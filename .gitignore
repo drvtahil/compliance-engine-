@@ -7,3 +7,6 @@ __pycache__/
 
 # User-uploaded compliance documents (may contain PII, e.g. ID scans)
 uploads/
+
+# Design-review mockups published via Artifacts, not application source
+scratch/
