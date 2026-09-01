@@ -231,12 +231,30 @@ def delete_registry_item(item_id: int, db: Session = Depends(get_db), current_ad
 
 
 # --- Account Operations (Add & Edit - Deletion Disabled) ---
+def get_valid_act_names(db: Session) -> set:
+    return {
+        name for (name,) in db.query(MasterRegistryItem.item_name)
+        .join(MasterRegistry, MasterRegistry.id == MasterRegistryItem.registry_id)
+        .filter(MasterRegistry.registry_key == "acts")
+        .all()
+    }
+
+def validate_enrolled_acts(db: Session, enrolled_acts: List[str]):
+    valid_acts = get_valid_act_names(db)
+    invalid = sorted(set(enrolled_acts) - valid_acts)
+    if invalid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"These Acts no longer exist in the Master Registry and cannot be enrolled: {', '.join(invalid)}"
+        )
+
 @router.post("/accounts")
 def create_account(payload: AccountPayload, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     if not payload.enrolled_acts:
         raise HTTPException(status_code=400, detail="At least one Enrolled Act must be selected.")
     if not payload.admins:
         raise HTTPException(status_code=400, detail="At least one Account Admin must be created.")
+    validate_enrolled_acts(db, payload.enrolled_acts)
     if any(not adm.password.strip() for adm in payload.admins):
         raise HTTPException(status_code=400, detail="A password is required for every new Account Admin.")
 
@@ -292,6 +310,7 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
         raise HTTPException(status_code=400, detail="At least one Enrolled Act must be selected.")
     if not payload.admins:
         raise HTTPException(status_code=400, detail="At least one Account Admin is required.")
+    validate_enrolled_acts(db, payload.enrolled_acts)
     if any(not adm.id and not adm.password.strip() for adm in payload.admins):
         raise HTTPException(status_code=400, detail="A password is required for every new Account Admin.")
 
