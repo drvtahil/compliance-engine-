@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { BookOpen, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { BookOpen, ChevronRight, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { fetchEnrolledActsApi, fetchChaptersForActApi } from "../services/rulesApi";
 
 // The Act a chapter was created under is always mapped by default in Super
@@ -156,27 +156,53 @@ export default function RulesTab() {
   const [chapters, setChapters] = useState([]);
   const [loadingActs, setLoadingActs] = useState(true);
   const [loadingChapters, setLoadingChapters] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetchEnrolledActsApi()
       .then((data) => {
         setActs(data);
-        if (data.length > 0) setActiveAct(data[0]);
+        if (data.length > 0) setActiveAct((prev) => prev || data[0]);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoadingActs(false));
   }, []);
 
-  useEffect(() => {
-    if (!activeAct) return;
-    setLoadingChapters(true);
+  // `silent` refreshes (focus regain, manual button) keep the current chapter
+  // list on screen - including whatever the user has expanded - and only
+  // swap it once the new data arrives, instead of dropping into the "loading"
+  // branch, which would unmount every open chapter/rule and collapse them.
+  const loadChapters = useCallback((act, { silent } = {}) => {
+    if (!act) return;
+    if (silent) setRefreshing(true); else setLoadingChapters(true);
     setError("");
-    fetchChaptersForActApi(activeAct)
+    fetchChaptersForActApi(act)
       .then(setChapters)
       .catch((err) => setError(err.message))
-      .finally(() => setLoadingChapters(false));
-  }, [activeAct]);
+      .finally(() => {
+        setLoadingChapters(false);
+        setRefreshing(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    loadChapters(activeAct);
+  }, [activeAct, loadChapters]);
+
+  // Rules are edited from a separate Super Admin session with no push
+  // mechanism between the two - refetch quietly whenever this tab regains
+  // focus so a change made elsewhere shows up as soon as it's looked at,
+  // without a full page reload or a visible loading flash.
+  useEffect(() => {
+    const onFocus = () => loadChapters(activeAct, { silent: true });
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [activeAct, loadChapters]);
 
   return (
     <div className="h-full flex flex-col">
@@ -185,7 +211,8 @@ export default function RulesTab() {
         <p className="text-[11px] text-slate-400 mt-0.5">View only &middot; showing acts your account is enrolled in</p>
       </div>
 
-      <div className="px-5 mt-3 border-b border-slate-200 flex gap-1">
+      <div className="px-5 mt-3 border-b border-slate-200 flex items-center gap-1">
+        <div className="flex-1 flex gap-1">
         {loadingActs ? (
           <div className="py-2 text-[11px] text-slate-400 flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />Loading acts...</div>
         ) : acts.length === 0 ? (
@@ -204,6 +231,16 @@ export default function RulesTab() {
             </button>
           ))
         )}
+        </div>
+        <button
+          onClick={() => loadChapters(activeAct, { silent: true })}
+          title="Refresh from Super Admin"
+          disabled={refreshing}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-slate-500 hover:text-slate-800 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2">

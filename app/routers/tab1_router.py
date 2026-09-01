@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -12,6 +14,7 @@ from app.models.super_admin import SuperAdmin
 from app.models.tab1_models import (
     MasterRegistry, MasterRegistryItem, EnterpriseAccount, AccountEnrolledAct, AccountAdmin
 )
+from app.models.tab2_models import LegalRule
 
 router = APIRouter(prefix="/api/v1/tab1", tags=["Tab 1 Master Registries & Accounts"])
 
@@ -191,22 +194,40 @@ def add_registry_item(reg_id: int, payload: MasterItemCreate, db: Session = Depe
     db.refresh(item)
     return item
 
+def sync_sample_policy_name(db: Session, old_name: str, new_name: Optional[str]):
+    # LegalRule.sample_policies is a JSON-encoded list of policy name strings,
+    # not a real relation - unlike AccountEnrolledAct, a rename/delete in the
+    # registry can't be synced with a single SQL UPDATE/DELETE. new_name=None
+    # means remove the entry entirely (the item was deleted, not renamed).
+    rules = db.query(LegalRule).filter(LegalRule.sample_policies.like(f'%{old_name}%')).all()
+    for rule in rules:
+        names = json.loads(rule.sample_policies or "[]")
+        if old_name not in names:
+            continue
+        updated = [new_name if n == old_name else n for n in names] if new_name else [n for n in names if n != old_name]
+        rule.sample_policies = json.dumps(updated)
+    db.commit()
+
 @router.put("/registry-items/{item_id}")
 def update_registry_item(item_id: int, payload: MasterItemCreate, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     item = db.query(MasterRegistryItem).filter(MasterRegistryItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    
+
     old_name = item.item_name
     new_name = payload.item_name.strip()
     item.item_name = new_name
     item.item_code = payload.item_code.strip() if payload.item_code else item.item_code
     item.description = payload.description
 
-    # If an Act is renamed, synchronize with all accounts enrolled in it
     parent_reg = db.query(MasterRegistry).filter(MasterRegistry.id == item.registry_id).first()
-    if parent_reg and parent_reg.registry_key == "acts" and old_name != new_name:
-        db.query(AccountEnrolledAct).filter(AccountEnrolledAct.act_name == old_name).update({"act_name": new_name})
+    if parent_reg and old_name != new_name:
+        # If an Act is renamed, synchronize with all accounts enrolled in it
+        if parent_reg.registry_key == "acts":
+            db.query(AccountEnrolledAct).filter(AccountEnrolledAct.act_name == old_name).update({"act_name": new_name})
+        # If a Sample Policy is renamed, synchronize with every rule that maps it
+        elif parent_reg.registry_key == "sample_policies":
+            sync_sample_policy_name(db, old_name, new_name)
 
     db.commit()
     db.refresh(item)
@@ -217,13 +238,16 @@ def delete_registry_item(item_id: int, db: Session = Depends(get_db), current_ad
     item = db.query(MasterRegistryItem).filter(MasterRegistryItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    
+
     item_name = item.item_name
     parent_reg = db.query(MasterRegistry).filter(MasterRegistry.id == item.registry_id).first()
 
-    # Cascade: If the deleted item is an Act, remove it from all enrolled accounts immediately
     if parent_reg and parent_reg.registry_key == "acts":
+        # Cascade: If the deleted item is an Act, remove it from all enrolled accounts immediately
         db.query(AccountEnrolledAct).filter(AccountEnrolledAct.act_name == item_name).delete()
+    elif parent_reg and parent_reg.registry_key == "sample_policies":
+        # Cascade: If the deleted item is a Sample Policy, remove it from every rule that maps it
+        sync_sample_policy_name(db, item_name, None)
 
     db.delete(item)
     db.commit()

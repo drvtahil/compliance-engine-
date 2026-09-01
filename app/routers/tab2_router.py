@@ -7,9 +7,27 @@ import json
 from app.core.deps import get_current_super_admin
 from app.database.connection import get_db
 from app.models.super_admin import SuperAdmin
+from app.models.tab1_models import MasterRegistry, MasterRegistryItem
 from app.models.tab2_models import LegalChapter, LegalRule, LegalSection, LegalAssessment
 
 router = APIRouter(prefix="/api/v1/tab2", tags=["Tab 2 Deep Rules Engine"])
+
+
+def validate_sample_policies(db: Session, sample_policies: List[str]):
+    if not sample_policies:
+        return
+    valid_names = {
+        name for (name,) in db.query(MasterRegistryItem.item_name)
+        .join(MasterRegistry, MasterRegistry.id == MasterRegistryItem.registry_id)
+        .filter(MasterRegistry.registry_key == "sample_policies")
+        .all()
+    }
+    invalid = sorted(set(sample_policies) - valid_names)
+    if invalid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"These Sample Policies no longer exist in the Master Registry: {', '.join(invalid)}"
+        )
 
 # --- Pydantic Request Schemas ---
 class ProcessItem(BaseModel):
@@ -180,6 +198,10 @@ def save_or_update_chapter(payload: ChapterPayload, db: Session = Depends(get_db
     if not chap:
         chap = db.query(LegalChapter).filter(LegalChapter.act_code == payload.act_code, LegalChapter.title == payload.title.strip()).first()
 
+    for r_item in payload.rules:
+        if r_item.rule_narrative.strip():
+            validate_sample_policies(db, r_item.sample_policies)
+
     if not chap:
         chap = LegalChapter(act_code=payload.act_code, title=payload.title.strip())
         db.add(chap)
@@ -229,6 +251,7 @@ def update_single_rule(rule_id: int, payload: SingleRuleUpdatePayload, db: Sessi
         raise HTTPException(status_code=404, detail="Rule not found in this chapter.")
 
     r_item = payload.rule
+    validate_sample_policies(db, r_item.sample_policies)
     rule.rule_narrative = r_item.rule_narrative.strip()
     rule.sample_policies = json.dumps(r_item.sample_policies)
     rule.is_hidden = r_item.is_hidden
@@ -250,6 +273,7 @@ def add_rule_to_existing_chapter(chapter_id: int, payload: AddRuleToChapterPaylo
         raise HTTPException(status_code=404, detail="Chapter not found.")
 
     r_item = payload.rule
+    validate_sample_policies(db, r_item.sample_policies)
     max_order = db.query(LegalRule).filter(LegalRule.chapter_id == chapter_id).count()
     new_rule = LegalRule(
         chapter_id=chap.id,
