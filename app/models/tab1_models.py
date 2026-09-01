@@ -62,6 +62,13 @@ class AccountEnrolledAct(Base):
     account = relationship("EnterpriseAccount", back_populates="enrolled_acts")
 
 
+class Role(Base):
+    __tablename__ = "roles"
+    id = Column(Integer, primary_key=True, index=True)
+    role_name = Column(String(50), unique=True, nullable=False)  # "Account Admin", "User"
+    description = Column(Text, nullable=True)
+
+
 class AccountAdmin(Base):
     __tablename__ = "account_admins"
     id = Column(Integer, primary_key=True, index=True)
@@ -71,6 +78,11 @@ class AccountAdmin(Base):
     phone = Column(String(50), nullable=False)
     email = Column(String(255), nullable=False)
     password = Column(String(255), nullable=False)
+    role_id = Column(Integer, ForeignKey("roles.id"), nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
+    last_login_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     account = relationship("EnterpriseAccount", back_populates="admins")
+    role = relationship("Role")

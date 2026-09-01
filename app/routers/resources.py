@@ -28,49 +28,53 @@ class SectionCreatePayload(BaseModel):
 class SectionUpdatePayload(BaseModel):
     new_name: str
 
-def ensure_sample_policy_section(db: Session):
+def ensure_sample_policy_section(db: Session) -> bool:
     # "Sample Policy" is a fixed system section other endpoints assume always
     # exists (see the is_system/name checks in update_section/delete_section) -
     # it's required scaffolding, not demo content, so it's seeded unconditionally.
+    # Returns True only the first time it's created, so callers can tell "brand
+    # new install" apart from "user deleted everything" - the latter must never
+    # re-trigger demo-data seeding.
     sample_sec = db.query(ComplianceSection).filter(ComplianceSection.name == "Sample Policy").first()
     if not sample_sec:
         sample_sec = ComplianceSection(name="Sample Policy", is_system=True)
         db.add(sample_sec)
         db.commit()
+        return True
+    return False
 
 def seed_demo_tab3_data(db: Session):
-    if db.query(ComplianceResource).count() == 0:
-        defaults = [
-            ComplianceResource(
-                title="Customer Privacy Notice Standard",
-                section_name="Sample Policy",
-                description="Mandatory itemized notice and multilingual consent template conforming with Section 5 DPDPA 2023.",
-                file_name="privacy_notice_template.pdf",
-                file_type="PDF",
-                mapped_acts=json.dumps(["DPDPA 2023", "GDPR"]),
-                mapped_industry_processes=json.dumps(["Customer Onboarding Consent"]),
-                mapped_industries=json.dumps(["Healthcare & Life Sciences", "Fintech & Banking"]),
-                mapped_org_types=json.dumps(["Data Fiduciary", "Significant Data Fiduciary"])
-            ),
-            ComplianceResource(
-                title="Data Retention & Erasure Policy",
-                section_name="Sample Policy",
-                description="Operational standard governing data minimization, retention schedules, and automated deletion.",
-                file_name="data_retention_schedule.docx",
-                file_type="DOCX",
-                mapped_acts=json.dumps(["DPDPA 2023", "IT Act 2000"]),
-                mapped_industry_processes=json.dumps(["Third-Party Data Sharing Protocol"]),
-                mapped_industries=json.dumps(["SaaS & Cloud Computing"]),
-                mapped_org_types=json.dumps(["Data Fiduciary", "Data Processor"])
-            )
-        ]
-        db.add_all(defaults)
-        db.commit()
+    defaults = [
+        ComplianceResource(
+            title="Customer Privacy Notice Standard",
+            section_name="Sample Policy",
+            description="Mandatory itemized notice and multilingual consent template conforming with Section 5 DPDPA 2023.",
+            file_name="privacy_notice_template.pdf",
+            file_type="PDF",
+            mapped_acts=json.dumps(["DPDPA 2023", "GDPR"]),
+            mapped_industry_processes=json.dumps(["Customer Onboarding Consent"]),
+            mapped_industries=json.dumps(["Healthcare & Life Sciences", "Fintech & Banking"]),
+            mapped_org_types=json.dumps(["Data Fiduciary", "Significant Data Fiduciary"])
+        ),
+        ComplianceResource(
+            title="Data Retention & Erasure Policy",
+            section_name="Sample Policy",
+            description="Operational standard governing data minimization, retention schedules, and automated deletion.",
+            file_name="data_retention_schedule.docx",
+            file_type="DOCX",
+            mapped_acts=json.dumps(["DPDPA 2023", "IT Act 2000"]),
+            mapped_industry_processes=json.dumps(["Third-Party Data Sharing Protocol"]),
+            mapped_industries=json.dumps(["SaaS & Cloud Computing"]),
+            mapped_org_types=json.dumps(["Data Fiduciary", "Data Processor"])
+        )
+    ]
+    db.add_all(defaults)
+    db.commit()
 
 @router.get("/sections")
 def get_sections(db: Session = Depends(get_db)):
-    ensure_sample_policy_section(db)
-    if settings.enable_demo_seed:
+    is_new_install = ensure_sample_policy_section(db)
+    if is_new_install and settings.enable_demo_seed:
         seed_demo_tab3_data(db)
     sections = db.query(ComplianceSection).order_by(ComplianceSection.id.asc()).all()
     res = []
@@ -139,8 +143,8 @@ def delete_section(section_id: int, db: Session = Depends(get_db), current_admin
 @router.get("")
 @router.get("/")
 def get_all_resources(db: Session = Depends(get_db)):
-    ensure_sample_policy_section(db)
-    if settings.enable_demo_seed:
+    is_new_install = ensure_sample_policy_section(db)
+    if is_new_install and settings.enable_demo_seed:
         seed_demo_tab3_data(db)
     items = db.query(ComplianceResource).order_by(ComplianceResource.id.desc()).all()
     result = []

@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { Routes, Route } from "react-router-dom";
 import { ShieldCheck, Building2, BookOpen, FolderArchive, Activity, LogOut } from "lucide-react";
 import TabOneAccounts from "./components/tab1_accounts/TabOneAccounts";
 import TabTwoRules from "./components/tab2_rules/TabTwoRules";
 import TabThreeResources from "./components/tab3_resources/TabThreeResources";
 import { loginApi, loadSession, saveSession, clearSession } from "./services/authApi";
+import AccountPortalRoot from "./account-portal/AccountPortalRoot";
 
 function LoginScreen({ onLoggedIn }) {
   const [email, setEmail] = useState("");
@@ -78,6 +80,15 @@ function LoginScreen({ onLoggedIn }) {
 }
 
 export default function App() {
+  return (
+    <Routes>
+      <Route path="/account/*" element={<AccountPortalRoot />} />
+      <Route path="/*" element={<SuperAdminApp />} />
+    </Routes>
+  );
+}
+
+function SuperAdminApp() {
   const [activeTab, setActiveTab] = useState("tab1");
   const [session, setSession] = useState(() => loadSession());
 

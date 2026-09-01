@@ -171,6 +171,14 @@ export default function TabTwoRules() {
 
   const cloneRules = () => JSON.parse(JSON.stringify(builderRules));
 
+  // The Act a chapter is created under must always be part of a section's
+  // mapped_acts - it's locked in the UI, so it must also be locked in on
+  // save/load, not just used as a fallback when the list happens to be empty.
+  const withDefaultAct = (acts, defaultAct) => {
+    const list = acts || [];
+    return defaultAct && !list.includes(defaultAct) ? [defaultAct, ...list] : list;
+  };
+
   const handleToggleRulePolicy = (rIdx, policyName) => {
     const copy = cloneRules();
     const cur = copy[rIdx].sample_policies || [];
@@ -181,6 +189,7 @@ export default function TabTwoRules() {
   };
 
   const handleToggleSectionAct = (rIdx, sIdx, actName) => {
+    if (actName === selectedAct) return; // the Act the chapter was created under is locked, not editable
     const copy = cloneRules();
     const cur = copy[rIdx].sections[sIdx].mapped_acts || [];
     copy[rIdx].sections[sIdx].mapped_acts = cur.includes(actName)
@@ -335,7 +344,7 @@ export default function TabTwoRules() {
           .filter(sec => sec.section_title.trim() || sec.section_explanation.trim())
           .map(sec => ({
             ...sec,
-            mapped_acts: sec.mapped_acts?.length > 0 ? sec.mapped_acts : [selectedAct],
+            mapped_acts: withDefaultAct(sec.mapped_acts, selectedAct),
             sub_sections: (sec.sub_sections || [])
               .filter(sub => sub.title?.trim())
               .map(sub => ({
@@ -446,7 +455,7 @@ export default function TabTwoRules() {
       ...rule,
       sections: rule.sections?.length > 0 ? rule.sections.map(s => ({
         ...s,
-        mapped_acts: s.mapped_acts?.length > 0 ? s.mapped_acts : [selectedAct],
+        mapped_acts: withDefaultAct(s.mapped_acts, selectedAct),
         assessments: s.assessments?.length > 0 ? s.assessments.map(a => ({
           ...a,
           mapped_acts: a.mapped_acts?.length > 0 ? a.mapped_acts : [selectedAct]
@@ -651,23 +660,47 @@ export default function TabTwoRules() {
                         <label className="text-xs font-bold text-slate-700 block mb-1">Section Act Mapping (Multi-Select)</label>
                         <div className="flex flex-wrap gap-1.5 p-2 bg-white border border-slate-300 rounded-lg max-h-24 overflow-y-auto">
                           {masterActs.map((act) => {
-                            const isActChecked = sec.mapped_acts?.includes(act.item_name);
+                            const isDefaultAct = act.item_name === selectedAct;
+                            const isActChecked = isDefaultAct || sec.mapped_acts?.includes(act.item_name);
                             return (
                               <button
                                 type="button"
                                 key={act.id}
+                                disabled={isDefaultAct}
+                                title={isDefaultAct ? "This is the Act the chapter was created under - always mapped" : undefined}
                                 onClick={(e) => {
                                   e.preventDefault();
                                   handleToggleSectionAct(rIdx, sIdx, act.item_name);
                                 }}
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded transition ${
-                                  isActChecked ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  isDefaultAct
+                                    ? "bg-blue-600 text-white cursor-not-allowed opacity-90"
+                                    : isActChecked
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                 }`}
                               >
-                                {act.item_name}
+                                {act.item_name}{isDefaultAct ? " (default)" : ""}
                               </button>
                             );
                           })}
+                          {(sec.mapped_acts || [])
+                            .filter(ma => !masterActs.some(act => act.item_name === ma))
+                            .map((staleAct, sIdx2) => (
+                              <button
+                                type="button"
+                                key={`stale-${sIdx2}`}
+                                title="This value no longer matches any current Act - click to remove"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleToggleSectionAct(rIdx, sIdx, staleAct);
+                                }}
+                                className="text-[10px] font-bold px-2 py-0.5 rounded transition bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 flex items-center gap-1"
+                              >
+                                {staleAct}
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            ))}
                         </div>
                       </div>
                     </div>
@@ -1233,7 +1266,7 @@ export default function TabTwoRules() {
                                       </h4>
                                       <div className="flex items-center gap-1">
                                         <span className="text-[10px] text-slate-400 font-bold uppercase mr-1">Mapped Acts:</span>
-                                        {sec.mapped_acts?.map((ma, mIdx) => (
+                                        {withDefaultAct(sec.mapped_acts, chap.act_code).map((ma, mIdx) => (
                                           <span key={mIdx} className="bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
                                             {ma}
                                           </span>
