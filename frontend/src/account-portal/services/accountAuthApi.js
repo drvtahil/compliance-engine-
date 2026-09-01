@@ -35,3 +35,21 @@ export const accountAuthHeaders = () => {
   const session = loadAccountSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 };
+
+// Wraps fetch for every account-scoped endpoint: attaches the bearer token,
+// and on a 401 (expired/invalid session) clears it and reloads so the user
+// lands back on the login screen instead of staring at a raw error message.
+export const accountFetch = async (url, options = {}) => {
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...options.headers, ...accountAuthHeaders() },
+  });
+  if (res.status === 401) {
+    clearAccountSession();
+    window.location.reload();
+    // Reload is async; throw so the caller's .then/.catch chain stops here
+    // instead of trying to parse a 401 body as success.
+    throw new Error("Session expired. Signing you out.");
+  }
+  return res;
+};

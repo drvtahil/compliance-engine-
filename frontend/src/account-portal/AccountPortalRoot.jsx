@@ -77,6 +77,16 @@ export default function AccountPortalRoot() {
               </button>
             );
           })}
+
+          <div className="my-1.5 border-t border-slate-100" />
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium text-left text-red-600 hover:bg-red-50"
+          >
+            <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="flex-1">Logout</span>
+          </button>
         </nav>
 
         <div className="border-t border-slate-200 px-3 py-3 flex items-center gap-2.5">
@@ -87,9 +97,6 @@ export default function AccountPortalRoot() {
             <div className="text-xs font-semibold text-slate-800 truncate">{session.name}</div>
             <div className="text-[10px] text-slate-400 truncate">{session.role} &middot; {session.account_name}</div>
           </div>
-          <button onClick={handleLogout} title="Logout" className="text-slate-400 hover:text-slate-700 flex-shrink-0">
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
       </aside>
 

@@ -62,7 +62,10 @@ function SectionCard({ section, chapterActCode }) {
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
       <div className="flex items-baseline justify-between gap-3 mb-1">
-        <div className="text-[11.5px] font-bold text-slate-800">{section.section_title}</div>
+        <div className="text-[11.5px] font-bold text-slate-800">
+          <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600 mr-1.5">Section</span>
+          {section.section_title}
+        </div>
         {displayActs.length > 0 && (
           <div className="flex gap-1 flex-shrink-0">
             {displayActs.map((act, i) => (
