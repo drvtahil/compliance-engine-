@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import AccountLogin from "./AccountLogin";
 import RulesTab from "./components/RulesTab";
+import ResourcesTab from "./components/ResourcesTab";
 import ChangePasswordModal from "./components/ChangePasswordModal";
 import AdminTab from "./components/admin/AdminTab";
 import { loadAccountSession, clearAccountSession } from "./services/accountAuthApi";
@@ -65,7 +66,7 @@ export default function AccountPortalRoot() {
     { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: false },
     { key: "activity", label: "Activity Tracker", icon: Activity, enabled: false },
     { key: "library", label: "Library", icon: FolderOpen, enabled: false },
-    { key: "resources", label: "Resources", icon: Archive, enabled: false },
+    { key: "resources", label: "Resources", icon: Archive, enabled: true },
     { key: "admin", label: "Admin", icon: UserCog, enabled: isAccountAdmin },
   ];
 
@@ -140,6 +141,7 @@ export default function AccountPortalRoot() {
 
       <main className="flex-1 min-w-0">
         {activeTab === "rules" && <RulesTab />}
+        {activeTab === "resources" && <ResourcesTab />}
         {activeTab === "admin" && isAccountAdmin && <AdminTab />}
       </main>
 
