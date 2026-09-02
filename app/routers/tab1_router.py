@@ -13,7 +13,7 @@ from app.core.security import hash_password
 from app.database.connection import get_db
 from app.models.super_admin import SuperAdmin
 from app.models.tab1_models import (
-    MasterRegistry, MasterRegistryItem, EnterpriseAccount, AccountEnrolledAct, AccountAdmin
+    MasterRegistry, MasterRegistryItem, EnterpriseAccount, AccountEnrolledAct, AccountAdmin, Role
 )
 from app.models.tab2_models import LegalRule
 
@@ -286,6 +286,10 @@ def validate_enrolled_acts(db: Session, enrolled_acts: List[str]):
             detail=f"These Acts no longer exist in the Master Registry and cannot be enrolled: {', '.join(invalid)}"
         )
 
+def get_account_admin_role_id(db: Session) -> Optional[int]:
+    return db.query(Role.id).filter(Role.role_name == "Account Admin").scalar()
+
+
 @router.post("/accounts")
 def create_account(payload: AccountPayload, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     if not payload.enrolled_acts:
@@ -321,6 +325,7 @@ def create_account(payload: AccountPayload, db: Session = Depends(get_db), curre
     for act_name in payload.enrolled_acts:
         db.add(AccountEnrolledAct(account_id=acc.id, act_name=act_name.strip()))
 
+    account_admin_role_id = get_account_admin_role_id(db)
     admin_counter = 1
     for adm in payload.admins:
         adm_code = f"ADM-{admin_counter:04d}"
@@ -330,7 +335,9 @@ def create_account(payload: AccountPayload, db: Session = Depends(get_db), curre
             name=adm.name.strip(),
             phone=adm.phone.strip(),
             email=adm.email.strip(),
-            password=hash_password(adm.password.strip())
+            password=hash_password(adm.password.strip()),
+            role_id=account_admin_role_id,
+            is_active=True
         ))
         admin_counter += 1
 
@@ -375,6 +382,7 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
         if existing_id not in submitted_ids:
             db.delete(existing)
 
+    account_admin_role_id = get_account_admin_role_id(db)
     admin_counter = len(existing_admins_by_id) + 1
     for adm in payload.admins:
         existing = existing_admins_by_id.get(adm.id) if adm.id else None
@@ -382,6 +390,8 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
             existing.name = adm.name.strip()
             existing.phone = adm.phone.strip()
             existing.email = adm.email.strip()
+            if not existing.role_id:
+                existing.role_id = account_admin_role_id
             if adm.password.strip():
                 existing.password = hash_password(adm.password.strip())
         else:
@@ -392,7 +402,9 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
                 name=adm.name.strip(),
                 phone=adm.phone.strip(),
                 email=adm.email.strip(),
-                password=hash_password(adm.password.strip())
+                password=hash_password(adm.password.strip()),
+                role_id=account_admin_role_id,
+                is_active=True
             ))
             admin_counter += 1
 

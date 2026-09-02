@@ -78,7 +78,7 @@ class AccountAdmin(Base):
     phone = Column(String(50), nullable=False)
     email = Column(String(255), nullable=False)
     password = Column(String(255), nullable=False)
-    role_id = Column(Integer, ForeignKey("roles.id"), nullable=True)
+    role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     is_active = Column(Boolean, default=True)
     created_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
     last_login_at = Column(DateTime, nullable=True)

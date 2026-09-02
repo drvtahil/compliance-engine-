@@ -11,6 +11,7 @@ import {
   UserCog,
   LogOut,
   KeyRound,
+  Clock,
 } from "lucide-react";
 import AccountLogin from "./AccountLogin";
 import RulesTab from "./components/RulesTab";
@@ -33,6 +34,29 @@ export default function AccountPortalRoot() {
   }
 
   const isAccountAdmin = session.role === "Account Admin";
+
+  // The User App doesn't exist yet — a User login should never see the
+  // Account Admin App, even a degraded view of it. This is a safety net:
+  // the login screen already blocks the User path before it gets here.
+  if (!isAccountAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8 w-full max-w-sm space-y-3 text-center">
+          <Clock className="w-8 h-8 text-slate-300 mx-auto" />
+          <p className="text-sm font-bold text-slate-700">User App — Coming Soon</p>
+          <p className="text-xs text-slate-500">
+            Your login works, but the User App hasn't launched yet. Check back once it's available.
+          </p>
+          <button
+            onClick={handleLogout}
+            className="text-xs font-bold text-red-600 hover:text-red-700 pt-2"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const NAV_ITEMS = [
     { key: "rules", label: "Rules & Acts", icon: BookOpen, enabled: true },

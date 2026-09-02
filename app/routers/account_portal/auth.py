@@ -47,7 +47,7 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
         access_token=token,
         name=admin.name,
         email=admin.email,
-        role=admin.role.role_name if admin.role else "Account Admin",
+        role=admin.role.role_name,
         account_id=admin.account_id,
         account_name=admin.account.account_name,
     )
