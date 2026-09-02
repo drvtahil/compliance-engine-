@@ -51,6 +51,7 @@ class AccountPayload(BaseModel):
     contact_person_phone: str
     enrolled_acts: List[str]
     admins: List[AccountAdminPayload]
+    removed_admin_ids: List[int] = []
 
 
 # --- Helper Seed Function ---
@@ -78,7 +79,7 @@ def seed_default_registries(db: Session):
 
 # --- Bootstrap / Fetch Everything ---
 @router.get("/bootstrap")
-def get_bootstrap_data(db: Session = Depends(get_db)):
+def get_bootstrap_data(db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     if settings.enable_demo_seed:
         seed_default_registries(db)
 
@@ -377,9 +378,14 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
     for act_name in payload.enrolled_acts:
         db.add(AccountEnrolledAct(account_id=acc.id, act_name=act_name.strip()))
 
-    submitted_ids = {adm.id for adm in payload.admins if adm.id}
-    for existing_id, existing in existing_admins_by_id.items():
-        if existing_id not in submitted_ids:
+    # Only delete an admin when the frontend explicitly says to remove it
+    # (removed_admin_ids). An admin simply absent from payload.admins is left
+    # untouched — this form can legitimately be stale relative to admins
+    # created elsewhere (e.g. an Account Admin's own "Create User"), and
+    # inferring deletion from mere absence previously wiped those out.
+    for admin_id in payload.removed_admin_ids:
+        existing = existing_admins_by_id.get(admin_id)
+        if existing:
             db.delete(existing)
 
     account_admin_role_id = get_account_admin_role_id(db)

@@ -3,7 +3,7 @@ import { authFetch } from "./authApi";
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/tab1`;
 
 export const fetchTab1BootstrapApi = async () => {
-  const res = await fetch(`${API_BASE}/bootstrap`);
+  const res = await authFetch(`${API_BASE}/bootstrap`);
   if (!res.ok) throw new Error("Failed to load Tab 1 registries and accounts from database.");
   return await res.json();
 };

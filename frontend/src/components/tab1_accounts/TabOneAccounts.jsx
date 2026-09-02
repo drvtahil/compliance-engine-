@@ -83,6 +83,7 @@ export default function TabOneAccounts() {
   };
   const [accountForm, setAccountForm] = useState(initialAccountForm);
   const [visiblePasswords, setVisiblePasswords] = useState({});
+  const [removedAdminIds, setRemovedAdminIds] = useState([]);
 
   // Master List Form State (Create & Edit)
   const [listForm, setListForm] = useState({ display_name: "", description: "" });
@@ -173,6 +174,7 @@ export default function TabOneAccounts() {
       enrolled_acts: actsList.length > 0 ? [actsList[0].item_name] : []
     });
     setVisiblePasswords({});
+    setRemovedAdminIds([]);
     setShowAccountModal({ open: true, isEdit: false, isViewOnly: false, accountId: null });
   };
 
@@ -200,6 +202,7 @@ export default function TabOneAccounts() {
       })) : [{ name: "", phone: "", email: "", password: "", admin_code: "" }]
     });
     setVisiblePasswords({});
+    setRemovedAdminIds([]);
     setShowAccountModal({ open: true, isEdit: !isViewOnly, isViewOnly, accountId: acc.id });
   };
 
@@ -226,6 +229,10 @@ export default function TabOneAccounts() {
     if (accountForm.admins.length === 1) {
       alert("At least one Account Admin is required.");
       return;
+    }
+    const removed = accountForm.admins[idx];
+    if (removed?.id) {
+      setRemovedAdminIds(prev => [...prev, removed.id]);
     }
     setAccountForm(prev => ({
       ...prev,
@@ -254,7 +261,7 @@ export default function TabOneAccounts() {
     try {
       setSaving(true);
       if (showAccountModal.isEdit) {
-        await updateAccountApi(showAccountModal.accountId, accountForm);
+        await updateAccountApi(showAccountModal.accountId, { ...accountForm, removed_admin_ids: removedAdminIds });
         showToast("Account updated successfully.");
       } else {
         await createAccountApi(accountForm);
