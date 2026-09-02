@@ -1,4 +1,4 @@
-import { authHeaders } from "./authApi";
+import { authFetch } from "./authApi";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/tab1`;
 
@@ -9,9 +9,9 @@ export const fetchTab1BootstrapApi = async () => {
 };
 
 export const createCustomRegistryApi = async (display_name, description = "") => {
-  const res = await fetch(`${API_BASE}/registries`, {
+  const res = await authFetch(`${API_BASE}/registries`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ display_name, description }),
   });
   if (!res.ok) {
@@ -22,19 +22,21 @@ export const createCustomRegistryApi = async (display_name, description = "") =>
 };
 
 export const updateRegistryApi = async (reg_id, display_name, description = "") => {
-  const res = await fetch(`${API_BASE}/registries/${reg_id}`, {
+  const res = await authFetch(`${API_BASE}/registries/${reg_id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ display_name, description }),
   });
-  if (!res.ok) throw new Error("Failed to update registry.");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to update registry.");
+  }
   return await res.json();
 };
 
 export const deleteRegistryApi = async (reg_id) => {
-  const res = await fetch(`${API_BASE}/registries/${reg_id}`, {
+  const res = await authFetch(`${API_BASE}/registries/${reg_id}`, {
     method: "DELETE",
-    headers: authHeaders(),
   });
   if (!res.ok) {
     const err = await res.json();
@@ -44,38 +46,46 @@ export const deleteRegistryApi = async (reg_id) => {
 };
 
 export const addRegistryItemApi = async (reg_id, item_name, item_code = "", description = "") => {
-  const res = await fetch(`${API_BASE}/registries/${reg_id}/items`, {
+  const res = await authFetch(`${API_BASE}/registries/${reg_id}/items`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ item_name, item_code, description }),
   });
-  if (!res.ok) throw new Error("Failed to add item to registry.");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to add item to registry.");
+  }
   return await res.json();
 };
 
 export const updateRegistryItemApi = async (item_id, item_name, item_code = "", description = "") => {
-  const res = await fetch(`${API_BASE}/registry-items/${item_id}`, {
+  const res = await authFetch(`${API_BASE}/registry-items/${item_id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ item_name, item_code, description }),
   });
-  if (!res.ok) throw new Error("Failed to update registry item.");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to update registry item.");
+  }
   return await res.json();
 };
 
 export const deleteRegistryItemApi = async (item_id) => {
-  const res = await fetch(`${API_BASE}/registry-items/${item_id}`, {
+  const res = await authFetch(`${API_BASE}/registry-items/${item_id}`, {
     method: "DELETE",
-    headers: authHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to delete registry item.");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to delete registry item.");
+  }
   return await res.json();
 };
 
 export const createAccountApi = async (payload) => {
-  const res = await fetch(`${API_BASE}/accounts`, {
+  const res = await authFetch(`${API_BASE}/accounts`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -86,9 +96,9 @@ export const createAccountApi = async (payload) => {
 };
 
 export const updateAccountApi = async (account_id, payload) => {
-  const res = await fetch(`${API_BASE}/accounts/${account_id}`, {
+  const res = await authFetch(`${API_BASE}/accounts/${account_id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {

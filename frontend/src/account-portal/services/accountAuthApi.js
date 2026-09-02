@@ -53,3 +53,16 @@ export const accountFetch = async (url, options = {}) => {
   }
   return res;
 };
+
+export const changePasswordApi = async (currentPassword, newPassword) => {
+  const res = await accountFetch(`${API_BASE}/change-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to change password.");
+  }
+  return await res.json();
+};

@@ -10,9 +10,11 @@ import {
   Archive,
   UserCog,
   LogOut,
+  KeyRound,
 } from "lucide-react";
 import AccountLogin from "./AccountLogin";
 import RulesTab from "./components/RulesTab";
+import ChangePasswordModal from "./components/ChangePasswordModal";
 import { loadAccountSession, clearAccountSession } from "./services/accountAuthApi";
 
 const NAV_ITEMS = [
@@ -29,6 +31,7 @@ const NAV_ITEMS = [
 export default function AccountPortalRoot() {
   const [session, setSession] = useState(() => loadAccountSession());
   const [activeTab, setActiveTab] = useState("rules");
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const handleLogout = () => {
     clearAccountSession();
@@ -46,9 +49,9 @@ export default function AccountPortalRoot() {
           <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm">
             <ShieldCheck className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="text-[12.5px] font-bold text-slate-800 leading-tight">Mood9 Compliance</div>
-            <div className="text-[9.5px] text-slate-400">Account Portal</div>
+            <div className="text-[9.5px] text-slate-400 truncate">{session.account_name}</div>
           </div>
         </div>
 
@@ -81,6 +84,14 @@ export default function AccountPortalRoot() {
           <div className="my-1.5 border-t border-slate-100" />
 
           <button
+            onClick={() => setShowChangePassword(true)}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium text-left text-slate-600 hover:bg-slate-50"
+          >
+            <KeyRound className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="flex-1">Change Password</span>
+          </button>
+
+          <button
             onClick={handleLogout}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium text-left text-red-600 hover:bg-red-50"
           >
@@ -103,6 +114,10 @@ export default function AccountPortalRoot() {
       <main className="flex-1 min-w-0">
         {activeTab === "rules" && <RulesTab />}
       </main>
+
+      {showChangePassword && (
+        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      )}
     </div>
   );
 }

@@ -35,3 +35,20 @@ export const authHeaders = () => {
   const session = loadSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 };
+
+// Wraps fetch for every Super Admin endpoint: attaches the bearer token, and
+// on a 401 (expired/invalid session) clears it and reloads so the user lands
+// back on the login screen instead of a raw "Could not validate credentials"
+// error on whatever action they were trying to take.
+export const authFetch = async (url, options = {}) => {
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...options.headers, ...authHeaders() },
+  });
+  if (res.status === 401) {
+    clearSession();
+    window.location.reload();
+    throw new Error("Session expired. Signing you out.");
+  }
+  return res;
+};

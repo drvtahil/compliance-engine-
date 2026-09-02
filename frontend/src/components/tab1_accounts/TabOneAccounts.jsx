@@ -39,6 +39,12 @@ export default function TabOneAccounts() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState("");
+
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(""), 3000);
+  };
 
   // Sub-Tab State: Default is "accounts" (Account Registry)
   const [activeSubTab, setActiveSubTab] = useState("accounts"); // 'accounts' | 'masters'
@@ -249,8 +255,10 @@ export default function TabOneAccounts() {
       setSaving(true);
       if (showAccountModal.isEdit) {
         await updateAccountApi(showAccountModal.accountId, accountForm);
+        showToast("Account updated successfully.");
       } else {
         await createAccountApi(accountForm);
+        showToast("Account registered successfully.");
       }
       setShowAccountModal({ open: false, isEdit: false, isViewOnly: false, accountId: null });
       await loadData();
@@ -357,6 +365,11 @@ export default function TabOneAccounts() {
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <div className="fixed top-4 right-4 z-[60] bg-emerald-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-lg">
+          {toast}
+        </div>
+      )}
       {/* ========================================================================= */}
       {/* SUB-TABS NAVIGATION: DEFAULT IS ACCOUNT REGISTRY                          */}
       {/* ========================================================================= */}

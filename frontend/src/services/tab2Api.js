@@ -1,4 +1,4 @@
-import { authHeaders } from "./authApi";
+import { authFetch } from "./authApi";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/tab2`;
 
@@ -9,9 +9,9 @@ export const fetchChaptersByActApi = async (actCode) => {
 };
 
 export const saveChapterTreeApi = async (payload) => {
-  const res = await fetch(`${API_BASE}/chapters`, {
+  const res = await authFetch(`${API_BASE}/chapters`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -22,9 +22,9 @@ export const saveChapterTreeApi = async (payload) => {
 };
 
 export const updateSingleRuleApi = async (ruleId, chapterId, rulePayload) => {
-  const res = await fetch(`${API_BASE}/rules/${ruleId}`, {
+  const res = await authFetch(`${API_BASE}/rules/${ruleId}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chapter_id: chapterId, rule: rulePayload }),
   });
   if (!res.ok) {
@@ -35,9 +35,9 @@ export const updateSingleRuleApi = async (ruleId, chapterId, rulePayload) => {
 };
 
 export const addRuleToChapterApi = async (chapterId, rulePayload) => {
-  const res = await fetch(`${API_BASE}/chapters/${chapterId}/rules`, {
+  const res = await authFetch(`${API_BASE}/chapters/${chapterId}/rules`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chapter_id: chapterId, rule: rulePayload }),
   });
   if (!res.ok) {
@@ -48,10 +48,12 @@ export const addRuleToChapterApi = async (chapterId, rulePayload) => {
 };
 
 export const toggleRuleHideApi = async (ruleId) => {
-  const res = await fetch(`${API_BASE}/rules/${ruleId}/toggle-hide`, {
+  const res = await authFetch(`${API_BASE}/rules/${ruleId}/toggle-hide`, {
     method: "PATCH",
-    headers: authHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to toggle rule visibility.");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to toggle rule visibility.");
+  }
   return await res.json();
 };

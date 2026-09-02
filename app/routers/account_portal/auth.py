@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from app.core.security import create_access_token, verify_password
+from app.core.deps import get_current_account_admin
+from app.core.security import create_access_token, hash_password, verify_password
 from app.database.connection import get_db
 from app.models.tab1_models import AccountAdmin
 
@@ -50,3 +51,24 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
         account_id=admin.account_id,
         account_name=admin.account.account_name,
     )
+
+
+class ChangePasswordPayload(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordPayload,
+    db: Session = Depends(get_db),
+    current_admin: AccountAdmin = Depends(get_current_account_admin),
+):
+    if not verify_password(payload.current_password, current_admin.password):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Current password is incorrect.")
+    if len(payload.new_password.strip()) < 6:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "New password must be at least 6 characters.")
+
+    current_admin.password = hash_password(payload.new_password.strip())
+    db.commit()
+    return {"status": "password_updated"}

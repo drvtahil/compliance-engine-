@@ -1,4 +1,4 @@
-import { authHeaders } from "./authApi";
+import { authFetch } from "./authApi";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/resources`;
 
@@ -9,9 +9,9 @@ export const fetchSectionsApi = async () => {
 };
 
 export const createSectionApi = async (name) => {
-  const res = await fetch(`${API_BASE}/sections`, {
+  const res = await authFetch(`${API_BASE}/sections`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name }),
   });
   if (!res.ok) {
@@ -22,9 +22,9 @@ export const createSectionApi = async (name) => {
 };
 
 export const updateSectionApi = async (id, newName) => {
-  const res = await fetch(`${API_BASE}/sections/${id}`, {
+  const res = await authFetch(`${API_BASE}/sections/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ new_name: newName }),
   });
   if (!res.ok) {
@@ -35,9 +35,8 @@ export const updateSectionApi = async (id, newName) => {
 };
 
 export const deleteSectionApi = async (id) => {
-  const res = await fetch(`${API_BASE}/sections/${id}`, {
+  const res = await authFetch(`${API_BASE}/sections/${id}`, {
     method: "DELETE",
-    headers: authHeaders(),
   });
   if (!res.ok) {
     const err = await res.json();
@@ -53,9 +52,8 @@ export const fetchResourcesApi = async () => {
 };
 
 export const createResourceWithFileApi = async (formData) => {
-  const res = await fetch(`${API_BASE}`, {
+  const res = await authFetch(`${API_BASE}`, {
     method: "POST",
-    headers: authHeaders(),
     body: formData,
   });
   if (!res.ok) {
@@ -66,9 +64,8 @@ export const createResourceWithFileApi = async (formData) => {
 };
 
 export const updateResourceWithFileApi = async (id, formData) => {
-  const res = await fetch(`${API_BASE}/${id}`, {
+  const res = await authFetch(`${API_BASE}/${id}`, {
     method: "PUT",
-    headers: authHeaders(),
     body: formData,
   });
   if (!res.ok) {
@@ -79,11 +76,13 @@ export const updateResourceWithFileApi = async (id, formData) => {
 };
 
 export const deleteResourceApi = async (id) => {
-  const res = await fetch(`${API_BASE}/${id}`, {
+  const res = await authFetch(`${API_BASE}/${id}`, {
     method: "DELETE",
-    headers: authHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to delete document.");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to delete document.");
+  }
   return await res.json();
 };
 

@@ -1,6 +1,7 @@
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr
@@ -178,11 +179,22 @@ def delete_registry(reg_id: int, db: Session = Depends(get_db), current_admin: S
 
 
 # --- Master Registry Items Operations with Cascade Clean for Acts ---
+def check_duplicate_item_name(db: Session, registry_id: int, item_name: str, exclude_item_id: Optional[int] = None):
+    query = db.query(MasterRegistryItem).filter(
+        MasterRegistryItem.registry_id == registry_id,
+        func.lower(MasterRegistryItem.item_name) == item_name.strip().lower()
+    )
+    if exclude_item_id:
+        query = query.filter(MasterRegistryItem.id != exclude_item_id)
+    if query.first():
+        raise HTTPException(status_code=400, detail=f"'{item_name.strip()}' already exists in this list.")
+
 @router.post("/registries/{reg_id}/items")
 def add_registry_item(reg_id: int, payload: MasterItemCreate, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     reg = db.query(MasterRegistry).filter(MasterRegistry.id == reg_id).first()
     if not reg:
         raise HTTPException(status_code=404, detail="Registry not found")
+    check_duplicate_item_name(db, reg_id, payload.item_name)
     item = MasterRegistryItem(
         registry_id=reg_id,
         item_name=payload.item_name.strip(),
@@ -216,6 +228,8 @@ def update_registry_item(item_id: int, payload: MasterItemCreate, db: Session = 
 
     old_name = item.item_name
     new_name = payload.item_name.strip()
+    if new_name.lower() != old_name.lower():
+        check_duplicate_item_name(db, item.registry_id, new_name, exclude_item_id=item.id)
     item.item_name = new_name
     item.item_code = payload.item_code.strip() if payload.item_code else item.item_code
     item.description = payload.description
@@ -356,21 +370,31 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
     for act_name in payload.enrolled_acts:
         db.add(AccountEnrolledAct(account_id=acc.id, act_name=act_name.strip()))
 
-    db.query(AccountAdmin).filter(AccountAdmin.account_id == acc.id).delete()
-    admin_counter = 1
+    submitted_ids = {adm.id for adm in payload.admins if adm.id}
+    for existing_id, existing in existing_admins_by_id.items():
+        if existing_id not in submitted_ids:
+            db.delete(existing)
+
+    admin_counter = len(existing_admins_by_id) + 1
     for adm in payload.admins:
-        adm_code = adm.admin_code if adm.admin_code else f"ADM-{admin_counter:04d}"
         existing = existing_admins_by_id.get(adm.id) if adm.id else None
-        password_hash = existing.password if (existing and not adm.password.strip()) else hash_password(adm.password.strip())
-        db.add(AccountAdmin(
-            account_id=acc.id,
-            admin_code=adm_code,
-            name=adm.name.strip(),
-            phone=adm.phone.strip(),
-            email=adm.email.strip(),
-            password=password_hash
-        ))
-        admin_counter += 1
+        if existing:
+            existing.name = adm.name.strip()
+            existing.phone = adm.phone.strip()
+            existing.email = adm.email.strip()
+            if adm.password.strip():
+                existing.password = hash_password(adm.password.strip())
+        else:
+            adm_code = adm.admin_code if adm.admin_code else f"ADM-{admin_counter:04d}"
+            db.add(AccountAdmin(
+                account_id=acc.id,
+                admin_code=adm_code,
+                name=adm.name.strip(),
+                phone=adm.phone.strip(),
+                email=adm.email.strip(),
+                password=hash_password(adm.password.strip())
+            ))
+            admin_counter += 1
 
     db.commit()
     db.refresh(acc)
