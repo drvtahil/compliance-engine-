@@ -80,6 +80,7 @@ export default function AccountPortalRoot() {
           <div className="min-w-0">
             <div className="text-[12.5px] font-bold text-slate-800 leading-tight">Mood9 Compliance</div>
             <div className="text-[9.5px] text-slate-400 truncate">{session.account_name}</div>
+            <div className="text-[9.5px] text-slate-500 font-semibold truncate">{session.name}</div>
           </div>
         </div>
 
