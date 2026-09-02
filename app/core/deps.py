@@ -61,3 +61,12 @@ def get_current_account_admin(
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This account's access period has ended.")
 
     return admin
+
+
+def get_current_account_admin_manager(
+    admin: AccountAdmin = Depends(get_current_account_admin),
+) -> AccountAdmin:
+    role_name = admin.role.role_name if admin.role else "Account Admin"
+    if role_name != "Account Admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only Account Admins can manage users.")
+    return admin

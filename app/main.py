@@ -8,7 +8,7 @@ from app.database.connection import get_db
 
 # Import routers
 from app.routers import tab1_router, tab2_router, resources, auth
-from app.routers.account_portal import auth as account_auth, rules as account_rules
+from app.routers.account_portal import auth as account_auth, rules as account_rules, users as account_users, questions as account_questions
 
 app = FastAPI(
     title="Mood9 Compliance Engine API",
@@ -30,6 +30,8 @@ app.include_router(tab2_router.router)
 app.include_router(resources.router)
 app.include_router(account_auth.router)
 app.include_router(account_rules.router)
+app.include_router(account_users.router)
+app.include_router(account_questions.router)
 
 @app.get("/")
 def health_check():

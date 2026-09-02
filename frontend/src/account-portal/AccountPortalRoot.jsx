@@ -15,18 +15,8 @@ import {
 import AccountLogin from "./AccountLogin";
 import RulesTab from "./components/RulesTab";
 import ChangePasswordModal from "./components/ChangePasswordModal";
+import AdminTab from "./components/admin/AdminTab";
 import { loadAccountSession, clearAccountSession } from "./services/accountAuthApi";
-
-const NAV_ITEMS = [
-  { key: "rules", label: "Rules & Acts", icon: BookOpen, enabled: true },
-  { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: false },
-  { key: "sops", label: "SOPs", icon: ListChecks, enabled: false },
-  { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: false },
-  { key: "activity", label: "Activity Tracker", icon: Activity, enabled: false },
-  { key: "library", label: "Library", icon: FolderOpen, enabled: false },
-  { key: "resources", label: "Resources", icon: Archive, enabled: false },
-  { key: "admin", label: "Admin", icon: UserCog, enabled: false },
-];
 
 export default function AccountPortalRoot() {
   const [session, setSession] = useState(() => loadAccountSession());
@@ -41,6 +31,19 @@ export default function AccountPortalRoot() {
   if (!session) {
     return <AccountLogin onLoggedIn={setSession} />;
   }
+
+  const isAccountAdmin = session.role === "Account Admin";
+
+  const NAV_ITEMS = [
+    { key: "rules", label: "Rules & Acts", icon: BookOpen, enabled: true },
+    { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: false },
+    { key: "sops", label: "SOPs", icon: ListChecks, enabled: false },
+    { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: false },
+    { key: "activity", label: "Activity Tracker", icon: Activity, enabled: false },
+    { key: "library", label: "Library", icon: FolderOpen, enabled: false },
+    { key: "resources", label: "Resources", icon: Archive, enabled: false },
+    { key: "admin", label: "Admin", icon: UserCog, enabled: isAccountAdmin },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex font-sans">
@@ -113,6 +116,7 @@ export default function AccountPortalRoot() {
 
       <main className="flex-1 min-w-0">
         {activeTab === "rules" && <RulesTab />}
+        {activeTab === "admin" && isAccountAdmin && <AdminTab />}
       </main>
 
       {showChangePassword && (

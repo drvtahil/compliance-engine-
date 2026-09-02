@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database.connection import Base
@@ -53,3 +53,17 @@ class LegalAssessment(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     section = relationship("LegalSection", back_populates="assessments")
+
+
+class QuestionAssignment(Base):
+    __tablename__ = "question_assignments"
+    __table_args__ = (UniqueConstraint("account_id", "assessment_id", name="uq_question_assignment_account_assessment"),)
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(Integer, ForeignKey("enterprise_accounts.id", ondelete="CASCADE"), nullable=False)
+    assessment_id = Column(Integer, ForeignKey("legal_assessments.id", ondelete="CASCADE"), nullable=False)
+    assigned_user_id = Column(Integer, ForeignKey("account_admins.id", ondelete="CASCADE"), nullable=False)
+    assigned_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
+    assigned_at = Column(DateTime, default=datetime.utcnow)
+
+    assessment = relationship("LegalAssessment")
+    assigned_user = relationship("AccountAdmin", foreign_keys=[assigned_user_id])

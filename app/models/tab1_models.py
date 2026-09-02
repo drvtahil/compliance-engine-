@@ -73,7 +73,7 @@ class AccountAdmin(Base):
     __tablename__ = "account_admins"
     id = Column(Integer, primary_key=True, index=True)
     account_id = Column(Integer, ForeignKey("enterprise_accounts.id", ondelete="CASCADE"), nullable=False)
-    admin_code = Column(String(50), nullable=False) # ADM-0001
+    admin_code = Column(String(50), nullable=False) # ADM-0001 or USR-0001
     name = Column(String(255), nullable=False)
     phone = Column(String(50), nullable=False)
     email = Column(String(255), nullable=False)
@@ -83,6 +83,9 @@ class AccountAdmin(Base):
     created_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
     last_login_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    job_title = Column(String(255), nullable=True) # e.g. "Compliance Officer"
+    role_description = Column(Text, nullable=True)
 
     account = relationship("EnterpriseAccount", back_populates="admins")
     role = relationship("Role")
