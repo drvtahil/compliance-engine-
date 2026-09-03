@@ -23,6 +23,7 @@ class LoginResponse(BaseModel):
     name: str
     email: str
     role: str
+    job_title: str = ""
     account_id: int
     account_name: str
 
@@ -48,6 +49,7 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
         name=admin.name,
         email=admin.email,
         role=admin.role.role_name,
+        job_title=admin.job_title or "",
         account_id=admin.account_id,
         account_name=admin.account.account_name,
     )

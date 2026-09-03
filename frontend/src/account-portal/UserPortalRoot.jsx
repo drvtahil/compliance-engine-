@@ -41,7 +41,11 @@ export default function UserPortalRoot({ session, onLogout }) {
           <div className="min-w-0">
             <div className="text-[12.5px] font-bold text-slate-800 leading-tight">Mood9 Compliance</div>
             <div className="text-[9.5px] text-slate-400 truncate">{session.account_name}</div>
+            <div className="text-[9.5px] text-blue-600 font-bold truncate">{session.role}</div>
             <div className="text-[9.5px] text-slate-500 font-semibold truncate">{session.name}</div>
+            {session.job_title && (
+              <div className="text-[9.5px] text-purple-600 font-semibold truncate">{session.job_title}</div>
+            )}
           </div>
         </div>
 
@@ -96,7 +100,8 @@ export default function UserPortalRoot({ session, onLogout }) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-xs font-semibold text-slate-800 truncate">{session.name}</div>
-            <div className="text-[10px] text-slate-400 truncate">{session.role} &middot; {session.account_name}</div>
+            <div className="text-[10px] text-blue-600 font-bold truncate">{session.role}</div>
+            <div className="text-[10px] text-slate-400 truncate">{session.account_name}</div>
           </div>
         </div>
       </aside>
