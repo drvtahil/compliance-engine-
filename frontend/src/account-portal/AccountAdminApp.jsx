@@ -16,10 +16,11 @@ import RulesTab from "./components/RulesTab";
 import ResourcesTab from "./components/ResourcesTab";
 import ChangePasswordModal from "./components/ChangePasswordModal";
 import AdminTab from "./components/admin/AdminTab";
+import AdminReadinessTab from "./components/admin/AdminReadinessTab";
 
 const NAV_ITEMS = [
   { key: "rules", label: "Rules & Acts", icon: BookOpen, enabled: true },
-  { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: false },
+  { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: true },
   { key: "sops", label: "SOPs", icon: ListChecks, enabled: false },
   { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: false },
   { key: "activity", label: "Activity Tracker", icon: Activity, enabled: false },
@@ -106,6 +107,7 @@ export default function AccountAdminApp({ session, onLogout }) {
 
       <main className="flex-1 min-w-0">
         {activeTab === "rules" && <RulesTab />}
+        {activeTab === "readiness" && <AdminReadinessTab />}
         {activeTab === "resources" && <ResourcesTab />}
         {activeTab === "admin" && <AdminTab />}
       </main>

@@ -13,13 +13,14 @@ import {
 } from "lucide-react";
 import RulesTab from "./components/RulesTab";
 import ResourcesTab from "./components/ResourcesTab";
+import UserReadinessTab from "./components/UserReadinessTab";
 import ChangePasswordModal from "./components/ChangePasswordModal";
 
 // Same tab list as the Account Admin App, minus Admin — Users are scoped to
 // their own account's view-only data, never to user/question management.
 const NAV_ITEMS = [
   { key: "rules", label: "Rules & Acts", icon: BookOpen, enabled: true },
-  { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: false },
+  { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: true },
   { key: "sops", label: "SOPs", icon: ListChecks, enabled: false },
   { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: false },
   { key: "activity", label: "Activity Tracker", icon: Activity, enabled: false },
@@ -108,6 +109,7 @@ export default function UserPortalRoot({ session, onLogout }) {
 
       <main className="flex-1 min-w-0">
         {activeTab === "rules" && <RulesTab />}
+        {activeTab === "readiness" && <UserReadinessTab />}
         {activeTab === "resources" && <ResourcesTab />}
       </main>
 

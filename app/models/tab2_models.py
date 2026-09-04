@@ -64,6 +64,19 @@ class QuestionAssignment(Base):
     assigned_user_id = Column(Integer, ForeignKey("account_admins.id", ondelete="CASCADE"), nullable=False)
     assigned_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
     assigned_at = Column(DateTime, default=datetime.utcnow)
+    response = Column(String(10), nullable=True)  # "Yes" | "No" | "NA" | None
 
     assessment = relationship("LegalAssessment")
     assigned_user = relationship("AccountAdmin", foreign_keys=[assigned_user_id])
+
+
+class ReadinessSubmission(Base):
+    __tablename__ = "readiness_submissions"
+    __table_args__ = (UniqueConstraint("account_id", "act_code", name="uq_readiness_submission_account_act"),)
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(Integer, ForeignKey("enterprise_accounts.id", ondelete="CASCADE"), nullable=False)
+    act_code = Column(String(100), nullable=False)
+    submitted_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+
+    submitted_by_admin = relationship("AccountAdmin", foreign_keys=[submitted_by])
