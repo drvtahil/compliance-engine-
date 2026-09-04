@@ -29,6 +29,15 @@ export const fetchReadinessStatusApi = async (actCode) => {
   return await res.json();
 };
 
+export const fetchReadinessScoreApi = async (actCode) => {
+  const res = await accountFetch(`${API_BASE}/score?act_code=${encodeURIComponent(actCode)}`);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to load Readiness score.");
+  }
+  return await res.json();
+};
+
 export const setReadinessResponseApi = async (assessmentId, response) => {
   const res = await accountFetch(`${API_BASE}/${assessmentId}/response`, {
     method: "PATCH",

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { ClipboardCheck, Search, Loader2, RefreshCw, Lock } from "lucide-react";
+import { ClipboardCheck, Search, Loader2, RefreshCw } from "lucide-react";
 import { fetchEnrolledActsApi } from "../services/rulesApi";
 import { fetchMyReadinessApi, setReadinessResponseApi } from "../services/readinessApi";
 import ReadinessTable from "./ReadinessTable";
+import ReadinessScoreView from "./ReadinessScoreView";
 
 export default function UserReadinessTab() {
   const [acts, setActs] = useState([]);
@@ -88,23 +89,19 @@ export default function UserReadinessTab() {
             </button>
           </div>
 
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search question, department, process..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
-            />
-          </div>
+          {!locked && (
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search question, department, process..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+              />
+            </div>
+          )}
         </div>
-
-        {locked && (
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-2.5 font-semibold">
-            <Lock className="w-3.5 h-3.5" /> This Act's Readiness has been submitted and is locked by your Account Admin.
-          </div>
-        )}
       </div>
 
       {error && <div className="p-3 text-red-700 bg-red-50 border border-red-200 rounded-lg">{error}</div>}
@@ -114,6 +111,8 @@ export default function UserReadinessTab() {
           <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
           <span className="text-xs font-semibold">Loading questions...</span>
         </div>
+      ) : locked ? (
+        <ReadinessScoreView actCode={selectedAct} showReopen={false} />
       ) : (
         <ReadinessTable
           questions={filtered}

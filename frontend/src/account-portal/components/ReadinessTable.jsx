@@ -46,6 +46,7 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+              <th className="p-3 w-8">#</th>
               <th className="p-3">Question</th>
               <th className="p-3">Department</th>
               <th className="p-3">Process</th>
@@ -54,8 +55,9 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {questions.map((q) => (
+            {questions.map((q, idx) => (
               <tr key={q.assessment_id} className="hover:bg-slate-50/80 align-top">
+                <td className="p-3 text-slate-400 font-bold">{idx + 1}</td>
                 <td className="p-3 text-slate-700 max-w-md">
                   <div className="line-clamp-2">{q.question}</div>
                   <div className="text-[10px] text-slate-400 mt-0.5">{q.chapter_title} &middot; Rule {q.rule_order}</div>

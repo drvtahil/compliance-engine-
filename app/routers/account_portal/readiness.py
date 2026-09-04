@@ -108,6 +108,59 @@ def get_readiness_status(
     }
 
 
+def _score(yes: int, no: int) -> Optional[float]:
+    total = yes + no
+    return round(yes / total * 100, 1) if total > 0 else None
+
+
+@router.get("/score")
+def get_readiness_score(
+    act_code: str,
+    db: Session = Depends(get_db),
+    current_admin: AccountAdmin = Depends(get_current_account_admin),
+):
+    assert_act_enrolled(db, current_admin.account_id, act_code)
+    rows = assignments_query_for_act(db, current_admin.account_id, act_code).all()
+
+    total_yes = total_no = total_na = 0
+    dept_counts: dict[str, dict[str, int]] = {}
+
+    for qa in rows:
+        r = qa.response
+        if r == "Yes":
+            total_yes += 1
+        elif r == "No":
+            total_no += 1
+        elif r == "NA":
+            total_na += 1
+
+        for dept in json.loads(qa.assessment.industries or "[]"):
+            bucket = dept_counts.setdefault(dept, {"yes": 0, "no": 0, "na": 0})
+            if r == "Yes":
+                bucket["yes"] += 1
+            elif r == "No":
+                bucket["no"] += 1
+            elif r == "NA":
+                bucket["na"] += 1
+
+    departments = [
+        {
+            "name": name,
+            "yes": c["yes"],
+            "no": c["no"],
+            "na": c["na"],
+            "score": _score(c["yes"], c["no"]),
+        }
+        for name, c in sorted(dept_counts.items())
+    ]
+
+    return {
+        "locked": is_locked(db, current_admin.account_id, act_code),
+        "total": {"yes": total_yes, "no": total_no, "na": total_na, "score": _score(total_yes, total_no)},
+        "departments": departments,
+    }
+
+
 class ResponsePayload(BaseModel):
     response: Optional[Literal["Yes", "No", "NA"]] = None
 

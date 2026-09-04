@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { ClipboardCheck, Search, Loader2, RefreshCw, Lock, Unlock, CheckCircle2 } from "lucide-react";
+import { ClipboardCheck, Search, Loader2, RefreshCw, Lock } from "lucide-react";
 import { fetchEnrolledActsApi } from "../../services/rulesApi";
 import {
   fetchAllReadinessApi,
@@ -8,6 +8,7 @@ import {
   unsubmitReadinessApi,
 } from "../../services/readinessApi";
 import ReadinessTable from "../ReadinessTable";
+import ReadinessScoreView from "../ReadinessScoreView";
 
 export default function AdminReadinessTab() {
   const [acts, setActs] = useState([]);
@@ -120,37 +121,24 @@ export default function AdminReadinessTab() {
             </button>
           </div>
 
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search question, department, process..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
-            />
-          </div>
+          {!locked && (
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search question, department, process..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+              />
+            </div>
+          )}
         </div>
 
-        {locked ? (
-          <div className="flex items-center justify-between gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-2.5 font-semibold">
-            <span className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5" /> This Act's Readiness has been submitted and is locked.
-            </span>
-            <button
-              onClick={handleUnsubmit}
-              disabled={submitting}
-              className="bg-white hover:bg-emerald-100 border border-emerald-300 text-emerald-700 px-3 py-1 rounded-lg font-bold flex items-center gap-1.5"
-            >
-              <Unlock className="w-3.5 h-3.5" /> Reopen
-            </button>
+        {!locked && unansweredCount > 0 && (
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-2.5 font-semibold">
+            <Lock className="w-3.5 h-3.5" /> {unansweredCount} question(s) still need a response before you can submit.
           </div>
-        ) : (
-          unansweredCount > 0 && (
-            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-2.5 font-semibold">
-              <Lock className="w-3.5 h-3.5" /> {unansweredCount} question(s) still need a response before you can submit.
-            </div>
-          )
         )}
       </div>
 
@@ -161,6 +149,8 @@ export default function AdminReadinessTab() {
           <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
           <span className="text-xs font-semibold">Loading questions...</span>
         </div>
+      ) : locked ? (
+        <ReadinessScoreView actCode={selectedAct} showReopen={true} onReopen={handleUnsubmit} reopening={submitting} />
       ) : (
         <>
           <ReadinessTable
@@ -170,7 +160,7 @@ export default function AdminReadinessTab() {
             onSetResponse={handleSetResponse}
           />
 
-          {questions.length > 0 && !locked && (
+          {questions.length > 0 && (
             <div className="flex justify-end">
               <button
                 onClick={handleSubmit}
