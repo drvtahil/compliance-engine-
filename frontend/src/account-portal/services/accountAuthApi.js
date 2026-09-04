@@ -1,11 +1,11 @@
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/account/auth`;
 const STORAGE_KEY = "mood9_account_session";
 
-export const accountLoginApi = async (email, password) => {
+export const accountLoginApi = async (email, password, loginAs) => {
   const res = await fetch(`${API_BASE}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, login_as: loginAs }),
   });
   if (!res.ok) {
     const err = await res.json();

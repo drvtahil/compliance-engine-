@@ -291,6 +291,26 @@ def get_account_admin_role_id(db: Session) -> Optional[int]:
     return db.query(Role.id).filter(Role.role_name == "Account Admin").scalar()
 
 
+def assert_admin_emails_available(db: Session, admins: List["AccountAdminPayload"]):
+    """Email is the login identifier for every account_admins row (Account
+    Admin or User alike) — login looks a person up by email alone, so two
+    rows sharing an email would make login non-deterministic. Reject
+    duplicates within this save, and duplicates against any other existing
+    row (excluding the row being edited itself)."""
+    seen = set()
+    for adm in admins:
+        email = adm.email.strip().lower()
+        if email in seen:
+            raise HTTPException(status_code=400, detail=f"'{email}' is used by more than one admin in this form.")
+        seen.add(email)
+
+        query = db.query(AccountAdmin).filter(func.lower(AccountAdmin.email) == email)
+        if adm.id:
+            query = query.filter(AccountAdmin.id != adm.id)
+        if query.first():
+            raise HTTPException(status_code=400, detail=f"'{email}' is already in use by another admin or user.")
+
+
 @router.post("/accounts")
 def create_account(payload: AccountPayload, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     if not payload.enrolled_acts:
@@ -300,6 +320,7 @@ def create_account(payload: AccountPayload, db: Session = Depends(get_db), curre
     validate_enrolled_acts(db, payload.enrolled_acts)
     if any(not adm.password.strip() for adm in payload.admins):
         raise HTTPException(status_code=400, detail="A password is required for every new Account Admin.")
+    assert_admin_emails_available(db, payload.admins)
 
     last_acc = db.query(EnterpriseAccount).order_by(EnterpriseAccount.id.desc()).first()
     next_num = (last_acc.id + 1) if last_acc else 1
@@ -335,7 +356,7 @@ def create_account(payload: AccountPayload, db: Session = Depends(get_db), curre
             admin_code=adm_code,
             name=adm.name.strip(),
             phone=adm.phone.strip(),
-            email=adm.email.strip(),
+            email=adm.email.strip().lower(),
             password=hash_password(adm.password.strip()),
             role_id=account_admin_role_id,
             is_active=True
@@ -359,6 +380,7 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
     validate_enrolled_acts(db, payload.enrolled_acts)
     if any(not adm.id and not adm.password.strip() for adm in payload.admins):
         raise HTTPException(status_code=400, detail="A password is required for every new Account Admin.")
+    assert_admin_emails_available(db, payload.admins)
 
     existing_admins_by_id = {a.id: a for a in acc.admins}
 
@@ -395,7 +417,7 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
         if existing:
             existing.name = adm.name.strip()
             existing.phone = adm.phone.strip()
-            existing.email = adm.email.strip()
+            existing.email = adm.email.strip().lower()
             if not existing.role_id:
                 existing.role_id = account_admin_role_id
             if adm.password.strip():
@@ -407,7 +429,7 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
                 admin_code=adm_code,
                 name=adm.name.strip(),
                 phone=adm.phone.strip(),
-                email=adm.email.strip(),
+                email=adm.email.strip().lower(),
                 password=hash_password(adm.password.strip()),
                 role_id=account_admin_role_id,
                 is_active=True

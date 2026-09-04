@@ -14,7 +14,7 @@ export default function AccountLogin({ onLoggedIn }) {
     setError("");
     setLoading(true);
     try {
-      const session = await accountLoginApi(email, password);
+      const session = await accountLoginApi(email, password, loginAs);
       saveAccountSession(session);
       onLoggedIn(session);
     } catch (err) {

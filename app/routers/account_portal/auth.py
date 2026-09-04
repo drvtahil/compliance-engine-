@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/api/v1/account/auth", tags=["Account Portal Auth"])
 class LoginPayload(BaseModel):
     email: EmailStr
     password: str
+    login_as: Optional[Literal["admin", "user"]] = None
 
 
 class LoginResponse(BaseModel):
@@ -39,6 +41,12 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
         raise unauthorized
     if admin.account.project_end_date < date.today():
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This account's access period has ended.")
+
+    actual_role = admin.role.role_name
+    if payload.login_as == "admin" and actual_role != "Account Admin":
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "This is not an Account Admin login. Use the User tab to sign in.")
+    if payload.login_as == "user" and actual_role != "User":
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "This is not a User login. Use the Account Admin tab to sign in.")
 
     admin.last_login_at = datetime.utcnow()
     db.commit()
