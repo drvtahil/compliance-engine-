@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Loader2, Unlock, CheckCircle2 } from "lucide-react";
 import { fetchReadinessScoreApi } from "../services/readinessApi";
+import useRegistryLabels from "../hooks/useRegistryLabels";
 import SemicircleGauge from "./SemicircleGauge";
 
 export default function ReadinessScoreView({ actCode, showReopen, onReopen, reopening }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { department_label: departmentLabel } = useRegistryLabels();
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +60,7 @@ export default function ReadinessScoreView({ actCode, showReopen, onReopen, reop
 
       {data.departments.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-6">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-4">Score by Department</h3>
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-4">Score by {departmentLabel}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {data.departments.map((d) => (
               <div key={d.name} className="flex flex-col items-center bg-slate-50/70 rounded-lg border border-slate-200 p-3.5">

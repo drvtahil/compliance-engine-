@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Eye, EyeOff, Loader2 } from "lucide-react";
 import { createUserApi, updateUserApi } from "../../services/usersApi";
+import useRegistryLabels from "../../hooks/useRegistryLabels";
 
 const emptyForm = {
   name: "",
@@ -12,6 +13,7 @@ const emptyForm = {
 };
 
 export default function UserFormModal({ editingUser, onClose, onSaved }) {
+  const { department_label: departmentLabel, process_label: processLabel } = useRegistryLabels();
   const [form, setForm] = useState(emptyForm);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -157,7 +159,7 @@ export default function UserFormModal({ editingUser, onClose, onSaved }) {
           </div>
 
           <div className="text-[11px] text-slate-400 italic bg-slate-50 border border-slate-200 rounded-lg p-2">
-            Department and Process Areas are set by assigning questions to this user from "Allocate Role & Questions" — not here.
+            {departmentLabel} and {processLabel} are set by assigning questions to this user from "Allocate Role & Questions" — not here.
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">

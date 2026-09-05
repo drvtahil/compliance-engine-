@@ -3,8 +3,10 @@ import { Edit2, KeyRound, UserX, UserCheck, Loader2 } from "lucide-react";
 import { toggleUserActiveApi } from "../../services/usersApi";
 import UserFormModal from "./UserFormModal";
 import ResetUserPasswordModal from "./ResetUserPasswordModal";
+import useRegistryLabels from "../../hooks/useRegistryLabels";
 
 export default function UserListTab({ users, onRefresh }) {
+  const { department_label: departmentLabel, process_label: processLabel } = useRegistryLabels();
   const [editingUser, setEditingUser] = useState(null);
   const [resettingUser, setResettingUser] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
@@ -32,8 +34,8 @@ export default function UserListTab({ users, onRefresh }) {
               <th className="p-3">Email</th>
               <th className="p-3">Phone</th>
               <th className="p-3">Role Title</th>
-              <th className="p-3">Department</th>
-              <th className="p-3">Process Areas</th>
+              <th className="p-3">{departmentLabel}</th>
+              <th className="p-3">{processLabel}</th>
               <th className="p-3">Status</th>
               <th className="p-3 text-right">Actions</th>
             </tr>

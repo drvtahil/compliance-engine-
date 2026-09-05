@@ -15,6 +15,7 @@ import {
   Building,
 } from "lucide-react";
 import { fetchAccountResourcesApi, getResourceViewUrl, getResourceDownloadUrl } from "../services/resourcesApi";
+import useRegistryLabels from "../hooks/useRegistryLabels";
 
 const getBadgeColor = (ext) => {
   switch (ext?.toUpperCase()) {
@@ -35,7 +36,7 @@ const getBadgeColor = (ext) => {
   }
 };
 
-function DocumentDetailsModal({ doc, onClose }) {
+function DocumentDetailsModal({ doc, onClose, departmentLabel, processLabel }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 space-y-4 text-xs max-h-[92vh] flex flex-col">
@@ -97,7 +98,7 @@ function DocumentDetailsModal({ doc, onClose }) {
 
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
             <label className="font-bold text-slate-700 block text-[11px] uppercase flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-emerald-600" /> Process
+              <Activity className="w-3.5 h-3.5 text-emerald-600" /> {processLabel}
             </label>
             <div className="flex flex-wrap gap-1.5">
               {doc.mapped_industry_processes.length > 0 ? (
@@ -112,7 +113,7 @@ function DocumentDetailsModal({ doc, onClose }) {
 
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
             <label className="font-bold text-slate-700 block text-[11px] uppercase flex items-center gap-1.5">
-              <Briefcase className="w-3.5 h-3.5 text-purple-600" /> Department
+              <Briefcase className="w-3.5 h-3.5 text-purple-600" /> {departmentLabel}
             </label>
             <div className="flex flex-wrap gap-1.5">
               {doc.mapped_industries.length > 0 ? (
@@ -148,6 +149,7 @@ function DocumentDetailsModal({ doc, onClose }) {
 }
 
 export default function ResourcesTab() {
+  const { department_label: departmentLabel, process_label: processLabel } = useRegistryLabels();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -226,7 +228,7 @@ export default function ResourcesTab() {
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by document name, Acts, Department, Process, Org type..."
+              placeholder={`Search by document name, Acts, ${departmentLabel}, ${processLabel}, Org type...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
@@ -357,7 +359,14 @@ export default function ResourcesTab() {
           })
       )}
 
-      {detailsDoc && <DocumentDetailsModal doc={detailsDoc} onClose={() => setDetailsDoc(null)} />}
+      {detailsDoc && (
+        <DocumentDetailsModal
+          doc={detailsDoc}
+          onClose={() => setDetailsDoc(null)}
+          departmentLabel={departmentLabel}
+          processLabel={processLabel}
+        />
+      )}
     </div>
   );
 }

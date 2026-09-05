@@ -5,10 +5,29 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_account_admin
 from app.database.connection import get_db
-from app.models.tab1_models import AccountAdmin, AccountEnrolledAct
+from app.models.tab1_models import AccountAdmin, AccountEnrolledAct, MasterRegistry
 from app.models.tab2_models import LegalChapter
 
 router = APIRouter(prefix="/api/v1/account/rules", tags=["Account Portal Rules"])
+
+
+@router.get("/registry-labels")
+def get_registry_labels(
+    db: Session = Depends(get_db),
+    current_admin: AccountAdmin = Depends(get_current_account_admin),
+):
+    """Department and Process are Super Admin-managed Master Registry names
+    (registry_key "industries" / "industry_processes"), not fixed strings —
+    read live so any rename in Tab 1 shows up everywhere without a code
+    change."""
+    def label_for(key: str, fallback: str) -> str:
+        reg = db.query(MasterRegistry).filter(MasterRegistry.registry_key == key).first()
+        return reg.display_name if reg else fallback
+
+    return {
+        "department_label": label_for("industries", "Department"),
+        "process_label": label_for("industry_processes", "Process"),
+    }
 
 
 @router.get("/acts")

@@ -7,10 +7,12 @@ import {
   submitReadinessApi,
   unsubmitReadinessApi,
 } from "../../services/readinessApi";
+import useRegistryLabels from "../../hooks/useRegistryLabels";
 import ReadinessTable from "../ReadinessTable";
 import ReadinessScoreView from "../ReadinessScoreView";
 
 export default function AdminReadinessTab() {
+  const { department_label: departmentLabel, process_label: processLabel } = useRegistryLabels();
   const [acts, setActs] = useState([]);
   const [selectedAct, setSelectedAct] = useState("");
   const [questions, setQuestions] = useState([]);
@@ -126,7 +128,7 @@ export default function AdminReadinessTab() {
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search question, department, process..."
+                placeholder={`Search question, ${departmentLabel}, ${processLabel}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
@@ -158,6 +160,8 @@ export default function AdminReadinessTab() {
             locked={locked}
             showAssignee={true}
             onSetResponse={handleSetResponse}
+            departmentLabel={departmentLabel}
+            processLabel={processLabel}
           />
 
           {questions.length > 0 && (

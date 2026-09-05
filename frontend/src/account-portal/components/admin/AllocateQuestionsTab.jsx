@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Loader2, RefreshCw } from "lucide-react";
 import { fetchQuestionsApi, fetchAssignableUsersApi, assignQuestionApi, unassignQuestionApi } from "../../services/questionsApi";
+import useRegistryLabels from "../../hooks/useRegistryLabels";
 
 export default function AllocateQuestionsTab({ acts }) {
+  const { department_label: departmentLabel, process_label: processLabel } = useRegistryLabels();
   const [selectedAct, setSelectedAct] = useState(acts[0] || "");
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -154,7 +156,7 @@ export default function AllocateQuestionsTab({ acts }) {
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search questions, department, process area, SOP..."
+              placeholder={`Search questions, ${departmentLabel}, ${processLabel}, SOP...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
@@ -198,10 +200,10 @@ export default function AllocateQuestionsTab({ acts }) {
                   <div className="flex items-center gap-1">Question Title <SortIcon field="question" /></div>
                 </th>
                 <th className="p-3 cursor-pointer" onClick={() => handleSort("industries")}>
-                  <div className="flex items-center gap-1">Department <SortIcon field="industries" /></div>
+                  <div className="flex items-center gap-1">{departmentLabel} <SortIcon field="industries" /></div>
                 </th>
                 <th className="p-3 cursor-pointer" onClick={() => handleSort("industry_process")}>
-                  <div className="flex items-center gap-1">Process Area <SortIcon field="industry_process" /></div>
+                  <div className="flex items-center gap-1">{processLabel} <SortIcon field="industry_process" /></div>
                 </th>
                 <th className="p-3 cursor-pointer" onClick={() => handleSort("assignee")}>
                   <div className="flex items-center gap-1">Current Assignee <SortIcon field="assignee" /></div>

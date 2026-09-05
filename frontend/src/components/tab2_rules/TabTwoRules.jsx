@@ -31,6 +31,8 @@ export default function TabTwoRules() {
   const [samplePoliciesList, setSamplePoliciesList] = useState([]);
   const [industriesList, setIndustriesList] = useState([]);
   const [industryProcessesList, setIndustryProcessesList] = useState([]);
+  const [departmentLabel, setDepartmentLabel] = useState("Department");
+  const [processLabel, setProcessLabel] = useState("Process");
   const [tasksList, setTasksList] = useState([]);
 
   const [chapters, setChapters] = useState([]);
@@ -127,8 +129,10 @@ export default function TabTwoRules() {
       const bData = await fetchTab1BootstrapApi();
       const acts = bData.registries?.find(r => r.registry_key === "acts")?.items || [];
       const policies = bData.registries?.find(r => r.registry_key === "sample_policies")?.items || [];
-      const industries = bData.registries?.find(r => r.registry_key === "industries")?.items || [];
-      const procs = bData.registries?.find(r => r.registry_key === "industry_processes")?.items || [];
+      const industriesRegistry = bData.registries?.find(r => r.registry_key === "industries");
+      const processesRegistry = bData.registries?.find(r => r.registry_key === "industry_processes");
+      const industries = industriesRegistry?.items || [];
+      const procs = processesRegistry?.items || [];
       const tasks = bData.registries?.find(r => r.registry_key === "tasks")?.items || [];
 
       setMasterActs(acts);
@@ -136,6 +140,8 @@ export default function TabTwoRules() {
       setIndustriesList(industries);
       setIndustryProcessesList(procs);
       setTasksList(tasks);
+      setDepartmentLabel(industriesRegistry?.display_name || "Department");
+      setProcessLabel(processesRegistry?.display_name || "Process");
 
       if (acts.length > 0) {
         const initialAct = acts[0].item_name;
@@ -915,7 +921,7 @@ export default function TabTwoRules() {
                             </div>
 
                             <div>
-                              <label className="text-[11px] font-bold text-slate-700 block mb-1">Industry (Multi-Select)</label>
+                              <label className="text-[11px] font-bold text-slate-700 block mb-1">{departmentLabel} (Multi-Select)</label>
                               <div className="p-2 border border-slate-300 rounded bg-slate-50 space-y-1 max-h-24 overflow-y-auto">
                                 {industriesList.map((ind) => {
                                   const isIndChecked = ass.industries?.includes(ind.item_name);
@@ -935,7 +941,7 @@ export default function TabTwoRules() {
                             </div>
 
                             <div>
-                              <label className="text-[11px] font-bold text-slate-700 block mb-1">Industry Process</label>
+                              <label className="text-[11px] font-bold text-slate-700 block mb-1">{processLabel}</label>
                               <select
                                 value={ass.industry_process}
                                 onChange={(e) => {
@@ -945,7 +951,7 @@ export default function TabTwoRules() {
                                 }}
                                 className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white"
                               >
-                                <option value="">Select Process...</option>
+                                <option value="">Select {processLabel}...</option>
                                 {industryProcessesList.map((proc) => (
                                   <option key={proc.id} value={proc.item_name}>{proc.item_name}</option>
                                 ))}
@@ -1317,12 +1323,12 @@ export default function TabTwoRules() {
                                           <div className="flex flex-wrap items-center gap-1.5">
                                             {ass.industries?.map((ind, iIdx) => (
                                               <span key={iIdx} className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200 uppercase">
-                                                INDUSTRY: {ind}
+                                                {departmentLabel.toUpperCase()}: {ind}
                                               </span>
                                             ))}
                                             {ass.industry_process && (
                                               <span className="bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200 uppercase">
-                                                INDUSTRY PROCESS: {ass.industry_process}
+                                                {processLabel.toUpperCase()}: {ass.industry_process}
                                               </span>
                                             )}
                                           </div>

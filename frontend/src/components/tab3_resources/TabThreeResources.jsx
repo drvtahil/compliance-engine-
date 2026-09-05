@@ -43,6 +43,8 @@ export default function TabThreeResources() {
   const [industryProcessesMaster, setIndustryProcessesMaster] = useState([]);
   const [industriesMaster, setIndustriesMaster] = useState([]);
   const [orgTypesMaster, setOrgTypesMaster] = useState([]);
+  const [departmentLabel, setDepartmentLabel] = useState("Department");
+  const [processLabel, setProcessLabel] = useState("Process");
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -76,9 +78,13 @@ export default function TabThreeResources() {
 
       setSamplePoliciesMaster(regs.find((r) => r.registry_key === "sample_policies")?.items || []);
       setActsMaster(regs.find((r) => r.registry_key === "acts")?.items || []);
-      setIndustryProcessesMaster(regs.find((r) => r.registry_key === "industry_processes")?.items || []);
-      setIndustriesMaster(regs.find((r) => r.registry_key === "industries")?.items || []);
+      const processesRegistry = regs.find((r) => r.registry_key === "industry_processes");
+      const industriesRegistry = regs.find((r) => r.registry_key === "industries");
+      setIndustryProcessesMaster(processesRegistry?.items || []);
+      setIndustriesMaster(industriesRegistry?.items || []);
       setOrgTypesMaster(regs.find((r) => r.registry_key === "organization_types")?.items || []);
+      setDepartmentLabel(industriesRegistry?.display_name || "Department");
+      setProcessLabel(processesRegistry?.display_name || "Process");
 
       // 2. Fetch Sections and Documents
       const [secList, resList] = await Promise.all([fetchSectionsApi(), fetchResourcesApi()]);
@@ -322,7 +328,7 @@ export default function TabThreeResources() {
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by Document name, Acts, Industry process, Industry, Org type..."
+              placeholder={`Search by Document name, Acts, ${processLabel}, ${departmentLabel}, Org type...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-hidden font-medium"
@@ -620,7 +626,7 @@ export default function TabThreeResources() {
               {/* 2) Industry Processes Multi-Select */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                 <label className="font-bold text-slate-700 block text-[11px] uppercase flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-emerald-600" /> 2. Industry Processes (Multi-Select)
+                  <Activity className="w-3.5 h-3.5 text-emerald-600" /> 2. {processLabel} (Multi-Select)
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-24 overflow-y-auto p-1">
                   {industryProcessesMaster.map((proc) => {
@@ -646,7 +652,7 @@ export default function TabThreeResources() {
               {/* 3) Industries Multi-Select */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                 <label className="font-bold text-slate-700 block text-[11px] uppercase flex items-center gap-1.5">
-                  <Briefcase className="w-3.5 h-3.5 text-purple-600" /> 3. Industries (Multi-Select)
+                  <Briefcase className="w-3.5 h-3.5 text-purple-600" /> 3. {departmentLabel} (Multi-Select)
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-24 overflow-y-auto p-1">
                   {industriesMaster.map((ind) => {

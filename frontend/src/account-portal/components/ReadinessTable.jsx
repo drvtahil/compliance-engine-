@@ -31,7 +31,7 @@ function ResponseSelector({ value, disabled, onChange }) {
   );
 }
 
-export default function ReadinessTable({ questions, locked, showAssignee, onSetResponse }) {
+export default function ReadinessTable({ questions, locked, showAssignee, onSetResponse, departmentLabel = "Department", processLabel = "Process" }) {
   if (questions.length === 0) {
     return (
       <div className="p-12 text-center text-slate-400 italic bg-white rounded-xl border border-slate-200">
@@ -48,8 +48,8 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
             <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
               <th className="p-3 w-8">#</th>
               <th className="p-3">Question</th>
-              <th className="p-3">Department</th>
-              <th className="p-3">Process</th>
+              <th className="p-3">{departmentLabel}</th>
+              <th className="p-3">{processLabel}</th>
               {showAssignee && <th className="p-3">Assigned To</th>}
               <th className="p-3">Response</th>
             </tr>
