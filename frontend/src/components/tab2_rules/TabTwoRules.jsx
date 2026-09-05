@@ -31,8 +31,10 @@ export default function TabTwoRules() {
   const [samplePoliciesList, setSamplePoliciesList] = useState([]);
   const [industriesList, setIndustriesList] = useState([]);
   const [industryProcessesList, setIndustryProcessesList] = useState([]);
+  const [orgTypesList, setOrgTypesList] = useState([]);
   const [departmentLabel, setDepartmentLabel] = useState("Department");
   const [processLabel, setProcessLabel] = useState("Process");
+  const [orgTypeLabel, setOrgTypeLabel] = useState("Organization Type");
   const [tasksList, setTasksList] = useState([]);
 
   const [chapters, setChapters] = useState([]);
@@ -45,7 +47,8 @@ export default function TabTwoRules() {
     chapterId: null,
     chapterTitle: "",
     ruleNarrative: "",
-    samplePolicies: []
+    samplePolicies: [],
+    orgTypes: []
   });
 
   // Editing Context for In-Place Updates
@@ -73,6 +76,7 @@ export default function TabTwoRules() {
     mapped_acts: currentAct ? [currentAct] : [],
     industries: [],
     industry_process: "",
+    mapped_org_types: [],
     sop_name: "",
     sop_details: "",
     processes: [getBlankProcess()]
@@ -131,17 +135,21 @@ export default function TabTwoRules() {
       const policies = bData.registries?.find(r => r.registry_key === "sample_policies")?.items || [];
       const industriesRegistry = bData.registries?.find(r => r.registry_key === "industries");
       const processesRegistry = bData.registries?.find(r => r.registry_key === "industry_processes");
+      const orgTypesRegistry = bData.registries?.find(r => r.registry_key === "organization_types");
       const industries = industriesRegistry?.items || [];
       const procs = processesRegistry?.items || [];
+      const orgTypes = orgTypesRegistry?.items || [];
       const tasks = bData.registries?.find(r => r.registry_key === "tasks")?.items || [];
 
       setMasterActs(acts);
       setSamplePoliciesList(policies);
       setIndustriesList(industries);
       setIndustryProcessesList(procs);
+      setOrgTypesList(orgTypes);
       setTasksList(tasks);
       setDepartmentLabel(industriesRegistry?.display_name || "Department");
       setProcessLabel(processesRegistry?.display_name || "Process");
+      setOrgTypeLabel(orgTypesRegistry?.display_name || "Organization Type");
 
       if (acts.length > 0) {
         const initialAct = acts[0].item_name;
@@ -219,6 +227,15 @@ export default function TabTwoRules() {
     copy[rIdx].sections[sIdx].assessments[aIdx].industries = cur.includes(indName)
       ? cur.filter(i => i !== indName)
       : [...cur, indName];
+    setBuilderRules(copy);
+  };
+
+  const handleToggleAssessmentOrgType = (rIdx, sIdx, aIdx, orgTypeName) => {
+    const copy = cloneRules();
+    const cur = copy[rIdx].sections[sIdx].assessments[aIdx].mapped_org_types || [];
+    copy[rIdx].sections[sIdx].assessments[aIdx].mapped_org_types = cur.includes(orgTypeName)
+      ? cur.filter(o => o !== orgTypeName)
+      : [...cur, orgTypeName];
     setBuilderRules(copy);
   };
 
@@ -377,6 +394,17 @@ export default function TabTwoRules() {
       return;
     }
 
+    for (const rule of cleanedRules) {
+      for (const sec of rule.sections) {
+        for (const ass of sec.assessments) {
+          if (!ass.mapped_org_types || ass.mapped_org_types.length === 0) {
+            alert(`Question "${(ass.question || ass.sop_name).slice(0, 80)}" must have at least one value selected under "${orgTypeLabel}".`);
+            return;
+          }
+        }
+      }
+    }
+
     try {
       setSaving(true);
       if (editingContext.isEditingSingleRule && editingContext.ruleId && editingContext.chapterId) {
@@ -406,7 +434,8 @@ export default function TabTwoRules() {
       chapterId: chap.id,
       chapterTitle: chap.title,
       ruleNarrative: "",
-      samplePolicies: []
+      samplePolicies: [],
+      orgTypes: []
     });
   };
 
@@ -420,10 +449,24 @@ export default function TabTwoRules() {
     });
   };
 
+  const handleToggleModalOrgType = (orgTypeName) => {
+    setAddRuleModal(prev => {
+      const cur = prev.orgTypes || [];
+      const updated = cur.includes(orgTypeName)
+        ? cur.filter(o => o !== orgTypeName)
+        : [...cur, orgTypeName];
+      return { ...prev, orgTypes: updated };
+    });
+  };
+
   const handleConfirmAddRuleToChapter = async (e) => {
     e.preventDefault();
     if (!addRuleModal.ruleNarrative.trim()) {
       alert("Please enter the rule narrative content.");
+      return;
+    }
+    if (!addRuleModal.orgTypes || addRuleModal.orgTypes.length === 0) {
+      alert(`Please select at least one value under "${orgTypeLabel}".`);
       return;
     }
 
@@ -438,9 +481,10 @@ export default function TabTwoRules() {
       newRulePayload.sections[0].assessments[0].question = "Is the rule requirement fully implemented?";
       newRulePayload.sections[0].assessments[0].sop_name = "SOP-01 Standard Verification";
       newRulePayload.sections[0].assessments[0].sop_details = "Operational standard procedure for verifying execution.";
+      newRulePayload.sections[0].assessments[0].mapped_org_types = addRuleModal.orgTypes;
 
       await addRuleToChapterApi(addRuleModal.chapterId, newRulePayload);
-      setAddRuleModal({ open: false, chapterId: null, chapterTitle: "", ruleNarrative: "", samplePolicies: [] });
+      setAddRuleModal({ open: false, chapterId: null, chapterTitle: "", ruleNarrative: "", samplePolicies: [], orgTypes: [] });
       await loadChapters(selectedAct);
     } catch (err) {
       alert("Error adding rule: " + err.message);
@@ -960,6 +1004,29 @@ export default function TabTwoRules() {
                           </div>
 
                           <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">{orgTypeLabel} (Multi-Select) *</label>
+                            <div className="flex flex-wrap gap-1 p-2 border border-slate-300 rounded bg-slate-50 max-h-24 overflow-y-auto">
+                              {orgTypesList.map((org) => {
+                                const isOrgChecked = ass.mapped_org_types?.includes(org.item_name);
+                                return (
+                                  <button
+                                    type="button"
+                                    key={org.id}
+                                    onClick={() => handleToggleAssessmentOrgType(rIdx, sIdx, aIdx, org.item_name)}
+                                    className={`px-2 py-1 rounded text-[11px] font-semibold border transition ${
+                                      isOrgChecked
+                                        ? "bg-amber-600 text-white border-amber-600"
+                                        : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
+                                    }`}
+                                  >
+                                    {org.item_name}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div>
                             <label className="text-xs font-bold text-slate-700 block mb-1">SOP Name *</label>
                             <input
                               type="text"
@@ -1331,6 +1398,11 @@ export default function TabTwoRules() {
                                                 {processLabel.toUpperCase()}: {ass.industry_process}
                                               </span>
                                             )}
+                                            {ass.mapped_org_types?.map((org, oIdx) => (
+                                              <span key={oIdx} className="bg-amber-50 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-200 uppercase">
+                                                {orgTypeLabel.toUpperCase()}: {org}
+                                              </span>
+                                            ))}
                                           </div>
                                         </div>
 
@@ -1413,7 +1485,7 @@ export default function TabTwoRules() {
               </div>
               <button
                 type="button"
-                onClick={() => setAddRuleModal({ open: false, chapterId: null, chapterTitle: "", ruleNarrative: "", samplePolicies: [] })}
+                onClick={() => setAddRuleModal({ open: false, chapterId: null, chapterTitle: "", ruleNarrative: "", samplePolicies: [], orgTypes: [] })}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
                 <X className="w-5 h-5" />
@@ -1459,11 +1531,34 @@ export default function TabTwoRules() {
                 </div>
               </div>
 
+              {/* Multi-Select Organization Types */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  {orgTypeLabel} (Multi-Select) *
+                </label>
+                <div className="p-2.5 border border-slate-300 rounded-lg space-y-1.5 max-h-28 overflow-y-auto bg-slate-50">
+                  {orgTypesList.map((org) => {
+                    const isChecked = addRuleModal.orgTypes.includes(org.item_name);
+                    return (
+                      <label key={org.id} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleModalOrgType(org.item_name)}
+                          className="rounded text-amber-600 focus:ring-amber-500"
+                        />
+                        <span className="truncate">{org.item_name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Modal Buttons */}
               <div className="flex justify-end items-center gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setAddRuleModal({ open: false, chapterId: null, chapterTitle: "", ruleNarrative: "", samplePolicies: [] })}
+                  onClick={() => setAddRuleModal({ open: false, chapterId: null, chapterTitle: "", ruleNarrative: "", samplePolicies: [], orgTypes: [] })}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold transition"
                 >
                   Cancel

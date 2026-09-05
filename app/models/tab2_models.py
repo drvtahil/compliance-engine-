@@ -47,6 +47,7 @@ class LegalAssessment(Base):
     mapped_acts = Column(Text, nullable=True) # Stored as JSON string list
     industries = Column(Text, nullable=True) # Stored as JSON string list
     industry_process = Column(String(255), nullable=False)
+    mapped_org_types = Column(Text, nullable=True) # Stored as JSON string list
     sop_name = Column(String(255), nullable=False)
     sop_details = Column(Text, nullable=False)
     processes = Column(Text, nullable=True) # Stored as structured JSON list of processes

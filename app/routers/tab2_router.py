@@ -29,6 +29,29 @@ def validate_sample_policies(db: Session, sample_policies: List[str]):
             detail=f"These Sample Policies no longer exist in the Master Registry: {', '.join(invalid)}"
         )
 
+
+def validate_assessment_org_types(db: Session, rule: "RulePayload"):
+    needs_check = any(
+        (a_item.question.strip() or a_item.sop_name.strip()) and not a_item.mapped_org_types
+        for s_item in rule.sections for a_item in s_item.assessments
+    )
+    if not needs_check:
+        return
+
+    org_type_registry = db.query(MasterRegistry).filter(MasterRegistry.registry_key == "organization_types").first()
+    org_type_label = org_type_registry.display_name if org_type_registry else "Organization Type"
+
+    for s_item in rule.sections:
+        for a_item in s_item.assessments:
+            if not a_item.question.strip() and not a_item.sop_name.strip():
+                continue
+            if not a_item.mapped_org_types:
+                label = a_item.question.strip() or a_item.sop_name.strip()
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Question \"{label[:80]}\" must have at least one value selected under \"{org_type_label}\"."
+                )
+
 # --- Pydantic Request Schemas ---
 class ProcessItem(BaseModel):
     action: str
@@ -42,6 +65,7 @@ class AssessmentItem(BaseModel):
     mapped_acts: List[str] = []
     industries: List[str] = []
     industry_process: Optional[str] = ""
+    mapped_org_types: List[str] = []
     sop_name: str
     sop_details: str
     processes: List[ProcessItem] = []
@@ -97,6 +121,7 @@ def get_chapters_by_act(act_code: str, db: Session = Depends(get_db)):
                         "mapped_acts": json.loads(a.mapped_acts or "[]"),
                         "industries": json.loads(a.industries or "[]"),
                         "industry_process": a.industry_process or "",
+                        "mapped_org_types": json.loads(a.mapped_org_types or "[]"),
                         "sop_name": a.sop_name,
                         "sop_details": a.sop_details,
                         "processes": json.loads(a.processes or "[]")
@@ -179,6 +204,7 @@ def sync_section_data(db: Session, rule_id: int, s_item: SectionPayload):
         ass.mapped_acts = json.dumps(a_item.mapped_acts)
         ass.industries = json.dumps(a_item.industries)
         ass.industry_process = a_item.industry_process.strip() if a_item.industry_process else ""
+        ass.mapped_org_types = json.dumps(a_item.mapped_org_types)
         ass.sop_name = a_item.sop_name.strip()
         ass.sop_details = a_item.sop_details.strip()
         ass.processes = json.dumps(valid_processes)
@@ -201,6 +227,7 @@ def save_or_update_chapter(payload: ChapterPayload, db: Session = Depends(get_db
     for r_item in payload.rules:
         if r_item.rule_narrative.strip():
             validate_sample_policies(db, r_item.sample_policies)
+            validate_assessment_org_types(db, r_item)
 
     if not chap:
         chap = LegalChapter(act_code=payload.act_code, title=payload.title.strip())
@@ -252,6 +279,7 @@ def update_single_rule(rule_id: int, payload: SingleRuleUpdatePayload, db: Sessi
 
     r_item = payload.rule
     validate_sample_policies(db, r_item.sample_policies)
+    validate_assessment_org_types(db, r_item)
     rule.rule_narrative = r_item.rule_narrative.strip()
     rule.sample_policies = json.dumps(r_item.sample_policies)
     rule.is_hidden = r_item.is_hidden
@@ -274,6 +302,7 @@ def add_rule_to_existing_chapter(chapter_id: int, payload: AddRuleToChapterPaylo
 
     r_item = payload.rule
     validate_sample_policies(db, r_item.sample_policies)
+    validate_assessment_org_types(db, r_item)
     max_order = db.query(LegalRule).filter(LegalRule.chapter_id == chapter_id).count()
     new_rule = LegalRule(
         chapter_id=chap.id,

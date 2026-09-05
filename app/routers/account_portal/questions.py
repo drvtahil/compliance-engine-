@@ -38,8 +38,11 @@ def list_questions(
         a.assessment_id: a for a in db.query(QuestionAssignment).filter(QuestionAssignment.account_id == current_admin.account_id).all()
     }
 
+    account_org_type = current_admin.account.org_type
     result = []
     for a in rows:
+        if account_org_type not in json.loads(a.mapped_org_types or "[]"):
+            continue
         assignment = assignments.get(a.id)
         assigned_user = assignment.assigned_user if assignment else None
         result.append({

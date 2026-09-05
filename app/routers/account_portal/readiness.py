@@ -38,6 +38,10 @@ def assignments_query_for_act(db: Session, account_id: int, act_code: str):
     )
 
 
+def filter_visible_to_account(rows: list, org_type: str) -> list:
+    return [qa for qa in rows if org_type in json.loads(qa.assessment.mapped_org_types or "[]")]
+
+
 def serialize_row(qa: QuestionAssignment, include_assignee: bool) -> dict:
     a = qa.assessment
     row = {
@@ -69,6 +73,7 @@ def get_my_readiness(
     rows = assignments_query_for_act(db, current_admin.account_id, act_code).filter(
         QuestionAssignment.assigned_user_id == current_admin.id
     ).all()
+    rows = filter_visible_to_account(rows, current_admin.account.org_type)
     return {
         "locked": is_locked(db, current_admin.account_id, act_code),
         "questions": [serialize_row(qa, include_assignee=False) for qa in rows],
@@ -83,6 +88,7 @@ def get_all_readiness(
 ):
     assert_act_enrolled(db, current_admin.account_id, act_code)
     rows = assignments_query_for_act(db, current_admin.account_id, act_code).all()
+    rows = filter_visible_to_account(rows, current_admin.account.org_type)
     return {
         "locked": is_locked(db, current_admin.account_id, act_code),
         "questions": [serialize_row(qa, include_assignee=True) for qa in rows],
@@ -121,6 +127,7 @@ def get_readiness_score(
 ):
     assert_act_enrolled(db, current_admin.account_id, act_code)
     rows = assignments_query_for_act(db, current_admin.account_id, act_code).all()
+    rows = filter_visible_to_account(rows, current_admin.account.org_type)
 
     total_yes = total_no = total_na = 0
     dept_counts: dict[str, dict[str, int]] = {}
@@ -207,6 +214,7 @@ def submit_readiness(
 ):
     assert_act_enrolled(db, current_admin.account_id, payload.act_code)
     rows = assignments_query_for_act(db, current_admin.account_id, payload.act_code).all()
+    rows = filter_visible_to_account(rows, current_admin.account.org_type)
     if not rows:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "No questions are allocated for this Act yet.")
     unanswered = sum(1 for qa in rows if not qa.response)
