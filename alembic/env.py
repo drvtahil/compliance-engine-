@@ -14,6 +14,7 @@ import app.models.tab1_models
 import app.models.tab2_models
 import app.models.resources
 import app.models.super_admin
+import app.models.sops
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
