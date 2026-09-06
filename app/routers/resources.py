@@ -23,30 +23,35 @@ UPLOAD_DIR = Path(settings.upload_dir).resolve()
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 class SectionCreatePayload(BaseModel):
+    act_code: str
     name: str
 
 class SectionUpdatePayload(BaseModel):
     new_name: str
 
-def ensure_sample_policy_section(db: Session) -> bool:
+def ensure_sample_policy_section(db: Session, act_code: str) -> bool:
     # "Sample Policy" is a fixed system section other endpoints assume always
-    # exists (see the is_system/name checks in update_section/delete_section) -
-    # it's required scaffolding, not demo content, so it's seeded unconditionally.
-    # Returns True only the first time it's created, so callers can tell "brand
-    # new install" apart from "user deleted everything" - the latter must never
-    # re-trigger demo-data seeding.
-    sample_sec = db.query(ComplianceSection).filter(ComplianceSection.name == "Sample Policy").first()
+    # exists per act (see the is_system/name checks in update_section/delete_section) -
+    # it's required scaffolding, not demo content, so it's seeded unconditionally
+    # the first time a given act's Resources tab is opened. Returns True only the
+    # first time it's created for that act, so callers can tell "brand new act"
+    # apart from "user deleted everything" - the latter must never re-trigger
+    # demo-data seeding.
+    sample_sec = db.query(ComplianceSection).filter(
+        ComplianceSection.act_code == act_code, ComplianceSection.name == "Sample Policy"
+    ).first()
     if not sample_sec:
-        sample_sec = ComplianceSection(name="Sample Policy", is_system=True)
+        sample_sec = ComplianceSection(act_code=act_code, name="Sample Policy", is_system=True)
         db.add(sample_sec)
         db.commit()
         return True
     return False
 
-def seed_demo_tab3_data(db: Session):
+def seed_demo_tab3_data(db: Session, act_code: str):
     defaults = [
         ComplianceResource(
             title="Customer Privacy Notice Standard",
+            act_code=act_code,
             section_name="Sample Policy",
             description="Mandatory itemized notice and multilingual consent template conforming with Section 5 DPDPA 2023.",
             file_name="privacy_notice_template.pdf",
@@ -58,6 +63,7 @@ def seed_demo_tab3_data(db: Session):
         ),
         ComplianceResource(
             title="Data Retention & Erasure Policy",
+            act_code=act_code,
             section_name="Sample Policy",
             description="Operational standard governing data minimization, retention schedules, and automated deletion.",
             file_name="data_retention_schedule.docx",
@@ -72,16 +78,19 @@ def seed_demo_tab3_data(db: Session):
     db.commit()
 
 @router.get("/sections")
-def get_sections(db: Session = Depends(get_db)):
-    is_new_install = ensure_sample_policy_section(db)
-    if is_new_install and settings.enable_demo_seed:
-        seed_demo_tab3_data(db)
-    sections = db.query(ComplianceSection).order_by(ComplianceSection.id.asc()).all()
+def get_sections(act_code: str, db: Session = Depends(get_db)):
+    is_new_act = ensure_sample_policy_section(db, act_code)
+    if is_new_act and settings.enable_demo_seed and act_code == "DPDPA 2023":
+        seed_demo_tab3_data(db, act_code)
+    sections = db.query(ComplianceSection).filter(ComplianceSection.act_code == act_code).order_by(ComplianceSection.id.asc()).all()
     res = []
     for s in sections:
-        doc_count = db.query(ComplianceResource).filter(ComplianceResource.section_name == s.name).count()
+        doc_count = db.query(ComplianceResource).filter(
+            ComplianceResource.act_code == act_code, ComplianceResource.section_name == s.name
+        ).count()
         res.append({
             "id": s.id,
+            "act_code": s.act_code,
             "name": s.name,
             "is_system": s.is_system,
             "doc_count": doc_count
@@ -93,10 +102,12 @@ def create_section(payload: SectionCreatePayload, db: Session = Depends(get_db),
     trimmed = payload.name.strip()
     if not trimmed:
         raise HTTPException(status_code=400, detail="Section name cannot be empty.")
-    if db.query(ComplianceSection).filter(ComplianceSection.name.ilike(trimmed)).first():
-        raise HTTPException(status_code=400, detail="A section with this name already exists.")
+    if db.query(ComplianceSection).filter(
+        ComplianceSection.act_code == payload.act_code, ComplianceSection.name.ilike(trimmed)
+    ).first():
+        raise HTTPException(status_code=400, detail="A section with this name already exists under this Act.")
 
-    sec = ComplianceSection(name=trimmed, is_system=False)
+    sec = ComplianceSection(act_code=payload.act_code, name=trimmed, is_system=False)
     db.add(sec)
     db.commit()
     db.refresh(sec)
@@ -116,7 +127,9 @@ def update_section(section_id: int, payload: SectionUpdatePayload, db: Session =
 
     old_name = sec.name
     sec.name = new_name
-    db.query(ComplianceResource).filter(ComplianceResource.section_name == old_name).update({"section_name": new_name})
+    db.query(ComplianceResource).filter(
+        ComplianceResource.act_code == sec.act_code, ComplianceResource.section_name == old_name
+    ).update({"section_name": new_name})
     db.commit()
     db.refresh(sec)
     return sec
@@ -129,10 +142,12 @@ def delete_section(section_id: int, db: Session = Depends(get_db), current_admin
     if sec.is_system or sec.name == "Sample Policy":
         raise HTTPException(status_code=400, detail="Sample Policy section cannot be deleted.")
 
-    doc_count = db.query(ComplianceResource).filter(ComplianceResource.section_name == sec.name).count()
+    doc_count = db.query(ComplianceResource).filter(
+        ComplianceResource.act_code == sec.act_code, ComplianceResource.section_name == sec.name
+    ).count()
     if doc_count > 0:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"Cannot delete section '{sec.name}' because it contains {doc_count} document(s). Delete all documents inside first."
         )
 
@@ -142,11 +157,11 @@ def delete_section(section_id: int, db: Session = Depends(get_db), current_admin
 
 @router.get("")
 @router.get("/")
-def get_all_resources(db: Session = Depends(get_db)):
-    is_new_install = ensure_sample_policy_section(db)
-    if is_new_install and settings.enable_demo_seed:
-        seed_demo_tab3_data(db)
-    items = db.query(ComplianceResource).order_by(ComplianceResource.id.desc()).all()
+def get_all_resources(act_code: str, db: Session = Depends(get_db)):
+    is_new_act = ensure_sample_policy_section(db, act_code)
+    if is_new_act and settings.enable_demo_seed and act_code == "DPDPA 2023":
+        seed_demo_tab3_data(db, act_code)
+    items = db.query(ComplianceResource).filter(ComplianceResource.act_code == act_code).order_by(ComplianceResource.id.desc()).all()
     result = []
     for r in items:
         result.append({
@@ -170,6 +185,7 @@ def get_all_resources(db: Session = Depends(get_db)):
 @router.post("/")
 def create_resource_with_file(
     title: str = Form(...),
+    act_code: str = Form(...),
     section_name: str = Form(...),
     description: str = Form(""),
     mapped_acts: str = Form("[]"),
@@ -198,6 +214,7 @@ def create_resource_with_file(
 
     res = ComplianceResource(
         title=title.strip(),
+        act_code=act_code,
         section_name=section_name.strip(),
         description=description.strip(),
         file_path=file_path_str,

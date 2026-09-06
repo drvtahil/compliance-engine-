@@ -2,17 +2,17 @@ import { authFetch } from "./authApi";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/resources`;
 
-export const fetchSectionsApi = async () => {
-  const res = await fetch(`${API_BASE}/sections`);
+export const fetchSectionsApi = async (actCode) => {
+  const res = await fetch(`${API_BASE}/sections?act_code=${encodeURIComponent(actCode)}`);
   if (!res.ok) throw new Error("Failed to load document sections.");
   return await res.json();
 };
 
-export const createSectionApi = async (name) => {
+export const createSectionApi = async (actCode, name) => {
   const res = await authFetch(`${API_BASE}/sections`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ act_code: actCode, name }),
   });
   if (!res.ok) {
     const err = await res.json();
@@ -45,8 +45,8 @@ export const deleteSectionApi = async (id) => {
   return await res.json();
 };
 
-export const fetchResourcesApi = async () => {
-  const res = await fetch(`${API_BASE}`);
+export const fetchResourcesApi = async (actCode) => {
+  const res = await fetch(`${API_BASE}?act_code=${encodeURIComponent(actCode)}`);
   if (!res.ok) throw new Error("Failed to load documents.");
   return await res.json();
 };

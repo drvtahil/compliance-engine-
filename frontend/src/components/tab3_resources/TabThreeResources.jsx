@@ -32,6 +32,7 @@ import {
 } from "../../services/resourcesApi";
 
 export default function TabThreeResources() {
+  const [selectedAct, setSelectedAct] = useState("");
   const [sections, setSections] = useState([]);
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,15 +70,15 @@ export default function TabThreeResources() {
   const [docModal, setDocModal] = useState({ open: false, isEdit: false, docId: null });
   const [docForm, setDocForm] = useState(initialDocState);
 
-  const loadData = async () => {
+  const loadMasters = async () => {
     try {
       setLoading(true);
-      // 1. Fetch Masters from Tab 1
       const bootstrapData = await fetchTab1BootstrapApi();
       const regs = bootstrapData.registries || [];
 
       setSamplePoliciesMaster(regs.find((r) => r.registry_key === "sample_policies")?.items || []);
-      setActsMaster(regs.find((r) => r.registry_key === "acts")?.items || []);
+      const acts = regs.find((r) => r.registry_key === "acts")?.items || [];
+      setActsMaster(acts);
       const processesRegistry = regs.find((r) => r.registry_key === "industry_processes");
       const industriesRegistry = regs.find((r) => r.registry_key === "industries");
       setIndustryProcessesMaster(processesRegistry?.items || []);
@@ -86,21 +87,43 @@ export default function TabThreeResources() {
       setDepartmentLabel(industriesRegistry?.display_name || "Department");
       setProcessLabel(processesRegistry?.display_name || "Process");
 
-      // 2. Fetch Sections and Documents
-      const [secList, resList] = await Promise.all([fetchSectionsApi(), fetchResourcesApi()]);
-      setSections(secList);
-      setResources(resList);
+      if (acts.length > 0) {
+        setSelectedAct((prev) => prev || acts[0].item_name);
+      } else {
+        setLoading(false);
+      }
     } catch (err) {
       console.error(err);
-      alert("Error loading Tab 3 data: " + err.message);
+      alert("Error loading Tab 3 masters: " + err.message);
+      setLoading(false);
+    }
+  };
+
+  const loadSectionsAndResources = async (actCode) => {
+    if (!actCode) return;
+    try {
+      setLoading(true);
+      const [secList, resList] = await Promise.all([fetchSectionsApi(actCode), fetchResourcesApi(actCode)]);
+      setSections(secList);
+      setResources(resList);
+      setActiveSectionFilter("ALL");
+    } catch (err) {
+      console.error(err);
+      alert("Error loading documents for this Act: " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadData = () => loadSectionsAndResources(selectedAct);
+
   useEffect(() => {
-    loadData();
+    loadMasters();
   }, []);
+
+  useEffect(() => {
+    loadSectionsAndResources(selectedAct);
+  }, [selectedAct]);
 
   // Multi-Select Toggle Helper
   const toggleArrayItem = (field, itemVal) => {
@@ -134,7 +157,7 @@ export default function TabThreeResources() {
       if (sectionModal.isEdit) {
         await updateSectionApi(sectionModal.sectionId, sectionModal.name.trim());
       } else {
-        await createSectionApi(sectionModal.name.trim());
+        await createSectionApi(selectedAct, sectionModal.name.trim());
       }
       setSectionModal({ open: false, isEdit: false, sectionId: null, name: "" });
       await loadData();
@@ -207,6 +230,7 @@ export default function TabThreeResources() {
 
     const payload = new FormData();
     payload.append("title", docForm.title.trim());
+    payload.append("act_code", selectedAct);
     payload.append("section_name", docForm.section_name);
     payload.append("description", docForm.description.trim());
     payload.append("mapped_acts", JSON.stringify(docForm.mapped_acts));
@@ -320,6 +344,24 @@ export default function TabThreeResources() {
           >
             <FolderPlus className="w-4 h-4" /> Add Section
           </button>
+        </div>
+
+        {/* Dynamic Master Act Sub-Tabs */}
+        <div className="flex flex-wrap items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+          {actsMaster.map((act) => (
+            <button
+              key={act.id}
+              onClick={() => setSelectedAct(act.item_name)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                selectedAct === act.item_name
+                  ? "bg-white text-blue-700 shadow-xs border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              {act.item_name}
+            </button>
+          ))}
         </div>
 
         {/* Search Bar + Right-Side Filter Buttons */}

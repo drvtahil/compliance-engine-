@@ -1,24 +1,29 @@
 import json
 import os
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_account_admin
 from app.database.connection import get_db
 from app.models.resources import ComplianceResource
-from app.models.tab1_models import AccountAdmin
+from app.models.tab1_models import AccountAdmin, AccountEnrolledAct
 
 router = APIRouter(prefix="/api/v1/account/resources", tags=["Account Portal Resources"])
 
 
 @router.get("")
 def get_account_resources(
+    act_code: str,
     db: Session = Depends(get_db),
     current_admin: AccountAdmin = Depends(get_current_account_admin),
 ):
+    enrolled = {a for (a,) in db.query(AccountEnrolledAct.act_name).filter(AccountEnrolledAct.account_id == current_admin.account_id).all()}
+    if act_code not in enrolled:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This Act is not enrolled for your account.")
+
     org_type = current_admin.account.org_type
-    items = db.query(ComplianceResource).order_by(ComplianceResource.id.desc()).all()
+    items = db.query(ComplianceResource).filter(ComplianceResource.act_code == act_code).order_by(ComplianceResource.id.desc()).all()
 
     result = []
     for r in items:

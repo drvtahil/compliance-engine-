@@ -15,6 +15,7 @@ import {
   Building,
 } from "lucide-react";
 import { fetchAccountResourcesApi, getResourceViewUrl, getResourceDownloadUrl } from "../services/resourcesApi";
+import { fetchEnrolledActsApi } from "../services/rulesApi";
 import useRegistryLabels from "../hooks/useRegistryLabels";
 
 const getBadgeColor = (ext) => {
@@ -150,6 +151,9 @@ function DocumentDetailsModal({ doc, onClose, departmentLabel, processLabel }) {
 
 export default function ResourcesTab() {
   const { department_label: departmentLabel, process_label: processLabel } = useRegistryLabels();
+  const [acts, setActs] = useState([]);
+  const [activeAct, setActiveAct] = useState(null);
+  const [loadingActs, setLoadingActs] = useState(true);
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -157,12 +161,28 @@ export default function ResourcesTab() {
   const [activeSectionFilter, setActiveSectionFilter] = useState("ALL");
   const [detailsDoc, setDetailsDoc] = useState(null);
 
-  const loadResources = async () => {
+  useEffect(() => {
+    fetchEnrolledActsApi()
+      .then((data) => {
+        setActs(data);
+        if (data.length > 0) setActiveAct((prev) => prev || data[0]);
+        else setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      })
+      .finally(() => setLoadingActs(false));
+  }, []);
+
+  const loadResources = async (actCode = activeAct) => {
+    if (!actCode) return;
     setLoading(true);
     setError("");
     try {
-      const data = await fetchAccountResourcesApi();
+      const data = await fetchAccountResourcesApi(actCode);
       setResources(data);
+      setActiveSectionFilter("ALL");
     } catch (err) {
       setError(err.message || "Failed to load documents.");
     } finally {
@@ -171,8 +191,8 @@ export default function ResourcesTab() {
   };
 
   useEffect(() => {
-    loadResources();
-  }, []);
+    loadResources(activeAct);
+  }, [activeAct]);
 
   const filtered = useMemo(() => {
     let list = resources;
@@ -202,15 +222,6 @@ export default function ResourcesTab() {
     }));
   }, [resources]);
 
-  if (loading) {
-    return (
-      <div className="p-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        <span className="text-xs font-semibold">Loading documents...</span>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 space-y-6 text-xs">
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-4">
@@ -221,6 +232,27 @@ export default function ResourcesTab() {
           <p className="text-xs text-slate-500">
             Compliance document templates published for your organization type. View-only — reach out to your Super Admin for changes.
           </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 pb-3">
+          {loadingActs ? (
+            <div className="py-1 text-[11px] text-slate-400 flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />Loading acts...</div>
+          ) : acts.length === 0 ? (
+            <div className="py-1 text-[11px] text-slate-400">No acts enrolled for this account yet.</div>
+          ) : (
+            acts.map((act) => (
+              <button
+                key={act}
+                onClick={() => setActiveAct(act)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border-b-2 -mb-px ${
+                  activeAct === act ? "border-blue-600 text-blue-700" : "border-transparent text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                {act}
+              </button>
+            ))
+          )}
         </div>
 
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
@@ -261,7 +293,7 @@ export default function ResourcesTab() {
               </button>
             ))}
             <button
-              onClick={loadResources}
+              onClick={() => loadResources()}
               className="p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100"
               title="Refresh"
             >
@@ -273,9 +305,14 @@ export default function ResourcesTab() {
 
       {error && <div className="p-3 text-red-700 bg-red-50 border border-red-200 rounded-lg">{error}</div>}
 
-      {resources.length === 0 && !error ? (
+      {loading ? (
+        <div className="p-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3 bg-white rounded-xl border border-slate-200">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <span className="text-xs font-semibold">Loading documents...</span>
+        </div>
+      ) : resources.length === 0 && !error ? (
         <div className="p-12 text-center text-slate-400 italic bg-white rounded-xl border border-slate-200">
-          No documents have been published for your organization type yet.
+          No documents have been published for your organization type under this Act yet.
         </div>
       ) : (
         sections

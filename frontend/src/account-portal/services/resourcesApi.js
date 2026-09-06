@@ -3,8 +3,8 @@ import { accountFetch } from "./accountAuthApi";
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/account/resources`;
 const FILES_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/resources`;
 
-export const fetchAccountResourcesApi = async () => {
-  const res = await accountFetch(`${API_BASE}`);
+export const fetchAccountResourcesApi = async (actCode) => {
+  const res = await accountFetch(`${API_BASE}?act_code=${encodeURIComponent(actCode)}`);
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.detail || "Failed to load documents.");
