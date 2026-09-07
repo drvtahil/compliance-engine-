@@ -152,9 +152,10 @@ export default function SopTab() {
       ) : (
         <>
           <div className="space-y-3">
-            {pagedSops.map((sop) => (
+            {pagedSops.map((sop, idx) => (
               <SopCard
                 key={sop.assessment_id}
+                number={(page - 1) * pageSize + idx + 1}
                 sop={sop}
                 departmentLabel={departmentLabel}
                 processLabel={processLabel}

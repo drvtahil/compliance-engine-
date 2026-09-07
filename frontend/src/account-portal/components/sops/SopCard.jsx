@@ -89,7 +89,7 @@ function FileCard({ file, kind, isManager, onEdit, onDelete }) {
   );
 }
 
-export default function SopCard({ sop, departmentLabel, processLabel, isManager, onSetStatus, onSetProcessStatus, onCreateActivity, onUploadFile, onEditFile, onDeleteFile }) {
+export default function SopCard({ sop, number, departmentLabel, processLabel, isManager, onSetStatus, onSetProcessStatus, onCreateActivity, onUploadFile, onEditFile, onDeleteFile }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -100,6 +100,9 @@ export default function SopCard({ sop, departmentLabel, processLabel, isManager,
         className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-emerald-50/40 transition"
       >
         <div className="flex items-center gap-2 min-w-0">
+          {number != null && (
+            <span className="text-[11px] font-bold text-slate-400 w-5 flex-shrink-0 text-right">{number}.</span>
+          )}
           {expanded ? <ChevronDown className="w-4 h-4 text-emerald-700 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-emerald-700 flex-shrink-0" />}
           <div className="min-w-0">
             <div className="text-xs font-extrabold text-emerald-900 truncate">{sop.sop_name}</div>
@@ -149,6 +152,7 @@ export default function SopCard({ sop, departmentLabel, processLabel, isManager,
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
                     <th className="p-2">Process Action</th>
                     <th className="p-2">Task Name</th>
+                    <th className="p-2">Schedule</th>
                     <th className="p-2">Status</th>
                   </tr>
                 </thead>
@@ -160,6 +164,7 @@ export default function SopCard({ sop, departmentLabel, processLabel, isManager,
                         <div className="text-slate-600">{proc.action}</div>
                       </td>
                       <td className="p-2 align-top text-slate-700 font-medium">{proc.task_name}</td>
+                      <td className="p-2 align-top text-slate-600">{proc.schedule || "None"}</td>
                       <td className="p-2 align-top">
                         <button
                           onClick={() => onSetProcessStatus(i, proc.status === "Complete" ? "Incomplete" : "Complete")}

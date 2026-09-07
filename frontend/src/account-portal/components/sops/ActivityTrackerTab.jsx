@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Activity, Loader2, RefreshCw, Info, X, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Activity, Loader2, RefreshCw, Info, X, CheckCircle2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { fetchActivitiesApi, setActivityStatusApi } from "../../services/sopsApi";
 import { loadAccountSession } from "../../services/accountAuthApi";
 
@@ -45,6 +45,7 @@ export default function ActivityTrackerTab() {
 
   const [pageSize, setPageSize] = useState(50);
   const [page, setPage] = useState(1);
+  const [sortConfig, setSortConfig] = useState({ field: null, direction: "asc" });
 
   const loadActivities = async () => {
     setLoading(true);
@@ -60,11 +61,49 @@ export default function ActivityTrackerTab() {
 
   useEffect(() => { loadActivities(); }, []);
 
-  const totalPages = Math.max(1, Math.ceil(activities.length / pageSize));
+  const handleSort = (field) => {
+    setSortConfig((prev) =>
+      prev.field === field
+        ? { field, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { field, direction: "asc" }
+    );
+  };
+
+  const SortIcon = ({ field }) =>
+    sortConfig.field === field ? (
+      sortConfig.direction === "asc" ? <ArrowUp className="w-3 h-3 text-blue-600" /> : <ArrowDown className="w-3 h-3 text-blue-600" />
+    ) : (
+      <ArrowUpDown className="w-3 h-3 text-slate-400" />
+    );
+
+  const sortedActivities = useMemo(() => {
+    if (!sortConfig.field) return activities;
+    const sorted = [...activities].sort((a, b) => {
+      let aVal, bVal;
+      if (sortConfig.field === "creator") {
+        aVal = a.creator?.name || "";
+        bVal = b.creator?.name || "";
+      } else if (sortConfig.field === "owner") {
+        aVal = a.owner?.name || "";
+        bVal = b.owner?.name || "";
+      } else {
+        aVal = a[sortConfig.field] ?? "";
+        bVal = b[sortConfig.field] ?? "";
+      }
+      aVal = String(aVal).toLowerCase();
+      bVal = String(bVal).toLowerCase();
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [activities, sortConfig]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedActivities.length / pageSize));
   const pagedActivities = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return activities.slice(start, start + pageSize);
-  }, [activities, page, pageSize]);
+    return sortedActivities.slice(start, start + pageSize);
+  }, [sortedActivities, page, pageSize]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -121,20 +160,34 @@ export default function ActivityTrackerTab() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
-                  <th className="p-3">Activity</th>
-                  <th className="p-3">SOP Name</th>
-                  <th className="p-3">Created By</th>
-                  <th className="p-3">Owner</th>
-                  <th className="p-3">Date of Completion</th>
-                  <th className="p-3">Status</th>
+                  <th className="p-3 w-8">#</th>
+                  <th className="p-3 cursor-pointer" onClick={() => handleSort("activity_name")}>
+                    <div className="flex items-center gap-1">Activity <SortIcon field="activity_name" /></div>
+                  </th>
+                  <th className="p-3 cursor-pointer" onClick={() => handleSort("sop_name")}>
+                    <div className="flex items-center gap-1">SOP Name <SortIcon field="sop_name" /></div>
+                  </th>
+                  <th className="p-3 cursor-pointer" onClick={() => handleSort("creator")}>
+                    <div className="flex items-center gap-1">Created By <SortIcon field="creator" /></div>
+                  </th>
+                  <th className="p-3 cursor-pointer" onClick={() => handleSort("owner")}>
+                    <div className="flex items-center gap-1">Owner <SortIcon field="owner" /></div>
+                  </th>
+                  <th className="p-3 cursor-pointer" onClick={() => handleSort("completed_at")}>
+                    <div className="flex items-center gap-1">Date of Completion <SortIcon field="completed_at" /></div>
+                  </th>
+                  <th className="p-3 cursor-pointer" onClick={() => handleSort("status")}>
+                    <div className="flex items-center gap-1">Status <SortIcon field="status" /></div>
+                  </th>
                   <th className="p-3 text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {pagedActivities.map((act) => {
+                {pagedActivities.map((act, idx) => {
                   const canToggle = act.owner?.id === currentAdminId;
                   return (
                     <tr key={act.id} className="hover:bg-slate-50/80">
+                      <td className="p-3 text-slate-400 font-bold">{(page - 1) * pageSize + idx + 1}</td>
                       <td className="p-3 font-semibold text-slate-800">{act.activity_name}</td>
                       <td className="p-3 text-slate-600">{act.sop_name}</td>
                       <td className="p-3 text-slate-600">{act.creator?.name || "-"}</td>
