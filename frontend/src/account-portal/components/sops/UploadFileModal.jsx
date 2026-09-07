@@ -1,12 +1,22 @@
 import React, { useState } from "react";
-import { X, Loader2, Upload } from "lucide-react";
-import { uploadSopFileApi } from "../../services/sopsApi";
+import { X, Loader2, Upload, FileCheck } from "lucide-react";
+import { uploadSopFileApi, updateSopFileApi } from "../../services/sopsApi";
 
-export default function UploadFileModal({ assessmentId, kind, owners, typeOptions, processOptions, onClose, onUploaded }) {
+export default function UploadFileModal({ assessmentId, kind, owners, typeOptions, processOptions, editingFile, onClose, onUploaded }) {
+  const isEditing = !!editingFile;
   const isEvidence = kind === "evidence";
   const label = isEvidence ? "Evidence" : "Document";
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => editingFile ? {
+    name: editingFile.name,
+    description: editingFile.description || "",
+    owner_admin_id: editingFile.owner?.id || "",
+    version: editingFile.version || "",
+    updated_on: editingFile.updated_on || "",
+    type_name: editingFile.type_name || "",
+    process_name: editingFile.process_name || "",
+    file: null,
+  } : {
     name: "", description: "", owner_admin_id: "", version: "",
     updated_on: "", type_name: "", process_name: "", file: null,
   });
@@ -23,7 +33,7 @@ export default function UploadFileModal({ assessmentId, kind, owners, typeOption
     setError("");
     try {
       const payload = new FormData();
-      payload.append("kind", kind);
+      if (!isEditing) payload.append("kind", kind);
       payload.append("name", form.name.trim());
       payload.append("description", form.description.trim());
       if (form.owner_admin_id) payload.append("owner_admin_id", form.owner_admin_id);
@@ -33,7 +43,11 @@ export default function UploadFileModal({ assessmentId, kind, owners, typeOption
       payload.append("process_name", form.process_name);
       if (form.file) payload.append("file", form.file);
 
-      await uploadSopFileApi(assessmentId, payload);
+      if (isEditing) {
+        await updateSopFileApi(editingFile.id, payload);
+      } else {
+        await uploadSopFileApi(assessmentId, payload);
+      }
       onUploaded();
     } catch (err) {
       setError(err.message);
@@ -46,7 +60,7 @@ export default function UploadFileModal({ assessmentId, kind, owners, typeOption
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 space-y-4 text-xs max-h-[92vh] flex flex-col">
         <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-          <h3 className="text-sm font-bold text-slate-800">Upload {label}</h3>
+          <h3 className="text-sm font-bold text-slate-800">{isEditing ? `Edit ${label}` : `Upload ${label}`}</h3>
           <button onClick={onClose}><X className="w-5 h-5 text-slate-400 hover:text-slate-600" /></button>
         </div>
 
@@ -145,6 +159,11 @@ export default function UploadFileModal({ assessmentId, kind, owners, typeOption
               onChange={(e) => e.target.files?.[0] && setForm({ ...form, file: e.target.files[0] })}
               className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer"
             />
+            {isEditing && editingFile.file_name && !form.file && (
+              <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                <FileCheck className="w-3.5 h-3.5" /> Current file: {editingFile.file_name} &mdash; choose a new file above to replace it.
+              </span>
+            )}
           </div>
 
           {error && <div className="p-2 text-red-700 bg-red-50 border border-red-200 rounded-lg">{error}</div>}
@@ -157,7 +176,7 @@ export default function UploadFileModal({ assessmentId, kind, owners, typeOption
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5"
             >
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Upload
+              {isEditing ? "Save Changes" : "Upload"}
             </button>
           </div>
         </form>

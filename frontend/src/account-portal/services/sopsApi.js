@@ -34,6 +34,15 @@ export const setSopStatusApi = async (assessmentId, statusValue) => {
   return handle(res, "Failed to update status.");
 };
 
+export const setProcessStatusApi = async (assessmentId, processIndex, statusValue) => {
+  const res = await accountFetch(`${API_BASE}/${assessmentId}/processes/${processIndex}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: statusValue }),
+  });
+  return handle(res, "Failed to update process status.");
+};
+
 export const createActivityApi = async (assessmentId, payload) => {
   const res = await accountFetch(`${API_BASE}/${assessmentId}/activities`, {
     method: "POST",
@@ -63,6 +72,21 @@ export const uploadSopFileApi = async (assessmentId, formData) => {
     body: formData,
   });
   return handle(res, "Failed to upload file.");
+};
+
+export const updateSopFileApi = async (fileId, formData) => {
+  const res = await accountFetch(`${API_BASE}/files/${fileId}`, {
+    method: "PUT",
+    body: formData,
+  });
+  return handle(res, "Failed to update file.");
+};
+
+export const deleteSopFileApi = async (fileId) => {
+  const res = await accountFetch(`${API_BASE}/files/${fileId}`, {
+    method: "DELETE",
+  });
+  return handle(res, "Failed to delete file.");
 };
 
 export const fetchDocumentsApi = async (actCode) => {

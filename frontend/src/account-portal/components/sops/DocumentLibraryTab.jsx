@@ -15,7 +15,7 @@ const getBadgeColor = (ext) => {
 
 export default function LibraryTab({ kind = "document" }) {
   const isEvidence = kind === "evidence";
-  const title = isEvidence ? "Evidence" : "Document Library";
+  const title = isEvidence ? "Evidences" : "Document Library";
   const typeLabel = isEvidence ? "Evidence Type" : "Document Type";
 
   const [acts, setActs] = useState([]);
@@ -79,7 +79,7 @@ export default function LibraryTab({ kind = "document" }) {
             <Archive className="w-5 h-5 text-blue-600" /> {title}
           </h2>
           <p className="text-xs text-slate-500">
-            {isEvidence ? "Evidence" : "Documents"} uploaded from SOPs. View-only &mdash; manage uploads from the SOPs tab.
+            {isEvidence ? "Evidences" : "Documents"} uploaded from SOPs. View-only &mdash; manage uploads from the SOPs tab.
           </p>
         </div>
 
@@ -160,7 +160,7 @@ export default function LibraryTab({ kind = "document" }) {
                   <FileText className="w-4 h-4 text-blue-400" />
                   <h3 className="font-bold text-sm tracking-wide">{g.name}</h3>
                   <span className="text-[11px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold ml-1">
-                    {groupFiles.length} {groupFiles.length === 1 ? "Document" : "Documents"}
+                    {groupFiles.length} {isEvidence ? (groupFiles.length === 1 ? "Evidence" : "Evidences") : (groupFiles.length === 1 ? "Document" : "Documents")}
                   </span>
                 </div>
                 <div className="p-4 sm:p-5">

@@ -18,6 +18,23 @@ class SopStatus(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class SopProcessStatus(Base):
+    # Per-process completion status within one SOP, for one account. A process
+    # row has no stable id of its own (it's an item in LegalAssessment.processes,
+    # a JSON list authored by Super Admin) - process_index is its position in
+    # that list, the same positional convention the UI already uses ("Process
+    # No. 1", "Process No. 2", ...).
+    __tablename__ = "sop_process_statuses"
+    __table_args__ = (UniqueConstraint("account_id", "assessment_id", "process_index", name="uq_sop_process_status"),)
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(Integer, ForeignKey("enterprise_accounts.id", ondelete="CASCADE"), nullable=False)
+    assessment_id = Column(Integer, ForeignKey("legal_assessments.id", ondelete="CASCADE"), nullable=False)
+    process_index = Column(Integer, nullable=False)
+    status = Column(String(20), nullable=False, default="Incomplete")  # "Incomplete" | "Complete"
+    updated_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class SopActivity(Base):
     __tablename__ = "sop_activities"
     id = Column(Integer, primary_key=True, index=True)

@@ -16,7 +16,7 @@ from app.core.deps import get_current_account_admin
 from app.database.connection import get_db
 from app.models.tab1_models import AccountAdmin, AccountEnrolledAct, MasterRegistry
 from app.models.tab2_models import LegalAssessment, LegalSection, LegalRule, LegalChapter, QuestionAssignment
-from app.models.sops import SopStatus, SopActivity, SopFile
+from app.models.sops import SopStatus, SopProcessStatus, SopActivity, SopFile
 
 router = APIRouter(prefix="/api/v1/account/sops", tags=["Account Portal SOPs"])
 
@@ -69,6 +69,15 @@ def serialize_owner(admin: Optional[AccountAdmin]) -> Optional[dict]:
     return {"id": admin.id, "name": admin.name, "user_code": admin.admin_code}
 
 
+def parse_updated_on(updated_on: Optional[str]):
+    if not updated_on:
+        return None
+    try:
+        return datetime.strptime(updated_on, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "updated_on must be in YYYY-MM-DD format.")
+
+
 def serialize_file(f: SopFile) -> dict:
     return {
         "id": f.id,
@@ -103,6 +112,9 @@ def list_sops(
     statuses = {
         s.assessment_id: s.status for s in db.query(SopStatus).filter(SopStatus.account_id == current_admin.account_id).all()
     }
+    process_statuses: dict = {}
+    for ps in db.query(SopProcessStatus).filter(SopProcessStatus.account_id == current_admin.account_id).all():
+        process_statuses.setdefault(ps.assessment_id, {})[ps.process_index] = ps.status
 
     result = []
     for a in rows:
@@ -110,6 +122,10 @@ def list_sops(
             continue
         assignment = assignments.get(a.id)
         files = db.query(SopFile).filter(SopFile.account_id == current_admin.account_id, SopFile.assessment_id == a.id).all()
+        proc_status_map = process_statuses.get(a.id, {})
+        processes = json.loads(a.processes or "[]")
+        for idx, proc in enumerate(processes):
+            proc["status"] = proc_status_map.get(idx, "Incomplete")
         result.append({
             "assessment_id": a.id,
             "question": a.question,
@@ -118,7 +134,7 @@ def list_sops(
             "mapped_org_types": json.loads(a.mapped_org_types or "[]"),
             "sop_name": a.sop_name,
             "sop_details": a.sop_details,
-            "processes": json.loads(a.processes or "[]"),
+            "processes": processes,
             "chapter_title": a.section.rule.chapter.title,
             "rule_order": a.section.rule.rule_order,
             "assigned_user": serialize_owner(assignment.assigned_user) if assignment else None,
@@ -186,6 +202,41 @@ def set_sop_status(
         ))
     db.commit()
     return {"status": "updated", "assessment_id": assessment_id, "sop_status": payload.status}
+
+
+class ProcessStatusPayload(BaseModel):
+    status: Literal["Incomplete", "Complete"]
+
+
+@router.patch("/{assessment_id}/processes/{process_index}/status")
+def set_process_status(
+    assessment_id: int,
+    process_index: int,
+    payload: ProcessStatusPayload,
+    db: Session = Depends(get_db),
+    current_admin: AccountAdmin = Depends(get_current_account_admin),
+):
+    if not can_act_on(db, current_admin, assessment_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This SOP is not assigned to you.")
+
+    row = db.query(SopProcessStatus).filter(
+        SopProcessStatus.account_id == current_admin.account_id,
+        SopProcessStatus.assessment_id == assessment_id,
+        SopProcessStatus.process_index == process_index,
+    ).first()
+    if row:
+        row.status = payload.status
+        row.updated_by = current_admin.id
+    else:
+        db.add(SopProcessStatus(
+            account_id=current_admin.account_id,
+            assessment_id=assessment_id,
+            process_index=process_index,
+            status=payload.status,
+            updated_by=current_admin.id,
+        ))
+    db.commit()
+    return {"status": "updated", "assessment_id": assessment_id, "process_index": process_index, "process_status": payload.status}
 
 
 class ActivityPayload(BaseModel):
@@ -303,12 +354,7 @@ def upload_sop_file(
             shutil.copyfileobj(file.file, buffer)
         file_path_str = str(save_dest)
 
-    parsed_date = None
-    if updated_on:
-        try:
-            parsed_date = datetime.strptime(updated_on, "%Y-%m-%d").date()
-        except ValueError:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "updated_on must be in YYYY-MM-DD format.")
+    parsed_date = parse_updated_on(updated_on)
 
     sop_file = SopFile(
         account_id=current_admin.account_id,
@@ -330,6 +376,84 @@ def upload_sop_file(
     db.commit()
     db.refresh(sop_file)
     return serialize_file(sop_file)
+
+
+@router.put("/files/{file_id}")
+def update_sop_file(
+    file_id: int,
+    name: str = Form(...),
+    description: str = Form(""),
+    owner_admin_id: Optional[int] = Form(None),
+    version: str = Form(""),
+    updated_on: Optional[str] = Form(None),
+    type_name: str = Form(""),
+    process_name: str = Form(""),
+    file: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_admin: AccountAdmin = Depends(get_current_account_admin),
+):
+    sop_file = db.query(SopFile).filter(
+        SopFile.id == file_id, SopFile.account_id == current_admin.account_id
+    ).first()
+    if not sop_file:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "File not found.")
+    if not can_act_on(db, current_admin, sop_file.assessment_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This SOP is not assigned to you.")
+    if not name.strip():
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{sop_file.kind.capitalize()} name is required.")
+
+    sop_file.name = name.strip()
+    sop_file.description = description.strip()
+    sop_file.owner_admin_id = owner_admin_id
+    sop_file.version = version.strip()
+    sop_file.updated_on = parse_updated_on(updated_on)
+    sop_file.type_name = type_name.strip()
+    sop_file.process_name = process_name.strip()
+
+    if file and file.filename:
+        if sop_file.file_path and os.path.exists(sop_file.file_path):
+            try:
+                os.remove(sop_file.file_path)
+            except OSError:
+                pass
+        orig_name = file.filename
+        f_ext = orig_name.split(".")[-1].upper() if "." in orig_name else "FILE"
+        safe_filename = f"{int(datetime.utcnow().timestamp())}_{orig_name.replace(' ', '_')}"
+        save_dest = UPLOAD_DIR / safe_filename
+        with open(save_dest, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        sop_file.file_path = str(save_dest)
+        sop_file.file_name = orig_name
+        sop_file.file_type = f_ext
+
+    db.commit()
+    db.refresh(sop_file)
+    return serialize_file(sop_file)
+
+
+@router.delete("/files/{file_id}")
+def delete_sop_file(
+    file_id: int,
+    db: Session = Depends(get_db),
+    current_admin: AccountAdmin = Depends(get_current_account_admin),
+):
+    sop_file = db.query(SopFile).filter(
+        SopFile.id == file_id, SopFile.account_id == current_admin.account_id
+    ).first()
+    if not sop_file:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "File not found.")
+    if not is_manager(current_admin):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only an Account Admin can delete a file.")
+
+    if sop_file.file_path and os.path.exists(sop_file.file_path):
+        try:
+            os.remove(sop_file.file_path)
+        except OSError:
+            pass
+
+    db.delete(sop_file)
+    db.commit()
+    return {"status": "deleted", "id": file_id}
 
 
 def _list_files(db: Session, current_admin: AccountAdmin, act_code: str, kind: str) -> list:

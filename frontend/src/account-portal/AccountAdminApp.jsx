@@ -30,7 +30,7 @@ const NAV_ITEMS = [
   { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: false },
   { key: "activity", label: "Activity Tracker", icon: Activity, enabled: true },
   { key: "library", label: "Document Library", icon: FolderOpen, enabled: true },
-  { key: "evidence", label: "Evidence", icon: ShieldPlus, enabled: true },
+  { key: "evidence", label: "Evidences", icon: ShieldPlus, enabled: true },
   { key: "resources", label: "Resources", icon: Archive, enabled: true },
   { key: "admin", label: "Admin", icon: UserCog, enabled: true },
 ];

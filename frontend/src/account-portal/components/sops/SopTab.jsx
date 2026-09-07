@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { ListChecks, Loader2, RefreshCw } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { ListChecks, Loader2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchEnrolledActsApi } from "../../services/rulesApi";
+import { loadAccountSession } from "../../services/accountAuthApi";
 import {
   fetchSopsApi,
   fetchUploadRegistriesApi,
   fetchAssignableOwnersApi,
   setSopStatusApi,
+  setProcessStatusApi,
+  deleteSopFileApi,
 } from "../../services/sopsApi";
 import useRegistryLabels from "../../hooks/useRegistryLabels";
 import SopCard from "./SopCard";
@@ -13,6 +16,7 @@ import CreateActivityModal from "./CreateActivityModal";
 import UploadFileModal from "./UploadFileModal";
 
 export default function SopTab() {
+  const isManager = loadAccountSession()?.role === "Account Admin";
   const { department_label: departmentLabel, process_label: processLabel } = useRegistryLabels();
   const [acts, setActs] = useState([]);
   const [selectedAct, setSelectedAct] = useState("");
@@ -25,6 +29,9 @@ export default function SopTab() {
 
   const [activityModal, setActivityModal] = useState(null); // assessment_id | null
   const [uploadModal, setUploadModal] = useState(null); // { assessmentId, kind } | null
+
+  const [pageSize, setPageSize] = useState(50);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetchEnrolledActsApi().then((data) => {
@@ -51,6 +58,7 @@ export default function SopTab() {
   };
 
   useEffect(() => {
+    setPage(1);
     loadSops(selectedAct);
   }, [selectedAct]);
 
@@ -63,6 +71,40 @@ export default function SopTab() {
       await loadSops(selectedAct);
     }
   };
+
+  const handleSetProcessStatus = async (assessmentId, processIndex, status) => {
+    setSops((prev) => prev.map((s) => {
+      if (s.assessment_id !== assessmentId) return s;
+      const processes = s.processes.map((p, i) => (i === processIndex ? { ...p, status } : p));
+      return { ...s, processes };
+    }));
+    try {
+      await setProcessStatusApi(assessmentId, processIndex, status);
+    } catch (err) {
+      alert(err.message);
+      await loadSops(selectedAct);
+    }
+  };
+
+  const handleEditFile = (kind, file) => {
+    setUploadModal({ assessmentId: null, kind, editingFile: file });
+  };
+
+  const handleDeleteFile = async (file) => {
+    if (!window.confirm(`Delete "${file.name}"? This cannot be undone.`)) return;
+    try {
+      await deleteSopFileApi(file.id);
+      await loadSops(selectedAct);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const totalPages = Math.max(1, Math.ceil(sops.length / pageSize));
+  const pagedSops = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sops.slice(start, start + pageSize);
+  }, [sops, page, pageSize]);
 
   return (
     <div className="p-6 space-y-4 text-xs">
@@ -108,19 +150,61 @@ export default function SopTab() {
           No SOPs to show for this Act yet.
         </div>
       ) : (
-        <div className="space-y-4">
-          {sops.map((sop) => (
-            <SopCard
-              key={sop.assessment_id}
-              sop={sop}
-              departmentLabel={departmentLabel}
-              processLabel={processLabel}
-              onSetStatus={(status) => handleSetStatus(sop.assessment_id, status)}
-              onCreateActivity={() => setActivityModal(sop.assessment_id)}
-              onUploadFile={(kind) => setUploadModal({ assessmentId: sop.assessment_id, kind })}
-            />
-          ))}
-        </div>
+        <>
+          <div className="space-y-3">
+            {pagedSops.map((sop) => (
+              <SopCard
+                key={sop.assessment_id}
+                sop={sop}
+                departmentLabel={departmentLabel}
+                processLabel={processLabel}
+                isManager={isManager}
+                onSetStatus={(status) => handleSetStatus(sop.assessment_id, status)}
+                onSetProcessStatus={(processIndex, status) => handleSetProcessStatus(sop.assessment_id, processIndex, status)}
+                onCreateActivity={() => setActivityModal(sop.assessment_id)}
+                onUploadFile={(kind) => setUploadModal({ assessmentId: sop.assessment_id, kind, editingFile: null })}
+                onEditFile={handleEditFile}
+                onDeleteFile={handleDeleteFile}
+              />
+            ))}
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500">Rows per page:</span>
+              {[50, 100, 150].map((size) => (
+                <button
+                  key={size}
+                  onClick={() => { setPageSize(size); setPage(1); }}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold border transition ${
+                    pageSize === size ? "bg-blue-600 text-white border-blue-600" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-500">
+                Page {page} of {totalPages} &middot; {sops.length} SOP{sops.length === 1 ? "" : "s"}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-1.5 rounded-md border border-slate-300 bg-white disabled:opacity-40 hover:bg-slate-100"
+              >
+                <ChevronLeft className="w-3.5 h-3.5 text-slate-600" />
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="p-1.5 rounded-md border border-slate-300 bg-white disabled:opacity-40 hover:bg-slate-100"
+              >
+                <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {activityModal && (
@@ -139,6 +223,7 @@ export default function SopTab() {
         <UploadFileModal
           assessmentId={uploadModal.assessmentId}
           kind={uploadModal.kind}
+          editingFile={uploadModal.editingFile}
           owners={owners}
           typeOptions={uploadModal.kind === "evidence" ? registries.evidence_types : registries.document_types}
           processOptions={registries.processes}
