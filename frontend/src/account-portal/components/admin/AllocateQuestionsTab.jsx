@@ -189,6 +189,7 @@ export default function AllocateQuestionsTab({ acts }) {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                <th className="p-3 w-10">S. No</th>
                 <th className="p-3 w-8">
                   <input
                     type="checkbox"
@@ -213,8 +214,9 @@ export default function AllocateQuestionsTab({ acts }) {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {filteredSorted.length > 0 ? (
-                filteredSorted.map((q) => (
+                filteredSorted.map((q, idx) => (
                   <tr key={q.id} className="hover:bg-slate-50/80">
+                    <td className="p-3 text-slate-400 font-bold">{idx + 1}</td>
                     <td className="p-3">
                       <input
                         type="checkbox"
@@ -279,7 +281,7 @@ export default function AllocateQuestionsTab({ acts }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-slate-400 italic">
+                  <td colSpan={7} className="p-8 text-center text-slate-400 italic">
                     No questions found for this act.
                   </td>
                 </tr>
