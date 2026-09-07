@@ -3,8 +3,11 @@ import { X, Loader2 } from "lucide-react";
 import { createActivityApi } from "../../services/sopsApi";
 import { loadAccountSession } from "../../services/accountAuthApi";
 
+const todayStr = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
+
 export default function CreateActivityModal({ assessmentId, owners, onClose, onCreated }) {
   const currentAdminId = loadAccountSession()?.id;
+  const minDate = todayStr();
   const [form, setForm] = useState({
     activity_name: "",
     detail: "",
@@ -26,6 +29,10 @@ export default function CreateActivityModal({ assessmentId, owners, onClose, onC
     }
     if (!form.completion_date) {
       setError("Completion date is required.");
+      return;
+    }
+    if (form.completion_date < minDate) {
+      setError("Completion date cannot be in the past.");
       return;
     }
     setSaving(true);
@@ -96,6 +103,7 @@ export default function CreateActivityModal({ assessmentId, owners, onClose, onC
               <input
                 type="date"
                 required
+                min={minDate}
                 value={form.completion_date}
                 onChange={(e) => setForm({ ...form, completion_date: e.target.value })}
                 className="w-full border border-slate-300 rounded-lg p-2 text-xs"

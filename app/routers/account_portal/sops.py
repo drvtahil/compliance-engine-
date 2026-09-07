@@ -2,7 +2,7 @@ import json
 import mimetypes
 import os
 import shutil
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Optional, Literal
 
@@ -261,6 +261,10 @@ def create_activity(
     if not payload.completion_date.strip():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Completion date is required.")
 
+    completion_date = parse_updated_on(payload.completion_date)
+    if completion_date < date.today():
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Completion date cannot be in the past.")
+
     owner = db.query(AccountAdmin).filter(
         AccountAdmin.id == payload.owner_admin_id, AccountAdmin.account_id == current_admin.account_id
     ).first()
@@ -273,7 +277,7 @@ def create_activity(
         activity_name=payload.activity_name.strip(),
         detail=payload.detail.strip(),
         owner_admin_id=payload.owner_admin_id,
-        completed_at=parse_updated_on(payload.completion_date),
+        completed_at=completion_date,
         created_by=current_admin.id,
     )
     db.add(activity)

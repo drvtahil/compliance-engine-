@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Activity, Loader2, RefreshCw, Info, X, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Activity, Loader2, RefreshCw, Info, X, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchActivitiesApi, setActivityStatusApi } from "../../services/sopsApi";
 import { loadAccountSession } from "../../services/accountAuthApi";
 
@@ -43,6 +43,9 @@ export default function ActivityTrackerTab() {
   const [viewing, setViewing] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
 
+  const [pageSize, setPageSize] = useState(50);
+  const [page, setPage] = useState(1);
+
   const loadActivities = async () => {
     setLoading(true);
     setError("");
@@ -56,6 +59,16 @@ export default function ActivityTrackerTab() {
   };
 
   useEffect(() => { loadActivities(); }, []);
+
+  const totalPages = Math.max(1, Math.ceil(activities.length / pageSize));
+  const pagedActivities = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return activities.slice(start, start + pageSize);
+  }, [activities, page, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
 
   const toggleComplete = async (activity) => {
     setUpdatingId(activity.id);
@@ -102,6 +115,7 @@ export default function ActivityTrackerTab() {
           No activities created yet. Create one from a SOP card.
         </div>
       ) : (
+        <>
         <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -117,7 +131,7 @@ export default function ActivityTrackerTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {activities.map((act) => {
+                {pagedActivities.map((act) => {
                   const canToggle = act.owner?.id === currentAdminId;
                   return (
                     <tr key={act.id} className="hover:bg-slate-50/80">
@@ -167,6 +181,43 @@ export default function ActivityTrackerTab() {
             </table>
           </div>
         </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-slate-500">Rows per page:</span>
+            {[50, 100, 150].map((size) => (
+              <button
+                key={size}
+                onClick={() => { setPageSize(size); setPage(1); }}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold border transition ${
+                  pageSize === size ? "bg-blue-600 text-white border-blue-600" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-500">
+              Page {page} of {totalPages} &middot; {activities.length} activit{activities.length === 1 ? "y" : "ies"}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-1.5 rounded-md border border-slate-300 bg-white disabled:opacity-40 hover:bg-slate-100"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 text-slate-600" />
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="p-1.5 rounded-md border border-slate-300 bg-white disabled:opacity-40 hover:bg-slate-100"
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+            </button>
+          </div>
+        </div>
+        </>
       )}
 
       {viewing && <ActivityDetailsModal activity={viewing} onClose={() => setViewing(null)} />}
