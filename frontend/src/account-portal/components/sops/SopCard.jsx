@@ -16,6 +16,16 @@ const KIND_STYLES = {
   evidence: { border: "border-amber-200", chip: "bg-amber-50 text-amber-700 border-amber-200" },
 };
 
+const getFileTypeBadgeColor = (ext) => {
+  switch (ext?.toUpperCase()) {
+    case "PDF": return "bg-red-50 text-red-700 border-red-200";
+    case "XLS": case "XLSX": case "CSV": return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "DOC": case "DOCX": return "bg-blue-50 text-blue-700 border-blue-200";
+    case "JPG": case "PNG": case "JPEG": return "bg-purple-50 text-purple-700 border-purple-200";
+    default: return "bg-slate-100 text-slate-600 border-slate-200";
+  }
+};
+
 function StatusPill({ status }) {
   const color = status === "Compliant"
     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -28,35 +38,43 @@ function StatusPill({ status }) {
 function FileCard({ file, kind, isManager, onEdit, onDelete }) {
   const style = KIND_STYLES[kind];
   return (
-    <div className={`bg-white border ${style.border} rounded-lg p-2.5 space-y-1.5`}>
+    <div className={`bg-white border ${style.border} rounded-lg p-2.5 space-y-1`}>
       <div className="flex items-center justify-between gap-2">
-        {file.process_name ? (
-          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${style.chip}`}>{file.process_name}</span>
-        ) : <span />}
-        {file.type_name && (
-          <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">{file.type_name}</span>
-        )}
-      </div>
-
-      <div className="flex items-center justify-end gap-1">
-        {file.has_file && (
-          <>
-            <button onClick={() => viewSopFile(file.id)} title="View" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100">
-              <Eye className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => downloadSopFile(file.id, file.file_name)} title="Download" className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100">
-              <Download className="w-3.5 h-3.5" />
-            </button>
-          </>
-        )}
-        <button onClick={() => onEdit(file)} title="Edit" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100">
-          <Edit2 className="w-3.5 h-3.5" />
-        </button>
-        {isManager && (
-          <button onClick={() => onDelete(file)} title="Delete" className="text-slate-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
-            <Trash2 className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-1 flex-wrap min-w-0">
+          {file.process_name && (
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${style.chip}`}>Process: {file.process_name}</span>
+          )}
+          {file.type_name && (
+            <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">
+              {kind === "evidence" ? "Evidence Type" : "Document Type"}: {file.type_name}
+            </span>
+          )}
+          {file.has_file && (
+            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border ${getFileTypeBadgeColor(file.file_type)}`}>
+              {file.file_type || "FILE"}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          {file.has_file && (
+            <>
+              <button onClick={() => viewSopFile(file.id)} title="View" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100">
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => downloadSopFile(file.id, file.file_name)} title="Download" className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100">
+                <Download className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+          <button onClick={() => onEdit(file)} title="Edit" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100">
+            <Edit2 className="w-3.5 h-3.5" />
           </button>
-        )}
+          {isManager && (
+            <button onClick={() => onDelete(file)} title="Delete" className="text-slate-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="text-[11px] font-bold text-slate-800 truncate">{file.name}</div>
