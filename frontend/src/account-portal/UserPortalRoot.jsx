@@ -20,6 +20,7 @@ import SopTab from "./components/sops/SopTab";
 import ActivityTrackerTab from "./components/sops/ActivityTrackerTab";
 import DocumentLibraryTab from "./components/sops/DocumentLibraryTab";
 import EvidenceLibraryTab from "./components/sops/EvidenceLibraryTab";
+import ComplianceScoreTab from "./components/sops/ComplianceScoreTab";
 
 // Same tab list as the Account Admin App, minus Admin — Users are scoped to
 // their own account's view-only data, never to user/question management.
@@ -27,7 +28,7 @@ const NAV_ITEMS = [
   { key: "rules", label: "Rules & Acts", icon: BookOpen, enabled: true },
   { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: true },
   { key: "sops", label: "SOPs", icon: ListChecks, enabled: true },
-  { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: false },
+  { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: true },
   { key: "activity", label: "Activity Tracker", icon: Activity, enabled: true },
   { key: "library", label: "Document Library", icon: FolderOpen, enabled: true },
   { key: "evidence", label: "Evidences", icon: ShieldPlus, enabled: true },
@@ -117,6 +118,7 @@ export default function UserPortalRoot({ session, onLogout }) {
         {activeTab === "rules" && <RulesTab />}
         {activeTab === "readiness" && <UserReadinessTab />}
         {activeTab === "sops" && <SopTab />}
+        {activeTab === "compliance" && <ComplianceScoreTab />}
         {activeTab === "activity" && <ActivityTrackerTab />}
         {activeTab === "library" && <DocumentLibraryTab />}
         {activeTab === "evidence" && <EvidenceLibraryTab />}

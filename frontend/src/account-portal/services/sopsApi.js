@@ -15,6 +15,11 @@ export const fetchSopsApi = async (actCode) => {
   return handle(res, "Failed to load SOPs.");
 };
 
+export const fetchComplianceScoreApi = async (actCode) => {
+  const res = await accountFetch(`${API_BASE}/compliance-score?act_code=${encodeURIComponent(actCode)}`);
+  return handle(res, "Failed to load compliance score.");
+};
+
 export const fetchUploadRegistriesApi = async () => {
   const res = await accountFetch(`${API_BASE}/registries`);
   return handle(res, "Failed to load master lists.");

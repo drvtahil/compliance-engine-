@@ -146,6 +146,97 @@ def list_sops(
     return result
 
 
+def _compliance_score(compliant: int, not_compliant: int) -> Optional[float]:
+    total = compliant + not_compliant
+    return round(compliant / total * 100, 1) if total > 0 else None
+
+
+def _risk_level(score: Optional[float]) -> str:
+    if score is None:
+        return "No Data"
+    if score == 100:
+        return "Compliant"
+    if score >= 90:
+        return "Low Risk"
+    if score >= 50:
+        return "Medium Risk"
+    return "High Risk"
+
+
+def _score_block(counts: dict) -> dict:
+    score = _compliance_score(counts["c"], counts["nc"])
+    return {
+        "compliant": counts["c"],
+        "not_compliant": counts["nc"],
+        "not_applicable": counts["na"],
+        "score": score,
+        "risk_level": _risk_level(score),
+    }
+
+
+@router.get("/compliance-score")
+def get_compliance_score(
+    act_code: str,
+    db: Session = Depends(get_db),
+    current_admin: AccountAdmin = Depends(get_current_account_admin),
+):
+    # Read-only, account-wide dashboard: every viewer (Account Admin and every
+    # User alike) sees the same full picture for this Act - unlike list_sops,
+    # this is never filtered down to "assigned to me".
+    assert_act_enrolled(db, current_admin.account_id, act_code)
+    account_org_type = current_admin.account.org_type
+
+    rows = (
+        db.query(LegalAssessment)
+        .join(LegalSection, LegalAssessment.section_id == LegalSection.id)
+        .join(LegalRule, LegalSection.rule_id == LegalRule.id)
+        .join(LegalChapter, LegalRule.chapter_id == LegalChapter.id)
+        .filter(LegalChapter.act_code == act_code)
+        .all()
+    )
+    visible = [a for a in rows if account_org_type in json.loads(a.mapped_org_types or "[]")]
+
+    statuses = {
+        s.assessment_id: s.status for s in db.query(SopStatus).filter(SopStatus.account_id == current_admin.account_id).all()
+    }
+    assignments = {
+        a.assessment_id: a.assigned_user for a in db.query(QuestionAssignment).filter(QuestionAssignment.account_id == current_admin.account_id).all()
+    }
+
+    total_counts = {"c": 0, "nc": 0, "na": 0}
+    dept_counts: dict = {}
+    user_buckets: dict = {}
+
+    for a in visible:
+        st = statuses.get(a.id, "Not Compliant")
+        key = "c" if st == "Compliant" else "nc" if st == "Not Compliant" else "na"
+        total_counts[key] += 1
+
+        for dept in json.loads(a.industries or "[]"):
+            dept_counts.setdefault(dept, {"c": 0, "nc": 0, "na": 0})[key] += 1
+
+        owner = assignments.get(a.id)
+        if owner:
+            if owner.id not in user_buckets:
+                user_buckets[owner.id] = {"owner": owner, "counts": {"c": 0, "nc": 0, "na": 0}}
+            user_buckets[owner.id]["counts"][key] += 1
+
+    departments = [
+        {"name": name, **_score_block(counts)}
+        for name, counts in sorted(dept_counts.items())
+    ]
+    users = [
+        {"user": serialize_owner(b["owner"]), **_score_block(b["counts"])}
+        for b in sorted(user_buckets.values(), key=lambda x: x["owner"].name)
+    ]
+
+    return {
+        "total": _score_block(total_counts),
+        "departments": departments,
+        "users": users,
+    }
+
+
 @router.get("/registries")
 def get_upload_registries(
     db: Session = Depends(get_db),
