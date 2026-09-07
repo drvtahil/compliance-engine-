@@ -62,7 +62,7 @@ class QuestionAssignment(Base):
     id = Column(Integer, primary_key=True, index=True)
     account_id = Column(Integer, ForeignKey("enterprise_accounts.id", ondelete="CASCADE"), nullable=False)
     assessment_id = Column(Integer, ForeignKey("legal_assessments.id", ondelete="CASCADE"), nullable=False)
-    assigned_user_id = Column(Integer, ForeignKey("account_admins.id", ondelete="CASCADE"), nullable=False)
+    assigned_user_id = Column(Integer, ForeignKey("account_admins.id"), nullable=False)
     assigned_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
     assigned_at = Column(DateTime, default=datetime.utcnow)
     response = Column(String(10), nullable=True)  # "Yes" | "No" | "NA" | None

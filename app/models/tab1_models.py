@@ -80,7 +80,7 @@ class AccountAdmin(Base):
     password = Column(String(255), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     is_active = Column(Boolean, default=True)
-    created_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
+    created_by = Column(Integer, ForeignKey("account_admins.id", ondelete="SET NULL"), nullable=True)
     last_login_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

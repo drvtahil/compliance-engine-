@@ -107,3 +107,12 @@ export const updateAccountApi = async (account_id, payload) => {
   }
   return await res.json();
 };
+
+export const checkAdminDeletionApi = async (account_id, admin_id) => {
+  const res = await authFetch(`${API_BASE}/accounts/${account_id}/admins/${admin_id}/deletion-check`);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to check admin.");
+  }
+  return await res.json();
+};

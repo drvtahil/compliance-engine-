@@ -32,7 +32,8 @@ import {
   updateRegistryItemApi,
   deleteRegistryItemApi,
   createAccountApi,
-  updateAccountApi
+  updateAccountApi,
+  checkAdminDeletionApi
 } from "../../services/tab1Api";
 
 export default function TabOneAccounts() {
@@ -40,6 +41,7 @@ export default function TabOneAccounts() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
+  const [blockedRemovalsNotice, setBlockedRemovalsNotice] = useState(null);
 
   const showToast = (message) => {
     setToast(message);
@@ -225,13 +227,23 @@ export default function TabOneAccounts() {
     }));
   };
 
-  const handleRemoveAdminField = (idx) => {
+  const handleRemoveAdminField = async (idx) => {
     if (accountForm.admins.length === 1) {
       alert("At least one Account Admin is required.");
       return;
     }
     const removed = accountForm.admins[idx];
     if (removed?.id) {
+      try {
+        const check = await checkAdminDeletionApi(showAccountModal.accountId, removed.id);
+        if (check.reasons?.length) {
+          setBlockedRemovalsNotice({ items: [check], saved: false });
+          return;
+        }
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
       setRemovedAdminIds(prev => [...prev, removed.id]);
     }
     setAccountForm(prev => ({
@@ -261,8 +273,12 @@ export default function TabOneAccounts() {
     try {
       setSaving(true);
       if (showAccountModal.isEdit) {
-        await updateAccountApi(showAccountModal.accountId, { ...accountForm, removed_admin_ids: removedAdminIds });
-        showToast("Account updated successfully.");
+        const result = await updateAccountApi(showAccountModal.accountId, { ...accountForm, removed_admin_ids: removedAdminIds });
+        if (result.blocked_removals?.length) {
+          setBlockedRemovalsNotice({ items: result.blocked_removals, saved: true });
+        } else {
+          showToast("Account updated successfully.");
+        }
       } else {
         await createAccountApi(accountForm);
         showToast("Account registered successfully.");
@@ -375,6 +391,39 @@ export default function TabOneAccounts() {
       {toast && (
         <div className="fixed top-4 right-4 z-[60] bg-emerald-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-lg">
           {toast}
+        </div>
+      )}
+      {blockedRemovalsNotice && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full border border-amber-300 shadow-2xl p-5 space-y-3 text-xs">
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="text-sm font-bold text-amber-700">Could not remove some admins/users</h3>
+              <button onClick={() => setBlockedRemovalsNotice(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-slate-600">
+              {blockedRemovalsNotice.saved
+                ? "The rest of the account was saved. These entries have activity on record, so they can't be deleted:"
+                : "This entry has activity on record, so it can't be removed:"}
+            </p>
+            <ul className="space-y-2">
+              {blockedRemovalsNotice.items.map((b) => (
+                <li key={b.id} className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="font-bold text-slate-800">{b.name}</div>
+                  <div className="text-slate-600">{b.reasons.join(", ")}</div>
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end pt-1">
+              <button
+                onClick={() => setBlockedRemovalsNotice(null)}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-lg"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
         </div>
       )}
       {/* ========================================================================= */}

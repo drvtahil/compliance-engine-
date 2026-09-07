@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Edit2, KeyRound, UserX, UserCheck, Loader2 } from "lucide-react";
+import { Edit2, KeyRound, UserX, UserCheck, Loader2, X } from "lucide-react";
 import { toggleUserActiveApi } from "../../services/usersApi";
 import UserFormModal from "./UserFormModal";
 import ResetUserPasswordModal from "./ResetUserPasswordModal";
@@ -10,6 +10,7 @@ export default function UserListTab({ users, onRefresh }) {
   const [editingUser, setEditingUser] = useState(null);
   const [resettingUser, setResettingUser] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+  const [blockedNotice, setBlockedNotice] = useState(null);
 
   const handleToggleActive = async (user) => {
     setTogglingId(user.id);
@@ -17,7 +18,7 @@ export default function UserListTab({ users, onRefresh }) {
       await toggleUserActiveApi(user.id);
       await onRefresh();
     } catch (err) {
-      alert(err.message);
+      setBlockedNotice({ message: err.message, reasons: err.reasons || [] });
     } finally {
       setTogglingId(null);
     }
@@ -147,6 +148,37 @@ export default function UserListTab({ users, onRefresh }) {
           onClose={() => setResettingUser(null)}
           onDone={() => setResettingUser(null)}
         />
+      )}
+
+      {blockedNotice && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full border border-amber-300 shadow-2xl p-5 space-y-3 text-xs">
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="text-sm font-bold text-amber-700">Cannot deactivate</h3>
+              <button onClick={() => setBlockedNotice(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-slate-600">{blockedNotice.message}</p>
+            {blockedNotice.reasons.length > 0 && (
+              <ul className="space-y-1.5">
+                {blockedNotice.reasons.map((r, i) => (
+                  <li key={i} className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-slate-700">
+                    {r}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex justify-end pt-1">
+              <button
+                onClick={() => setBlockedNotice(null)}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-lg"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

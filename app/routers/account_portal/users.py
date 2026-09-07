@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_account_admin_manager
@@ -10,6 +11,7 @@ from app.core.security import hash_password
 from app.database.connection import get_db
 from app.models.tab1_models import AccountAdmin, Role
 from app.models.tab2_models import LegalAssessment, QuestionAssignment
+from app.models.sops import SopActivity, SopStatus
 
 router = APIRouter(prefix="/api/v1/account/users", tags=["Account Portal Users"])
 
@@ -164,6 +166,53 @@ def toggle_active(
     ).first()
     if not user:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found.")
+
+    if user.is_active:
+        reasons = []
+
+        pending_activities = db.query(SopActivity).filter(
+            SopActivity.owner_admin_id == user.id,
+            SopActivity.status == "Pending",
+        ).all()
+        reasons += [f"Pending activity: {a.activity_name}" for a in pending_activities]
+
+        unanswered = (
+            db.query(LegalAssessment)
+            .join(QuestionAssignment, QuestionAssignment.assessment_id == LegalAssessment.id)
+            .filter(
+                QuestionAssignment.assigned_user_id == user.id,
+                QuestionAssignment.account_id == user.account_id,
+                QuestionAssignment.response.is_(None),
+            )
+            .all()
+        )
+        reasons += [f"Unanswered question: {a.sop_name}" for a in unanswered]
+
+        non_compliant = (
+            db.query(LegalAssessment)
+            .join(QuestionAssignment, QuestionAssignment.assessment_id == LegalAssessment.id)
+            .join(SopStatus, and_(
+                SopStatus.assessment_id == LegalAssessment.id,
+                SopStatus.account_id == QuestionAssignment.account_id,
+            ))
+            .filter(
+                QuestionAssignment.assigned_user_id == user.id,
+                QuestionAssignment.account_id == user.account_id,
+                SopStatus.status == "Not Compliant",
+            )
+            .all()
+        )
+        reasons += [f"Non-compliant SOP: {a.sop_name}" for a in non_compliant]
+
+        if reasons:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "message": "This user has pending items and cannot be deactivated until they are resolved.",
+                    "reasons": reasons,
+                },
+            )
+
     user.is_active = not user.is_active
     db.commit()
     return {"id": user.id, "is_active": user.is_active}

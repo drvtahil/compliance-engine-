@@ -43,6 +43,11 @@ export const toggleUserActiveApi = async (userId) => {
   });
   if (!res.ok) {
     const err = await res.json();
+    if (err.detail && typeof err.detail === "object") {
+      const error = new Error(err.detail.message || "Failed to update user status.");
+      error.reasons = err.detail.reasons || [];
+      throw error;
+    }
     throw new Error(err.detail || "Failed to update user status.");
   }
   return await res.json();

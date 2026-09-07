@@ -1,7 +1,7 @@
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr
@@ -15,7 +15,8 @@ from app.models.super_admin import SuperAdmin
 from app.models.tab1_models import (
     MasterRegistry, MasterRegistryItem, EnterpriseAccount, AccountEnrolledAct, AccountAdmin, Role
 )
-from app.models.tab2_models import LegalRule
+from app.models.tab2_models import LegalRule, QuestionAssignment, ReadinessSubmission
+from app.models.sops import SopStatus, SopProcessStatus, SopActivity, SopFile
 
 router = APIRouter(prefix="/api/v1/tab1", tags=["Tab 1 Master Registries & Accounts"])
 
@@ -311,6 +312,67 @@ def assert_admin_emails_available(db: Session, admins: List["AccountAdminPayload
             raise HTTPException(status_code=400, detail=f"'{email}' is already in use by another admin or user.")
 
 
+def get_deletion_blockers(db: Session, admin_id: int) -> List[str]:
+    """An admin/user can only be deleted once they have zero footprint —
+    merely having created other users doesn't count (AccountAdmin.created_by
+    is informational only), everything else below does."""
+    reasons = []
+
+    doc_count = db.query(SopFile).filter(
+        SopFile.kind == "document",
+        or_(SopFile.owner_admin_id == admin_id, SopFile.uploaded_by == admin_id),
+    ).count()
+    if doc_count:
+        reasons.append(f"{doc_count} document(s)")
+
+    evidence_count = db.query(SopFile).filter(
+        SopFile.kind == "evidence",
+        or_(SopFile.owner_admin_id == admin_id, SopFile.uploaded_by == admin_id),
+    ).count()
+    if evidence_count:
+        reasons.append(f"{evidence_count} evidence item(s)")
+
+    activity_count = db.query(SopActivity).filter(
+        or_(SopActivity.owner_admin_id == admin_id, SopActivity.created_by == admin_id)
+    ).count()
+    if activity_count:
+        reasons.append(f"{activity_count} activity/activities")
+
+    status_count = (
+        db.query(SopStatus).filter(SopStatus.updated_by == admin_id).count()
+        + db.query(SopProcessStatus).filter(SopProcessStatus.updated_by == admin_id).count()
+    )
+    if status_count:
+        reasons.append(f"{status_count} SOP/process status update(s)")
+
+    allocated_by = db.query(QuestionAssignment).filter(QuestionAssignment.assigned_by == admin_id).count()
+    if allocated_by:
+        reasons.append(f"{allocated_by} question allocation(s) made to others")
+
+    allocated_to = db.query(QuestionAssignment).filter(QuestionAssignment.assigned_user_id == admin_id).count()
+    if allocated_to:
+        reasons.append(f"{allocated_to} SOP/question(s) allocated to them")
+
+    submission_count = db.query(ReadinessSubmission).filter(ReadinessSubmission.submitted_by == admin_id).count()
+    if submission_count:
+        reasons.append(f"{submission_count} readiness submission(s)")
+
+    return reasons
+
+
+@router.get("/accounts/{account_id}/admins/{admin_id}/deletion-check")
+def check_admin_deletion(account_id: int, admin_id: int, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
+    """Lets the UI warn as soon as Remove is clicked, instead of only after
+    Update Account is submitted for the whole form."""
+    existing = db.query(AccountAdmin).filter(
+        AccountAdmin.id == admin_id, AccountAdmin.account_id == account_id
+    ).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Admin not found in this account.")
+    reasons = get_deletion_blockers(db, admin_id)
+    return {"id": existing.id, "name": existing.name, "reasons": reasons}
+
+
 @router.post("/accounts")
 def create_account(payload: AccountPayload, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     if not payload.enrolled_acts:
@@ -405,9 +467,22 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
     # untouched — this form can legitimately be stale relative to admins
     # created elsewhere (e.g. an Account Admin's own "Create User"), and
     # inferring deletion from mere absence previously wiped those out.
+    #
+    # An admin with any footprint (owns/uploaded a document or evidence,
+    # owns/created an activity, updated a SOP/process status, allocated or
+    # was allocated questions, submitted a readiness answer) is skipped
+    # rather than deleted, so one blocked admin doesn't roll back the rest
+    # of this save. They stay untouched and are reported back so the UI can
+    # explain why. Having only created other users doesn't block removal.
+    blocked_removals = []
     for admin_id in payload.removed_admin_ids:
         existing = existing_admins_by_id.get(admin_id)
-        if existing:
+        if not existing:
+            continue
+        reasons = get_deletion_blockers(db, admin_id)
+        if reasons:
+            blocked_removals.append({"id": existing.id, "name": existing.name, "reasons": reasons})
+        else:
             db.delete(existing)
 
     account_admin_role_id = get_account_admin_role_id(db)
@@ -438,4 +513,4 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
 
     db.commit()
     db.refresh(acc)
-    return {"status": "updated", "id": acc.id}
+    return {"status": "updated", "id": acc.id, "blocked_removals": blocked_removals}
