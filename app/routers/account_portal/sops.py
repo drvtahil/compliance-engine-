@@ -49,7 +49,7 @@ def can_act_on(db: Session, current_admin: AccountAdmin, assessment_id: int) -> 
     return assessment_id in assigned_assessment_ids(db, current_admin.account_id, current_admin.id)
 
 
-def visible_assessments_query(db: Session, current_admin: AccountAdmin, act_code: Optional[str] = None):
+def visible_assessments_query(db: Session, current_admin: AccountAdmin, act_code: Optional[str] = None, account_wide: bool = False):
     q = (
         db.query(LegalAssessment)
         .join(LegalSection, LegalAssessment.section_id == LegalSection.id)
@@ -58,7 +58,10 @@ def visible_assessments_query(db: Session, current_admin: AccountAdmin, act_code
     )
     if act_code:
         q = q.filter(LegalChapter.act_code == act_code)
-    if not is_manager(current_admin):
+    # account_wide=True is for account-level data (documents/evidence) that
+    # every member of the account can see, regardless of SOP assignment -
+    # unlike the SOPs tab itself, which stays assignment-gated for a User.
+    if not account_wide and not is_manager(current_admin):
         ids = assigned_assessment_ids(db, current_admin.account_id, current_admin.id)
         q = q.filter(LegalAssessment.id.in_(ids))
     return q
@@ -568,7 +571,7 @@ def _list_files(db: Session, current_admin: AccountAdmin, act_code: str, kind: s
     assert_act_enrolled(db, current_admin.account_id, act_code)
     account_org_type = current_admin.account.org_type
 
-    visible_ids = {a.id for a in visible_assessments_query(db, current_admin, act_code).all()
+    visible_ids = {a.id for a in visible_assessments_query(db, current_admin, act_code, account_wide=True).all()
                    if account_org_type in json.loads(a.mapped_org_types or "[]")}
     if not visible_ids:
         return []
@@ -606,10 +609,12 @@ def list_evidence(
 
 
 def _authorize_file_access(db: Session, current_admin: AccountAdmin, sop_file: SopFile):
+    # Documents/evidence are account-level data: any Account Admin or User in
+    # this account may view/download any file in it, regardless of which SOP
+    # it's attached to or who that SOP is assigned to. The account_id check
+    # below is what actually prevents cross-account access - never remove it.
     if sop_file.account_id != current_admin.account_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "File not found.")
-    if not is_manager(current_admin) and sop_file.assessment_id not in assigned_assessment_ids(db, current_admin.account_id, current_admin.id):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "This file is not accessible to you.")
 
 
 @router.get("/files/{file_id}/view")
