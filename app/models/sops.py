@@ -50,6 +50,7 @@ class SopActivity(Base):
 
     assessment = relationship("LegalAssessment")
     owner_admin = relationship("AccountAdmin", foreign_keys=[owner_admin_id])
+    created_by_admin = relationship("AccountAdmin", foreign_keys=[created_by])
 
 
 class SopFile(Base):

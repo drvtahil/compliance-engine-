@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Activity, Loader2, RefreshCw, Info, X, CheckCircle2 } from "lucide-react";
 import { fetchActivitiesApi, setActivityStatusApi } from "../../services/sopsApi";
+import { loadAccountSession } from "../../services/accountAuthApi";
 
 function ActivityDetailsModal({ activity, onClose }) {
   return (
@@ -18,6 +19,7 @@ function ActivityDetailsModal({ activity, onClose }) {
           <p className="text-slate-600 leading-relaxed">{activity.detail || "No description provided."}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-[11px]">
+          <div><span className="text-slate-400">Created By</span><div className="font-semibold text-slate-700">{activity.creator?.name || "-"}</div></div>
           <div><span className="text-slate-400">Owner</span><div className="font-semibold text-slate-700">{activity.owner?.name || "Unassigned"}</div></div>
           <div><span className="text-slate-400">Status</span><div className="font-semibold text-slate-700">{activity.status}</div></div>
           <div><span className="text-slate-400">Date of Completion</span><div className="font-semibold text-slate-700">{activity.completed_at || "-"}</div></div>
@@ -31,6 +33,10 @@ function ActivityDetailsModal({ activity, onClose }) {
 }
 
 export default function ActivityTrackerTab() {
+  const session = loadAccountSession();
+  const isManager = session?.role === "Account Admin";
+  const currentAdminId = session?.id;
+
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -72,7 +78,11 @@ export default function ActivityTrackerTab() {
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <Activity className="w-5 h-5 text-blue-600" /> Activity Tracker
             </h2>
-            <p className="text-xs text-slate-500">Activities created from SOPs across your account.</p>
+            <p className="text-xs text-slate-500">
+              {isManager
+                ? "Activities created from SOPs across your account."
+                : "Activities you created, or that are allocated to you."}
+            </p>
           </div>
           <button onClick={loadActivities} className="p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100">
             <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
@@ -99,6 +109,7 @@ export default function ActivityTrackerTab() {
                 <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                   <th className="p-3">Activity</th>
                   <th className="p-3">SOP Name</th>
+                  <th className="p-3">Created By</th>
                   <th className="p-3">Owner</th>
                   <th className="p-3">Date of Completion</th>
                   <th className="p-3">Status</th>
@@ -106,33 +117,52 @@ export default function ActivityTrackerTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {activities.map((act) => (
-                  <tr key={act.id} className="hover:bg-slate-50/80">
-                    <td className="p-3 font-semibold text-slate-800">{act.activity_name}</td>
-                    <td className="p-3 text-slate-600">{act.sop_name}</td>
-                    <td className="p-3 text-slate-600">{act.owner?.name || "Unassigned"}</td>
-                    <td className="p-3 text-slate-600">{act.completed_at || "-"}</td>
-                    <td className="p-3">
-                      <button
-                        onClick={() => toggleComplete(act)}
-                        disabled={updatingId === act.id}
-                        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border transition ${
-                          act.status === "Completed"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-amber-50 text-amber-700 border-amber-200"
-                        }`}
-                      >
-                        {updatingId === act.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                        {act.status}
-                      </button>
-                    </td>
-                    <td className="p-3 text-right">
-                      <button onClick={() => setViewing(act)} title="View Details" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100">
-                        <Info className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {activities.map((act) => {
+                  const canToggle = act.owner?.id === currentAdminId;
+                  return (
+                    <tr key={act.id} className="hover:bg-slate-50/80">
+                      <td className="p-3 font-semibold text-slate-800">{act.activity_name}</td>
+                      <td className="p-3 text-slate-600">{act.sop_name}</td>
+                      <td className="p-3 text-slate-600">{act.creator?.name || "-"}</td>
+                      <td className="p-3 text-slate-600">{act.owner?.name || "Unassigned"}</td>
+                      <td className="p-3 text-slate-600">{act.completed_at || "-"}</td>
+                      <td className="p-3">
+                        {canToggle ? (
+                          <button
+                            onClick={() => toggleComplete(act)}
+                            disabled={updatingId === act.id}
+                            title="Click to toggle"
+                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border transition ${
+                              act.status === "Completed"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}
+                          >
+                            {updatingId === act.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                            {act.status}
+                          </button>
+                        ) : (
+                          <span
+                            title="Only the Owner can change this status"
+                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                              act.status === "Completed"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            {act.status}
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right">
+                        <button onClick={() => setViewing(act)} title="View Details" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100">
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -22,6 +22,7 @@ class LoginPayload(BaseModel):
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    id: int
     name: str
     email: str
     role: str
@@ -54,6 +55,7 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
     token = create_access_token({"sub": str(admin.id), "principal": "account_admin"})
     return LoginResponse(
         access_token=token,
+        id=admin.id,
         name=admin.name,
         email=admin.email,
         role=admin.role.role_name,

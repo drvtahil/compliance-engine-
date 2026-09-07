@@ -1,9 +1,16 @@
 import React, { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { createActivityApi } from "../../services/sopsApi";
+import { loadAccountSession } from "../../services/accountAuthApi";
 
 export default function CreateActivityModal({ assessmentId, owners, onClose, onCreated }) {
-  const [form, setForm] = useState({ activity_name: "", detail: "", owner_admin_id: "" });
+  const currentAdminId = loadAccountSession()?.id;
+  const [form, setForm] = useState({
+    activity_name: "",
+    detail: "",
+    owner_admin_id: currentAdminId ? String(currentAdminId) : "",
+    completion_date: "",
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -13,13 +20,22 @@ export default function CreateActivityModal({ assessmentId, owners, onClose, onC
       setError("Activity name is required.");
       return;
     }
+    if (!form.owner_admin_id) {
+      setError("Owner is required.");
+      return;
+    }
+    if (!form.completion_date) {
+      setError("Completion date is required.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
       await createActivityApi(assessmentId, {
         activity_name: form.activity_name.trim(),
         detail: form.detail.trim(),
-        owner_admin_id: form.owner_admin_id ? Number(form.owner_admin_id) : null,
+        owner_admin_id: Number(form.owner_admin_id),
+        completion_date: form.completion_date,
       });
       onCreated();
     } catch (err) {
@@ -59,18 +75,32 @@ export default function CreateActivityModal({ assessmentId, owners, onClose, onC
             />
           </div>
 
-          <div>
-            <label className="font-bold text-slate-700 block mb-1">Owner</label>
-            <select
-              value={form.owner_admin_id}
-              onChange={(e) => setForm({ ...form, owner_admin_id: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
-            >
-              <option value="">Select owner...</option>
-              {owners.map((o) => (
-                <option key={o.id} value={o.id}>{o.name} ({o.user_code})</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Owner *</label>
+              <select
+                required
+                value={form.owner_admin_id}
+                onChange={(e) => setForm({ ...form, owner_admin_id: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white"
+              >
+                <option value="">Select owner...</option>
+                {owners.map((o) => (
+                  <option key={o.id} value={o.id}>{o.name} ({o.user_code})</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-slate-400 mt-1">Only the Owner will be able to mark this activity complete.</p>
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Completion Date *</label>
+              <input
+                type="date"
+                required
+                value={form.completion_date}
+                onChange={(e) => setForm({ ...form, completion_date: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg p-2 text-xs"
+              />
+            </div>
           </div>
 
           {error && <div className="p-2 text-red-700 bg-red-50 border border-red-200 rounded-lg">{error}</div>}

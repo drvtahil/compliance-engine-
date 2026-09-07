@@ -2,13 +2,14 @@ import json
 import mimetypes
 import os
 import shutil
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -242,7 +243,8 @@ def set_process_status(
 class ActivityPayload(BaseModel):
     activity_name: str
     detail: str = ""
-    owner_admin_id: Optional[int] = None
+    owner_admin_id: int
+    completion_date: str
 
 
 @router.post("/{assessment_id}/activities")
@@ -256,6 +258,14 @@ def create_activity(
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This SOP is not assigned to you.")
     if not payload.activity_name.strip():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Activity name is required.")
+    if not payload.completion_date.strip():
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Completion date is required.")
+
+    owner = db.query(AccountAdmin).filter(
+        AccountAdmin.id == payload.owner_admin_id, AccountAdmin.account_id == current_admin.account_id
+    ).first()
+    if not owner:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Owner must be an active member of your account.")
 
     activity = SopActivity(
         account_id=current_admin.account_id,
@@ -263,6 +273,7 @@ def create_activity(
         activity_name=payload.activity_name.strip(),
         detail=payload.detail.strip(),
         owner_admin_id=payload.owner_admin_id,
+        completed_at=parse_updated_on(payload.completion_date),
         created_by=current_admin.id,
     )
     db.add(activity)
@@ -278,8 +289,10 @@ def list_activities(
 ):
     q = db.query(SopActivity).filter(SopActivity.account_id == current_admin.account_id)
     if not is_manager(current_admin):
-        ids = assigned_assessment_ids(db, current_admin.account_id, current_admin.id)
-        q = q.filter(SopActivity.assessment_id.in_(ids))
+        q = q.filter(or_(
+            SopActivity.created_by == current_admin.id,
+            SopActivity.owner_admin_id == current_admin.id,
+        ))
 
     activities = q.order_by(SopActivity.created_at.desc()).all()
     return [
@@ -289,6 +302,7 @@ def list_activities(
             "detail": act.detail or "",
             "sop_name": act.assessment.sop_name,
             "assessment_id": act.assessment_id,
+            "creator": serialize_owner(act.created_by_admin) if act.created_by else None,
             "owner": serialize_owner(act.owner_admin) if act.owner_admin_id else None,
             "status": act.status,
             "completed_at": act.completed_at,
@@ -313,11 +327,10 @@ def set_activity_status(
     ).first()
     if not activity:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Activity not found.")
-    if not can_act_on(db, current_admin, activity.assessment_id):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "This SOP is not assigned to you.")
+    if activity.owner_admin_id != current_admin.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only the person this activity is allocated to can update its status.")
 
     activity.status = payload.status
-    activity.completed_at = date.today() if payload.status == "Completed" else None
     db.commit()
     return {"status": "updated", "id": activity_id, "activity_status": activity.status}
 
