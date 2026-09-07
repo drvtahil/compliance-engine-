@@ -707,7 +707,7 @@ export default function TabOneAccounts() {
                       >
                         <FolderEdit className="w-3.5 h-3.5" />
                       </button>
-                      {!reg.is_system && (
+                      {!reg.is_system && !["document_types", "evidence_types"].includes(reg.registry_key) && (
                         <button
                           onClick={() => handleDeleteRegistry(reg.id, reg.display_name)}
                           title="Delete List"
