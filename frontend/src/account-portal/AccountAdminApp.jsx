@@ -81,33 +81,27 @@ export default function AccountAdminApp({ session, onLogout }) {
             );
           })}
 
-          <div className="my-1.5 border-t border-slate-100" />
-
-          <button
-            onClick={() => setShowChangePassword(true)}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium text-left text-slate-600 hover:bg-slate-50"
-          >
-            <KeyRound className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="flex-1">Change Password</span>
-          </button>
-
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium text-left text-red-600 hover:bg-red-50"
-          >
-            <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="flex-1">Logout</span>
-          </button>
         </nav>
 
-        <div className="border-t border-slate-200 px-3 py-3 flex items-center gap-2.5">
+        <div className="border-t border-slate-200 px-3 py-3 flex items-center justify-between gap-2">
           <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center text-[11px] font-bold flex-shrink-0">
             {session.name?.slice(0, 2).toUpperCase()}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold text-slate-800 truncate">{session.name}</div>
-            <div className="text-[10px] text-blue-600 font-bold truncate">{session.role}</div>
-            <div className="text-[10px] text-slate-400 truncate">{session.account_name}</div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowChangePassword(true)}
+              title="Change Password"
+              className="p-1.5 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            >
+              <KeyRound className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onLogout}
+              title="Logout"
+              className="p-1.5 rounded-md text-red-500 hover:bg-red-50 hover:text-red-700"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </aside>
