@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BookOpen,
   PlusCircle,
@@ -11,6 +11,7 @@ import {
   FileSpreadsheet,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   RotateCcw,
   Lock,
   X,
@@ -40,6 +41,15 @@ export default function TabTwoRules() {
   const [chapters, setChapters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Chapter list pagination
+  const [chapterPageSize, setChapterPageSize] = useState(50);
+  const [chapterPage, setChapterPage] = useState(1);
+
+  // Hierarchical Legal Node Builder is collapsed by default to save space -
+  // it auto-expands when there's a reason to look at it (editing a rule,
+  // or starting a fresh chapter via "Clear / New Form").
+  const [builderCollapsed, setBuilderCollapsed] = useState(true);
 
   // Dedicated In-App Modal for Adding a Rule to Existing Chapter
   const [addRuleModal, setAddRuleModal] = useState({
@@ -180,6 +190,7 @@ export default function TabTwoRules() {
     if (!actName || selectedAct === actName) return;
     setSelectedAct(actName);
     resetBuilderForm(actName);
+    setChapterPage(1);
     await loadChapters(actName);
   };
 
@@ -190,6 +201,16 @@ export default function TabTwoRules() {
   const toggleRuleAccordion = (ruleId) => {
     setExpandedRules(prev => ({ ...prev, [ruleId]: !prev[ruleId] }));
   };
+
+  const totalChapterPages = Math.max(1, Math.ceil(chapters.length / chapterPageSize));
+  const pagedChapters = useMemo(() => {
+    const start = (chapterPage - 1) * chapterPageSize;
+    return chapters.slice(start, start + chapterPageSize);
+  }, [chapters, chapterPage, chapterPageSize]);
+
+  useEffect(() => {
+    if (chapterPage > totalChapterPages) setChapterPage(totalChapterPages);
+  }, [totalChapterPages, chapterPage]);
 
   const cloneRules = () => JSON.parse(JSON.stringify(builderRules));
 
@@ -427,6 +448,7 @@ export default function TabTwoRules() {
         alert("Hierarchical Chapter and Rules saved successfully to PostgreSQL!");
       }
       resetBuilderForm(selectedAct);
+      setBuilderCollapsed(true);
       await loadChapters(selectedAct);
     } catch (err) {
       alert("Error saving: " + err.message);
@@ -547,6 +569,7 @@ export default function TabTwoRules() {
         })) : [getBlankAssessment(selectedAct)]
       })) : [getBlankSection(selectedAct)]
     }]);
+    setBuilderCollapsed(false);
     window.scrollTo({ top: 120, behavior: "smooth" });
   };
 
@@ -593,7 +616,7 @@ export default function TabTwoRules() {
 
         <button
           type="button"
-          onClick={() => resetBuilderForm(selectedAct)}
+          onClick={() => { resetBuilderForm(selectedAct); setBuilderCollapsed(false); }}
           className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 self-end sm:self-auto"
         >
           <RotateCcw className="w-3.5 h-3.5" /> Clear / New Form
@@ -604,13 +627,19 @@ export default function TabTwoRules() {
       {/* 2. HIERARCHICAL LEGAL NODE BUILDER                                        */}
       {/* ========================================================================= */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-6 space-y-6">
-        <div className="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
-          <div>
-            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <PlusCircle className="w-4 h-4 text-blue-600" />
-              {editingContext.isEditingSingleRule ? "Edit Rule Node" : "Hierarchical Legal Node Builder"}
-            </h2>
-            <p className="text-[11px] text-slate-500">Configured for Act: <strong>{selectedAct}</strong></p>
+        <div
+          onClick={() => setBuilderCollapsed((prev) => !prev)}
+          className="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2 cursor-pointer select-none"
+        >
+          <div className="flex items-center gap-2">
+            {builderCollapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-blue-600" />}
+            <div>
+              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-blue-600" />
+                {editingContext.isEditingSingleRule ? "Edit Rule Node" : "Hierarchical Legal Node Builder"}
+              </h2>
+              <p className="text-[11px] text-slate-500">Configured for Act: <strong>{selectedAct}</strong></p>
+            </div>
           </div>
           {editingContext.isEditingSingleRule && (
             <span className="bg-amber-50 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded border border-amber-200">
@@ -619,6 +648,8 @@ export default function TabTwoRules() {
           )}
         </div>
 
+        {!builderCollapsed && (
+        <>
         {/* Assigned Act Banner & Chapter Title */}
         <div className="p-4 bg-blue-50/40 rounded-xl border border-blue-100 space-y-2">
           <div className="flex justify-between items-center">
@@ -1224,6 +1255,8 @@ export default function TabTwoRules() {
             {editingContext.isEditingSingleRule ? "Update Single Rule Node" : "Save Hierarchical Chapter & Rules"}
           </button>
         </div>
+        </>
+        )}
       </div>
 
       {/* ========================================================================= */}
@@ -1260,7 +1293,7 @@ export default function TabTwoRules() {
             No legal chapters found for <strong>{selectedAct}</strong>. Use the builder above to create and save one under this Act.
           </div>
         ) : (
-          chapters.map((chap) => {
+          pagedChapters.map((chap) => {
             const isChapExpanded = !!expandedChapters[chap.id];
             const rulesCount = chap.rules?.length || 0;
             let sectionsCount = 0;
@@ -1503,6 +1536,47 @@ export default function TabTwoRules() {
               </div>
             );
           })
+        )}
+
+        {chapters.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500">Rows per page:</span>
+              {[50, 100, 150].map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => { setChapterPageSize(size); setChapterPage(1); }}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold border transition ${
+                    chapterPageSize === size ? "bg-blue-600 text-white border-blue-600" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-500">
+                Page {chapterPage} of {totalChapterPages} &middot; {chapters.length} chapter{chapters.length === 1 ? "" : "s"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setChapterPage((p) => Math.max(1, p - 1))}
+                disabled={chapterPage === 1}
+                className="p-1.5 rounded-md border border-slate-300 bg-white disabled:opacity-40 hover:bg-slate-100"
+              >
+                <ChevronLeft className="w-3.5 h-3.5 text-slate-600" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setChapterPage((p) => Math.min(totalChapterPages, p + 1))}
+                disabled={chapterPage === totalChapterPages}
+                className="p-1.5 rounded-md border border-slate-300 bg-white disabled:opacity-40 hover:bg-slate-100"
+              >
+                <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
