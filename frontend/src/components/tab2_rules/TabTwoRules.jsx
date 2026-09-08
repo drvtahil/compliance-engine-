@@ -51,6 +51,14 @@ export default function TabTwoRules() {
     orgTypes: []
   });
 
+  // Dedicated In-App Modal for Renaming an Existing Chapter (title only, no delete)
+  const [editChapterModal, setEditChapterModal] = useState({
+    open: false,
+    chapterId: null,
+    title: ""
+  });
+  const [savingChapterTitle, setSavingChapterTitle] = useState(false);
+
   // Editing Context for In-Place Updates
   const [editingContext, setEditingContext] = useState({
     isEditingSingleRule: false,
@@ -490,6 +498,33 @@ export default function TabTwoRules() {
       alert("Error adding rule: " + err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleOpenEditChapterModal = (chap) => {
+    setEditChapterModal({ open: true, chapterId: chap.id, title: chap.title });
+  };
+
+  const handleConfirmEditChapter = async (e) => {
+    e.preventDefault();
+    if (!editChapterModal.title.trim()) {
+      alert("Chapter / Part Title cannot be empty.");
+      return;
+    }
+    try {
+      setSavingChapterTitle(true);
+      await saveChapterTreeApi({
+        id: editChapterModal.chapterId,
+        act_code: selectedAct,
+        title: editChapterModal.title.trim(),
+        rules: []
+      });
+      setEditChapterModal({ open: false, chapterId: null, title: "" });
+      await loadChapters(selectedAct);
+    } catch (err) {
+      alert("Error renaming chapter: " + err.message);
+    } finally {
+      setSavingChapterTitle(false);
     }
   };
 
@@ -1257,8 +1292,15 @@ export default function TabTwoRules() {
                     <span className="bg-emerald-950 text-emerald-300 px-2.5 py-0.5 rounded">{subSectionsCount} Sub-sections</span>
                     <button
                       type="button"
+                      onClick={() => handleOpenEditChapterModal(chap)}
+                      className="ml-2 bg-slate-700 hover:bg-slate-600 text-white px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-xs transition"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" /> Edit Chapter
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleOpenAddRuleModal(chap)}
-                      className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-xs transition"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-xs transition"
                     >
                       <PlusCircle className="w-3.5 h-3.5" /> Add Rule to Chapter
                     </button>
@@ -1463,6 +1505,63 @@ export default function TabTwoRules() {
           })
         )}
       </div>
+
+      {/* ========================================================================= */}
+      {/* STYLED IN-APP MODAL: RENAME CHAPTER (title only, no delete)               */}
+      {/* ========================================================================= */}
+      {editChapterModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-150">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
+                  <Edit2 className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-800">Edit Chapter</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditChapterModal({ open: false, chapterId: null, title: "" })}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmEditChapter} className="space-y-4">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Chapter / Part Title *</label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={editChapterModal.title}
+                  onChange={(e) => setEditChapterModal({ ...editChapterModal, title: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditChapterModal({ open: false, chapterId: null, title: "" })}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingChapterTitle}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 disabled:opacity-60"
+                >
+                  {savingChapterTitle ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Save Chapter Title
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 4. STYLED IN-APP MODAL: ADD NEW RULE TO EXISTING CHAPTER                  */}
