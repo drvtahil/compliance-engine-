@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PlusCircle, FileUp, ShieldPlus, Eye, Download, Edit2, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { viewSopFile, downloadSopFile } from "../../services/sopsApi";
 
@@ -89,8 +89,25 @@ function FileCard({ file, kind, isManager, onEdit, onDelete }) {
   );
 }
 
-export default function SopCard({ sop, number, departmentLabel, processLabel, isManager, onSetStatus, onSetProcessStatus, onCreateActivity, onUploadFile, onEditFile, onDeleteFile }) {
+export default function SopCard({ sop, number, departmentLabel, processLabel, isManager, onSetStatus, onSetComment, onSetProcessStatus, onCreateActivity, onUploadFile, onEditFile, onDeleteFile }) {
   const [expanded, setExpanded] = useState(false);
+  const [commentDraft, setCommentDraft] = useState(sop.comment || "");
+
+  useEffect(() => {
+    setCommentDraft(sop.comment || "");
+  }, [sop.comment]);
+
+  const commentDirty = commentDraft !== (sop.comment || "");
+
+  const handleSaveComment = () => {
+    onSetComment(commentDraft.trim());
+  };
+
+  const handleDeleteComment = () => {
+    if (!window.confirm("Delete this comment?")) return;
+    setCommentDraft("");
+    onSetComment("");
+  };
 
   return (
     <div className="bg-white rounded-xl border border-emerald-200 overflow-hidden">
@@ -184,12 +201,42 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div className="flex flex-wrap items-start justify-between gap-2 pt-1">
             {sop.assigned_user ? (
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-slate-500 pt-1.5 flex-shrink-0">
                 Assigned to: <span className="font-semibold text-slate-700">{sop.assigned_user.name}</span>
               </span>
             ) : <span />}
+
+            <div className="flex-1 min-w-[220px] flex items-center gap-1.5">
+              <textarea
+                rows={1}
+                value={commentDraft}
+                onChange={(e) => setCommentDraft(e.target.value)}
+                placeholder="Add a comment..."
+                className="flex-1 text-[11px] text-slate-700 border border-slate-300 rounded-lg px-2 py-1.5 resize-none focus:ring-2 focus:ring-blue-500 outline-hidden"
+              />
+              {commentDirty && (
+                <button
+                  type="button"
+                  onClick={handleSaveComment}
+                  className="text-[10.5px] font-bold text-white bg-blue-600 hover:bg-blue-700 px-2.5 py-1.5 rounded-lg flex-shrink-0"
+                >
+                  Save
+                </button>
+              )}
+              {!commentDirty && sop.comment && (
+                <button
+                  type="button"
+                  onClick={handleDeleteComment}
+                  title="Delete comment"
+                  className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg flex-shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
             <div className="flex items-center gap-1">
               {STATUS_OPTIONS.map((opt) => {
                 const style = sop.status === opt ? STATUS_STYLES[opt].active : STATUS_STYLES[opt].idle;

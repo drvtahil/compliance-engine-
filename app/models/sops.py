@@ -17,6 +17,12 @@ class SopStatus(Base):
     updated_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Shared comment on the SOP - visible/editable by both the assigned User
+    # and the Account Admin, same audience as the status above.
+    comment = Column(Text, nullable=True)
+    comment_updated_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
+    comment_updated_at = Column(DateTime, nullable=True)
+
 
 class SopProcessStatus(Base):
     # Per-process completion status within one SOP, for one account. A process

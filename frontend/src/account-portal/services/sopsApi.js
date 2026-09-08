@@ -39,6 +39,15 @@ export const setSopStatusApi = async (assessmentId, statusValue) => {
   return handle(res, "Failed to update status.");
 };
 
+export const setSopCommentApi = async (assessmentId, comment) => {
+  const res = await accountFetch(`${API_BASE}/${assessmentId}/comment`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ comment }),
+  });
+  return handle(res, "Failed to save comment.");
+};
+
 export const setProcessStatusApi = async (assessmentId, processIndex, statusValue) => {
   const res = await accountFetch(`${API_BASE}/${assessmentId}/processes/${processIndex}/status`, {
     method: "PATCH",

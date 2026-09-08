@@ -7,6 +7,7 @@ import {
   fetchUploadRegistriesApi,
   fetchAssignableOwnersApi,
   setSopStatusApi,
+  setSopCommentApi,
   setProcessStatusApi,
   deleteSopFileApi,
 } from "../../services/sopsApi";
@@ -66,6 +67,16 @@ export default function SopTab() {
     setSops((prev) => prev.map((s) => (s.assessment_id === assessmentId ? { ...s, status } : s)));
     try {
       await setSopStatusApi(assessmentId, status);
+    } catch (err) {
+      alert(err.message);
+      await loadSops(selectedAct);
+    }
+  };
+
+  const handleSetComment = async (assessmentId, comment) => {
+    setSops((prev) => prev.map((s) => (s.assessment_id === assessmentId ? { ...s, comment } : s)));
+    try {
+      await setSopCommentApi(assessmentId, comment);
     } catch (err) {
       alert(err.message);
       await loadSops(selectedAct);
@@ -161,6 +172,7 @@ export default function SopTab() {
                 processLabel={processLabel}
                 isManager={isManager}
                 onSetStatus={(status) => handleSetStatus(sop.assessment_id, status)}
+                onSetComment={(comment) => handleSetComment(sop.assessment_id, comment)}
                 onSetProcessStatus={(processIndex, status) => handleSetProcessStatus(sop.assessment_id, processIndex, status)}
                 onCreateActivity={() => setActivityModal(sop.assessment_id)}
                 onUploadFile={(kind) => setUploadModal({ assessmentId: sop.assessment_id, kind, editingFile: null })}

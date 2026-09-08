@@ -113,9 +113,9 @@ def list_sops(
     assignments = {
         a.assessment_id: a for a in db.query(QuestionAssignment).filter(QuestionAssignment.account_id == current_admin.account_id).all()
     }
-    statuses = {
-        s.assessment_id: s.status for s in db.query(SopStatus).filter(SopStatus.account_id == current_admin.account_id).all()
-    }
+    status_rows = db.query(SopStatus).filter(SopStatus.account_id == current_admin.account_id).all()
+    statuses = {s.assessment_id: s.status for s in status_rows}
+    comments = {s.assessment_id: s.comment for s in status_rows if s.comment}
     process_statuses: dict = {}
     for ps in db.query(SopProcessStatus).filter(SopProcessStatus.account_id == current_admin.account_id).all():
         process_statuses.setdefault(ps.assessment_id, {})[ps.process_index] = ps.status
@@ -143,6 +143,7 @@ def list_sops(
             "rule_order": a.section.rule.rule_order,
             "assigned_user": serialize_owner(assignment.assigned_user) if assignment else None,
             "status": statuses.get(a.id, "Not Compliant"),
+            "comment": comments.get(a.id, ""),
             "documents": [serialize_file(f) for f in files if f.kind == "document"],
             "evidence": [serialize_file(f) for f in files if f.kind == "evidence"],
         })
@@ -297,6 +298,40 @@ def set_sop_status(
         ))
     db.commit()
     return {"status": "updated", "assessment_id": assessment_id, "sop_status": payload.status}
+
+
+class CommentPayload(BaseModel):
+    comment: str
+
+
+@router.patch("/{assessment_id}/comment")
+def set_sop_comment(
+    assessment_id: int,
+    payload: CommentPayload,
+    db: Session = Depends(get_db),
+    current_admin: AccountAdmin = Depends(get_current_account_admin),
+):
+    if not can_act_on(db, current_admin, assessment_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This SOP is not assigned to you.")
+
+    comment_text = payload.comment.strip()
+    row = db.query(SopStatus).filter(
+        SopStatus.account_id == current_admin.account_id, SopStatus.assessment_id == assessment_id
+    ).first()
+    if row:
+        row.comment = comment_text
+        row.comment_updated_by = current_admin.id
+        row.comment_updated_at = datetime.utcnow()
+    else:
+        db.add(SopStatus(
+            account_id=current_admin.account_id,
+            assessment_id=assessment_id,
+            comment=comment_text,
+            comment_updated_by=current_admin.id,
+            comment_updated_at=datetime.utcnow(),
+        ))
+    db.commit()
+    return {"status": "updated", "assessment_id": assessment_id, "comment": comment_text}
 
 
 class ProcessStatusPayload(BaseModel):
