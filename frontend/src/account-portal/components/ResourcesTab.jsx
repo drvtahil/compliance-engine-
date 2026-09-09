@@ -13,7 +13,7 @@ import {
   Briefcase,
   Building,
 } from "lucide-react";
-import { fetchAccountResourcesApi, getResourceViewUrl, getResourceDownloadUrl } from "../services/resourcesApi";
+import { fetchAccountResourcesApi, viewResourceFile, downloadResourceFile } from "../services/resourcesApi";
 import { fetchEnrolledActsApi } from "../services/rulesApi";
 import useRegistryLabels from "../hooks/useRegistryLabels";
 
@@ -64,20 +64,18 @@ function DocumentDetailsModal({ doc, onClose, departmentLabel, processLabel }) {
               <div className="text-slate-600 mt-1 truncate">{doc.file_name}</div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <a
-                href={getResourceViewUrl(doc.id)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => viewResourceFile(doc.id)}
                 className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1"
               >
                 <Eye className="w-3.5 h-3.5" /> View
-              </a>
-              <a
-                href={getResourceDownloadUrl(doc.id)}
+              </button>
+              <button
+                onClick={() => downloadResourceFile(doc.id, doc.file_name)}
                 className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1"
               >
                 <Download className="w-3.5 h-3.5" /> Download
-              </a>
+              </button>
             </div>
           </div>
 
@@ -339,22 +337,20 @@ export default function ResourcesTab() {
                             <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border mr-0.5 ${getBadgeColor(doc.file_type)}`}>
                               {doc.file_type || "FILE"}
                             </span>
-                            <a
-                              href={getResourceViewUrl(doc.id)}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => viewResourceFile(doc.id)}
                               title="View Document"
                               className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition"
                             >
                               <Eye className="w-3.5 h-3.5" />
-                            </a>
-                            <a
-                              href={getResourceDownloadUrl(doc.id)}
+                            </button>
+                            <button
+                              onClick={() => downloadResourceFile(doc.id, doc.file_name)}
                               title="Download Document"
                               className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100 transition"
                             >
                               <Download className="w-3.5 h-3.5" />
-                            </a>
+                            </button>
                             <button
                               onClick={() => setDetailsDoc(doc)}
                               title="View Details"

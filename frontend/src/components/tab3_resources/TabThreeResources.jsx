@@ -27,8 +27,8 @@ import {
   createResourceWithFileApi,
   updateResourceWithFileApi,
   deleteResourceApi,
-  getFileViewUrl,
-  getFileDownloadUrl
+  viewResourceFile,
+  downloadResourceFile
 } from "../../services/resourcesApi";
 
 export default function TabThreeResources() {
@@ -437,14 +437,14 @@ export default function TabThreeResources() {
                               </span>
                             )}
                             {doc.has_file && (
-                              <a href={getFileViewUrl(doc.id)} target="_blank" rel="noreferrer" title="View Document" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition">
+                              <button onClick={() => viewResourceFile(doc.id)} title="View Document" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition">
                                 <Eye className="w-3.5 h-3.5" />
-                              </a>
+                              </button>
                             )}
                             {doc.has_file && (
-                              <a href={getFileDownloadUrl(doc.id)} download title="Download Document" className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100 transition">
+                              <button onClick={() => downloadResourceFile(doc.id, doc.file_name)} title="Download Document" className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100 transition">
                                 <Download className="w-3.5 h-3.5" />
-                              </a>
+                              </button>
                             )}
                             <button onClick={() => handleOpenEditDoc(doc)} title="Edit Document" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition">
                               <Edit2 className="w-3.5 h-3.5" />
@@ -544,27 +544,24 @@ export default function TabThreeResources() {
 
                                     {/* 1. View Document Button */}
                                     {doc.has_file && (
-                                      <a
-                                        href={getFileViewUrl(doc.id)}
-                                        target="_blank"
-                                        rel="noreferrer"
+                                      <button
+                                        onClick={() => viewResourceFile(doc.id)}
                                         title="View Document"
                                         className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition"
                                       >
                                         <Eye className="w-3.5 h-3.5" />
-                                      </a>
+                                      </button>
                                     )}
 
                                     {/* 2. Download Document Button */}
                                     {doc.has_file && (
-                                      <a
-                                        href={getFileDownloadUrl(doc.id)}
-                                        download
+                                      <button
+                                        onClick={() => downloadResourceFile(doc.id, doc.file_name)}
                                         title="Download Document"
                                         className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100 transition"
                                       >
                                         <Download className="w-3.5 h-3.5" />
-                                      </a>
+                                      </button>
                                     )}
 
                                     {/* Edit Document */}

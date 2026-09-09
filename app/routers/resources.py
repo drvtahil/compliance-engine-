@@ -6,18 +6,63 @@ from pathlib import Path
 from typing import List, Optional
 from datetime import datetime
 
+import jwt as pyjwt
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.core.deps import get_current_super_admin
+from app.core.deps import get_current_super_admin, bearer_scheme
+from app.core.security import decode_access_token
 from app.database.connection import get_db
 from app.models.resources import ComplianceSection, ComplianceResource
 from app.models.super_admin import SuperAdmin
+from app.models.tab1_models import AccountAdmin, AccountEnrolledAct
 
 router = APIRouter(prefix="/api/v1/resources", tags=["Tab 3 Compliance Resources"])
+
+
+def authorize_resource_file_access(db: Session, credentials: HTTPAuthorizationCredentials, resource: ComplianceResource):
+    """View/download are shared by the Super Admin app and the Account
+    Admin/User app as plain links, so they can't require one specific
+    principal type the way every other endpoint here does. Accept either:
+    a Super Admin (any resource), or an Account Admin/User scoped exactly
+    like get_account_resources - their account must be enrolled in the
+    resource's Act and match one of its mapped org types."""
+    unauthorized = HTTPException(status_code=401, detail="Could not validate credentials")
+    try:
+        payload = decode_access_token(credentials.credentials)
+    except pyjwt.PyJWTError:
+        raise unauthorized
+
+    principal = payload.get("principal")
+    sub = payload.get("sub")
+    if sub is None:
+        raise unauthorized
+
+    if principal == "super_admin":
+        if not db.query(SuperAdmin).filter(SuperAdmin.id == int(sub)).first():
+            raise unauthorized
+        return
+
+    if principal == "account_admin":
+        admin = db.query(AccountAdmin).filter(AccountAdmin.id == int(sub)).first()
+        if not admin or not admin.is_active:
+            raise unauthorized
+        enrolled = {
+            a for (a,) in db.query(AccountEnrolledAct.act_name)
+            .filter(AccountEnrolledAct.account_id == admin.account_id).all()
+        }
+        if resource.act_code not in enrolled:
+            raise HTTPException(status_code=403, detail="This Act is not enrolled for your account.")
+        mapped_org_types = json.loads(resource.mapped_org_types or "[]")
+        if admin.account.org_type not in mapped_org_types:
+            raise HTTPException(status_code=403, detail="This document is not applicable to your organization type.")
+        return
+
+    raise unauthorized
 
 UPLOAD_DIR = Path(settings.upload_dir).resolve()
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -273,11 +318,12 @@ def update_resource_with_file(
 
 # 1. View Endpoint (Inline Preview)
 @router.get("/{resource_id}/view")
-def view_document_file(resource_id: int, db: Session = Depends(get_db)):
+def view_document_file(resource_id: int, db: Session = Depends(get_db), credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     res = db.query(ComplianceResource).filter(ComplianceResource.id == resource_id).first()
     if not res or not res.file_path or not os.path.exists(res.file_path):
         raise HTTPException(status_code=404, detail="File not found on server.")
-    
+    authorize_resource_file_access(db, credentials, res)
+
     media_type, _ = mimetypes.guess_type(res.file_path)
     return FileResponse(
         path=res.file_path,
@@ -287,11 +333,12 @@ def view_document_file(resource_id: int, db: Session = Depends(get_db)):
 
 # 2. Download Endpoint (Attachment)
 @router.get("/{resource_id}/download")
-def download_document_file(resource_id: int, db: Session = Depends(get_db)):
+def download_document_file(resource_id: int, db: Session = Depends(get_db), credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     res = db.query(ComplianceResource).filter(ComplianceResource.id == resource_id).first()
     if not res or not res.file_path or not os.path.exists(res.file_path):
         raise HTTPException(status_code=404, detail="File not found on server.")
-    
+    authorize_resource_file_access(db, credentials, res)
+
     return FileResponse(
         path=res.file_path,
         filename=res.file_name or "document",
