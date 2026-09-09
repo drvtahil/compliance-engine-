@@ -131,13 +131,16 @@ export default function TabTwoRules() {
     setEditingContext({ isEditingSingleRule: false, chapterId: null, chapterTitle: "", ruleId: null });
   }, [selectedAct]);
 
+  // Does NOT touch expandedChapters/expandedRules - callers that are truly
+  // switching to a different data set (initial load, changing Act) reset
+  // those themselves. Every other caller is refreshing after an action on
+  // the current view (hide/unhide, save, add rule, rename chapter, ...)
+  // and should leave whatever the user had open exactly as it was.
   const loadChapters = async (actCode) => {
     try {
       setLoading(true);
       const chaps = await fetchChaptersByActApi(actCode);
       setChapters(chaps);
-      setExpandedChapters({});
-      setExpandedRules({});
     } catch (err) {
       console.error("Error loading chapters:", err);
     } finally {
@@ -173,6 +176,8 @@ export default function TabTwoRules() {
         const initialAct = acts[0].item_name;
         setSelectedAct(initialAct);
         setBuilderRules([getBlankRule(1, initialAct)]);
+        setExpandedChapters({});
+        setExpandedRules({});
         await loadChapters(initialAct);
       }
     } catch (err) {
@@ -191,6 +196,8 @@ export default function TabTwoRules() {
     setSelectedAct(actName);
     resetBuilderForm(actName);
     setChapterPage(1);
+    setExpandedChapters({});
+    setExpandedRules({});
     await loadChapters(actName);
   };
 
