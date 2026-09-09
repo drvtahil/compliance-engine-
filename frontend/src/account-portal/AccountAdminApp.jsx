@@ -12,6 +12,8 @@ import {
   UserCog,
   LogOut,
   KeyRound,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import RulesTab from "./components/RulesTab";
 import ResourcesTab from "./components/ResourcesTab";
@@ -39,20 +41,33 @@ const NAV_ITEMS = [
 export default function AccountAdminApp({ session, onLogout }) {
   const [activeTab, setActiveTab] = useState("rules");
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem("mood9_sidebar_collapsed") === "1"; } catch { return false; }
+  });
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("mood9_sidebar_collapsed", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex font-sans">
-      <aside className="w-52 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col">
-        <div className="flex items-center gap-2 px-3.5 py-3.5 border-b border-slate-200">
-          <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm">
+      <aside className={`${sidebarCollapsed ? "w-16" : "w-52"} flex-shrink-0 bg-white border-r border-slate-200 flex flex-col transition-all duration-200`}>
+        <div className={`flex items-center gap-2 px-3.5 py-3.5 border-b border-slate-200 ${sidebarCollapsed ? "justify-center" : ""}`}>
+          <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm flex-shrink-0">
             <ShieldCheck className="w-4 h-4" />
           </div>
-          <div className="min-w-0">
-            <div className="text-[12.5px] font-bold text-slate-800 leading-tight">Mood9 Compliance</div>
-            <div className="text-[9.5px] text-slate-400 truncate">{session.account_name}</div>
-            <div className="text-[9.5px] text-blue-600 font-bold truncate">{session.role}</div>
-            <div className="text-[9.5px] text-slate-500 font-semibold truncate">{session.name}</div>
-          </div>
+          {!sidebarCollapsed && (
+            <div className="min-w-0">
+              <div className="text-[12.5px] font-bold text-slate-800 leading-tight">Mood9 Compliance</div>
+              <div className="text-[9.5px] text-slate-400 truncate">{session.account_name}</div>
+              <div className="text-[9.5px] text-blue-600 font-bold truncate">{session.role}</div>
+              <div className="text-[9.5px] text-slate-500 font-semibold truncate">{session.name}</div>
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 p-1.5 space-y-0.5 overflow-y-auto">
@@ -64,7 +79,8 @@ export default function AccountAdminApp({ session, onLogout }) {
                 key={item.key}
                 disabled={!item.enabled}
                 onClick={() => item.enabled && setActiveTab(item.key)}
-                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium text-left ${
+                title={sidebarCollapsed ? item.label : undefined}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium text-left ${sidebarCollapsed ? "justify-center" : ""} ${
                   active
                     ? "bg-blue-50 text-blue-700"
                     : item.enabled
@@ -73,17 +89,24 @@ export default function AccountAdminApp({ session, onLogout }) {
                 }`}
               >
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="flex-1">{item.label}</span>
-                {!item.enabled && (
+                {!sidebarCollapsed && <span className="flex-1">{item.label}</span>}
+                {!sidebarCollapsed && !item.enabled && (
                   <span className="text-[9px] font-bold text-slate-300 border border-slate-200 rounded px-1 py-0.5">Soon</span>
                 )}
               </button>
             );
           })}
-
         </nav>
 
-        <div className="border-t border-slate-200 px-3 py-3 flex items-center justify-between gap-2">
+        <button
+          onClick={toggleSidebar}
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex items-center justify-center gap-1.5 py-2 text-[10.5px] font-bold text-slate-500 hover:bg-slate-50 border-t border-slate-100"
+        >
+          {sidebarCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <><ChevronLeft className="w-3.5 h-3.5" /> Collapse</>}
+        </button>
+
+        <div className={`border-t border-slate-200 px-3 py-3 flex ${sidebarCollapsed ? "flex-col items-center gap-2" : "items-center justify-between gap-2"}`}>
           <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center text-[11px] font-bold flex-shrink-0">
             {session.name?.slice(0, 2).toUpperCase()}
           </div>

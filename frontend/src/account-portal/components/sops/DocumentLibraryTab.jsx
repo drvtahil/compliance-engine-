@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Archive, FileText, Eye, Download, Search, Loader2, RefreshCw } from "lucide-react";
+import { Archive, Eye, Download, Search, Loader2, RefreshCw } from "lucide-react";
 import { fetchEnrolledActsApi } from "../../services/rulesApi";
 import { fetchDocumentsApi, fetchEvidenceApi, viewSopFile, downloadSopFile } from "../../services/sopsApi";
 
@@ -97,43 +97,48 @@ export default function LibraryTab({ kind = "document" }) {
           ))}
         </div>
 
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-          <div className="relative w-full lg:w-96">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder={`Search by name, SOP, process, ${typeLabel.toLowerCase()}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
-            />
-          </div>
+        <div className="relative w-full">
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder={`Search by name, SOP, process, ${typeLabel.toLowerCase()}...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+          />
+        </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-500 mr-1">Filter:</span>
+        <div className="flex items-center justify-between gap-2 border-b-2 border-slate-100">
+          <div className="flex items-center gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveTypeFilter("ALL")}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition border ${
-                activeTypeFilter === "ALL" ? "bg-blue-600 text-white border-blue-600" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold whitespace-nowrap border-b-2 -mb-0.5 transition ${
+                activeTypeFilter === "ALL" ? "text-blue-600 border-blue-600" : "text-slate-500 border-transparent hover:text-slate-800"
               }`}
             >
-              All ({files.length})
+              All
+              <span className={`text-[9.5px] px-1.5 py-0.5 rounded-full font-extrabold ${activeTypeFilter === "ALL" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
+                {files.length}
+              </span>
             </button>
             {groups.map((g) => (
               <button
                 key={g.name}
                 onClick={() => setActiveTypeFilter(g.name)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition border ${
-                  activeTypeFilter === g.name ? "bg-blue-600 text-white border-blue-600" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold whitespace-nowrap border-b-2 -mb-0.5 transition ${
+                  activeTypeFilter === g.name ? "text-blue-600 border-blue-600" : "text-slate-500 border-transparent hover:text-slate-800"
                 }`}
               >
-                {g.name} ({g.count})
+                {g.name}
+                <span className={`text-[9.5px] px-1.5 py-0.5 rounded-full font-extrabold ${activeTypeFilter === g.name ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
+                  {g.count}
+                </span>
               </button>
             ))}
-            <button onClick={() => loadFiles(selectedAct)} className="p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100" title="Refresh">
-              <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-            </button>
           </div>
+          <button onClick={() => loadFiles(selectedAct)} className="p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 flex-shrink-0" title="Refresh">
+            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+          </button>
         </div>
       </div>
 
@@ -148,67 +153,54 @@ export default function LibraryTab({ kind = "document" }) {
         <div className="p-12 text-center text-slate-400 italic bg-white rounded-xl border border-slate-200">
           No {isEvidence ? "evidence" : "documents"} uploaded yet.
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="p-12 text-center text-slate-400 italic bg-white rounded-xl border border-slate-200">
+          Nothing matches in this {typeLabel.toLowerCase()}.
+        </div>
       ) : (
-        groups
-          .filter((g) => activeTypeFilter === "ALL" || g.name === activeTypeFilter)
-          .map((g) => {
-            const groupFiles = filtered.filter((f) => (f.type_name || "Uncategorized") === g.name);
-            if (groupFiles.length === 0) return null;
-            return (
-              <div key={g.name} className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-                <div className="bg-[#0f172a] text-white px-5 py-3.5 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-400" />
-                  <h3 className="font-bold text-sm tracking-wide">{g.name}</h3>
-                  <span className="text-[11px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold ml-1">
-                    {groupFiles.length} {isEvidence ? (groupFiles.length === 1 ? "Evidence" : "Evidences") : (groupFiles.length === 1 ? "Document" : "Documents")}
-                  </span>
-                </div>
-                <div className="p-4 sm:p-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {groupFiles.map((doc) => (
-                      <div key={doc.id} className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between space-y-2.5">
-                        <div>
-                          <div className="flex justify-between items-start gap-2">
-                            <h4 className="font-bold text-xs text-slate-900 leading-snug truncate">{doc.name}</h4>
-                            <div className="flex items-center gap-1 shrink-0">
-                              {doc.has_file && (
-                                <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border mr-0.5 ${getBadgeColor(doc.file_type)}`}>
-                                  {doc.file_type || "FILE"}
-                                </span>
-                              )}
-                              {doc.has_file && (
-                                <>
-                                  <button onClick={() => viewSopFile(doc.id)} title="View" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition">
-                                    <Eye className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button onClick={() => downloadSopFile(doc.id, doc.file_name)} title="Download" className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100 transition">
-                                    <Download className="w-3.5 h-3.5" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-[11px] text-slate-500 truncate mt-1">{doc.description || "No description provided."}</p>
-                        </div>
-                        <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1 text-[9px] font-bold">
-                          <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">{doc.sop_name}</span>
-                          {doc.process_name && (
-                            <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100">{doc.process_name}</span>
-                          )}
-                          {doc.owner && (
-                            <span className="bg-slate-50 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">Owner: {doc.owner.name}</span>
-                          )}
-                          {doc.version && (
-                            <span className="bg-slate-50 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">v{doc.version}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 sm:p-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((doc) => (
+              <div key={doc.id} className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between space-y-2.5">
+                <div>
+                  <div className="flex justify-between items-start gap-2">
+                    <h4 className="font-bold text-xs text-slate-900 leading-snug truncate">{doc.name}</h4>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {doc.has_file && (
+                        <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border mr-0.5 ${getBadgeColor(doc.file_type)}`}>
+                          {doc.file_type || "FILE"}
+                        </span>
+                      )}
+                      {doc.has_file && (
+                        <>
+                          <button onClick={() => viewSopFile(doc.id)} title="View" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition">
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => downloadSopFile(doc.id, doc.file_name)} title="Download" className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100 transition">
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
+                  <p className="text-[11px] text-slate-500 truncate mt-1">{doc.description || "No description provided."}</p>
+                </div>
+                <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1 text-[9px] font-bold">
+                  <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">{doc.sop_name}</span>
+                  {doc.process_name && (
+                    <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100">{doc.process_name}</span>
+                  )}
+                  {doc.owner && (
+                    <span className="bg-slate-50 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">Owner: {doc.owner.name}</span>
+                  )}
+                  {doc.version && (
+                    <span className="bg-slate-50 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">v{doc.version}</span>
+                  )}
                 </div>
               </div>
-            );
-          })
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
