@@ -79,11 +79,18 @@ function LoginScreen({ onLoggedIn }) {
   );
 }
 
+// Local dev defaults keep the current simple paths (Super Admin at "/",
+// Account Portal at "/account"). Production sets VITE_ADMIN_BASE_PATH and
+// VITE_ACCOUNT_BASE_PATH (e.g. "/admin" and "/compliance") so both apps can
+// be served from one domain without changing anything in local dev.
+const ADMIN_BASE = import.meta.env.VITE_ADMIN_BASE_PATH || "";
+const ACCOUNT_BASE = import.meta.env.VITE_ACCOUNT_BASE_PATH || "/account";
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/account/*" element={<AccountPortalRoot />} />
-      <Route path="/*" element={<SuperAdminApp />} />
+      <Route path={`${ACCOUNT_BASE}/*`} element={<AccountPortalRoot />} />
+      <Route path={`${ADMIN_BASE}/*`} element={<SuperAdminApp />} />
     </Routes>
   );
 }
