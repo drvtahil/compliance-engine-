@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_account_admin_manager
@@ -12,6 +12,7 @@ from app.database.connection import get_db
 from app.models.tab1_models import AccountAdmin, Role
 from app.models.tab2_models import LegalAssessment, QuestionAssignment
 from app.models.sops import SopActivity, SopStatus
+from app.models.super_admin import SuperAdmin
 
 router = APIRouter(prefix="/api/v1/account/users", tags=["Account Portal Users"])
 
@@ -72,11 +73,14 @@ def next_user_code(db: Session, account_id: int) -> str:
 
 
 def assert_email_available(db: Session, email: str, exclude_id: Optional[int] = None):
-    query = db.query(AccountAdmin).filter(AccountAdmin.email == email)
+    email = email.strip().lower()
+    query = db.query(AccountAdmin).filter(func.lower(AccountAdmin.email) == email)
     if exclude_id:
         query = query.filter(AccountAdmin.id != exclude_id)
     if query.first():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "This email is already in use by another user or admin.")
+    if db.query(SuperAdmin).filter(func.lower(SuperAdmin.email) == email).first():
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This email is already in use by a Super Admin login.")
 
 
 @router.get("")

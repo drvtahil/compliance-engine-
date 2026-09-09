@@ -311,6 +311,8 @@ def assert_admin_emails_available(db: Session, admins: List["AccountAdminPayload
             query = query.filter(AccountAdmin.id != adm.id)
         if query.first():
             raise HTTPException(status_code=400, detail=f"'{email}' is already in use by another admin or user.")
+        if db.query(SuperAdmin).filter(func.lower(SuperAdmin.email) == email).first():
+            raise HTTPException(status_code=400, detail=f"'{email}' is already in use by a Super Admin login.")
 
 
 def get_deletion_blockers(db: Session, admin_id: int) -> List[str]:
