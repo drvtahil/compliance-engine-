@@ -200,6 +200,7 @@ export default function TabOneAccounts() {
         name: a.name,
         phone: a.phone,
         email: a.email,
+        role_name: a.role_name,
         password: ""
       })) : [{ name: "", phone: "", email: "", password: "", admin_code: "" }]
     });
@@ -1007,8 +1008,8 @@ export default function TabOneAccounts() {
               <div className="space-y-2 pt-2 border-t border-slate-200">
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="font-bold text-slate-800 block text-xs">Account Admins Provisioning</span>
-                    <span className="text-[11px] text-slate-400">Multiple admins can be added. Passwords can be edited and toggled.</span>
+                    <span className="font-bold text-slate-800 block text-xs">Account Admins &amp; Users</span>
+                    <span className="text-[11px] text-slate-400">Every login for this account, Account Admin and User alike &mdash; check the role badge on each row before editing.</span>
                   </div>
                   {!showAccountModal.isViewOnly && (
                     <button
@@ -1016,7 +1017,7 @@ export default function TabOneAccounts() {
                       onClick={handleAddAdminField}
                       className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200"
                     >
-                      <PlusCircle className="w-3.5 h-3.5" /> Add Admin
+                      <PlusCircle className="w-3.5 h-3.5" /> Add Account Admin
                     </button>
                   )}
                 </div>
@@ -1025,7 +1026,16 @@ export default function TabOneAccounts() {
                   {accountForm.admins.map((adm, idx) => (
                     <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
                       <div className="flex justify-between items-center text-[11px] font-bold text-slate-600">
-                        <span>Admin #{idx + 1} {adm.admin_code ? `(${adm.admin_code})` : "(Auto-Generated ID)"}</span>
+                        <span className="flex items-center gap-1.5">
+                          <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border ${
+                            (adm.role_name || "Account Admin") === "User"
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}>
+                            {adm.role_name || "Account Admin"}
+                          </span>
+                          #{idx + 1} {adm.admin_code ? `(${adm.admin_code})` : "(Auto-Generated ID)"}
+                        </span>
                         {!showAccountModal.isViewOnly && accountForm.admins.length > 1 && (
                           <button
                             type="button"

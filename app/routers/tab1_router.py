@@ -108,7 +108,8 @@ def get_bootstrap_data(db: Session = Depends(get_db), current_admin: SuperAdmin 
             "admin_code": adm.admin_code,
             "name": adm.name,
             "phone": adm.phone,
-            "email": adm.email
+            "email": adm.email,
+            "role_name": adm.role.role_name if adm.role else None
         } for adm in a.admins]
 
         status_val = "Active" if a.project_end_date >= today else "Inactive"
