@@ -254,53 +254,6 @@ export default function ResourcesTab() {
           )}
         </div>
 
-        <div className="relative w-full">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder={`Search by document name, Acts, ${departmentLabel}, ${processLabel}, Org type...`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
-          />
-        </div>
-
-        <div className="flex items-center justify-between gap-2 border-b-2 border-slate-100">
-          <div className="flex items-center gap-1 overflow-x-auto">
-            <button
-              onClick={() => setActiveSectionFilter("ALL")}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold whitespace-nowrap border-b-2 -mb-0.5 transition ${
-                activeSectionFilter === "ALL" ? "text-blue-600 border-blue-600" : "text-slate-500 border-transparent hover:text-slate-800"
-              }`}
-            >
-              All
-              <span className={`text-[9.5px] px-1.5 py-0.5 rounded-full font-extrabold ${activeSectionFilter === "ALL" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
-                {resources.length}
-              </span>
-            </button>
-            {sections.map((sec) => (
-              <button
-                key={sec.name}
-                onClick={() => setActiveSectionFilter(sec.name)}
-                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold whitespace-nowrap border-b-2 -mb-0.5 transition ${
-                  activeSectionFilter === sec.name ? "text-blue-600 border-blue-600" : "text-slate-500 border-transparent hover:text-slate-800"
-                }`}
-              >
-                {sec.name}
-                <span className={`text-[9.5px] px-1.5 py-0.5 rounded-full font-extrabold ${activeSectionFilter === sec.name ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
-                  {sec.count}
-                </span>
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => loadResources()}
-            className="p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 flex-shrink-0"
-            title="Refresh"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-          </button>
-        </div>
       </div>
 
       {error && <div className="p-3 text-red-700 bg-red-50 border border-red-200 rounded-lg">{error}</div>}
@@ -314,70 +267,126 @@ export default function ResourcesTab() {
         <div className="p-12 text-center text-slate-400 italic bg-white rounded-xl border border-slate-200">
           No documents have been published for your organization type under this Act yet.
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="p-12 text-center text-slate-400 italic bg-white rounded-xl border border-slate-200">
-          Nothing matches in this section.
-        </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 sm:p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((doc) => (
-              <div
-                key={doc.id}
-                className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between space-y-2.5"
+        <div className="flex flex-col lg:flex-row items-start gap-4">
+          {/* LEFT: vertical section tabs */}
+          <div className="w-full lg:w-52 flex-shrink-0 bg-white rounded-xl border border-slate-200 shadow-xs p-2">
+            <div className="flex items-center justify-between px-2 py-1.5 mb-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Sections</span>
+              <button onClick={() => loadResources()} className="p-1 rounded hover:bg-slate-100" title="Refresh">
+                <RefreshCw className="w-3 h-3 text-slate-400" />
+              </button>
+            </div>
+            <div className="space-y-0.5 lg:max-h-[520px] lg:overflow-y-auto">
+              <button
+                onClick={() => setActiveSectionFilter("ALL")}
+                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-xs font-bold text-left border-l-2 transition ${
+                  activeSectionFilter === "ALL" ? "bg-blue-50 text-blue-700 border-blue-600" : "text-slate-600 border-transparent hover:bg-slate-50"
+                }`}
               >
-                <div>
-                  <div className="flex justify-between items-start gap-2">
-                    <h4 className="font-bold text-xs text-slate-900 leading-snug truncate">{doc.title}</h4>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border mr-0.5 ${getBadgeColor(doc.file_type)}`}>
-                        {doc.file_type || "FILE"}
-                      </span>
-                      <a
-                        href={getResourceViewUrl(doc.id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="View Document"
-                        className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </a>
-                      <a
-                        href={getResourceDownloadUrl(doc.id)}
-                        title="Download Document"
-                        className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100 transition"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                      </a>
-                      <button
-                        onClick={() => setDetailsDoc(doc)}
-                        title="View Details"
-                        className="text-slate-400 hover:text-amber-600 p-1 rounded hover:bg-slate-100 transition"
-                      >
-                        <Info className="w-3.5 h-3.5" />
-                      </button>
+                <span className="truncate">All</span>
+                <span className={`text-[9.5px] px-1.5 py-0.5 rounded-full font-extrabold flex-shrink-0 ${activeSectionFilter === "ALL" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
+                  {resources.length}
+                </span>
+              </button>
+              {sections.map((sec) => (
+                <button
+                  key={sec.name}
+                  onClick={() => setActiveSectionFilter(sec.name)}
+                  title={sec.name}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-xs font-bold text-left border-l-2 transition ${
+                    activeSectionFilter === sec.name ? "bg-blue-50 text-blue-700 border-blue-600" : "text-slate-600 border-transparent hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="truncate">{sec.name}</span>
+                  <span className={`text-[9.5px] px-1.5 py-0.5 rounded-full font-extrabold flex-shrink-0 ${activeSectionFilter === sec.name ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
+                    {sec.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT: search + results for the selected section */}
+          <div className="flex-1 min-w-0 w-full space-y-4">
+            <div className="relative w-full">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder={`Search by document name, Acts, ${departmentLabel}, ${processLabel}, Org type...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+              />
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 italic bg-white rounded-xl border border-slate-200">
+                Nothing matches in this section.
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 sm:p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filtered.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between space-y-2.5"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start gap-2">
+                          <h4 className="font-bold text-xs text-slate-900 leading-snug truncate">{doc.title}</h4>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border mr-0.5 ${getBadgeColor(doc.file_type)}`}>
+                              {doc.file_type || "FILE"}
+                            </span>
+                            <a
+                              href={getResourceViewUrl(doc.id)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="View Document"
+                              className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </a>
+                            <a
+                              href={getResourceDownloadUrl(doc.id)}
+                              title="Download Document"
+                              className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100 transition"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                            <button
+                              onClick={() => setDetailsDoc(doc)}
+                              title="View Details"
+                              className="text-slate-400 hover:text-amber-600 p-1 rounded hover:bg-slate-100 transition"
+                            >
+                              <Info className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-500 truncate mt-1">
+                          {doc.description || "No description provided."}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1">
+                        {doc.mapped_acts.map((act, i) => (
+                          <span key={`act-${i}`} className="text-[9px] font-bold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
+                            {act}
+                          </span>
+                        ))}
+                        {doc.mapped_industries.map((ind, i) => (
+                          <span key={`ind-${i}`} className="text-[9px] font-bold bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100">
+                            {ind}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 truncate mt-1">
-                    {doc.description || "No description provided."}
-                  </p>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1">
-                  {doc.mapped_acts.map((act, i) => (
-                    <span key={`act-${i}`} className="text-[9px] font-bold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
-                      {act}
-                    </span>
-                  ))}
-                  {doc.mapped_industries.map((ind, i) => (
-                    <span key={`ind-${i}`} className="text-[9px] font-bold bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100">
-                      {ind}
-                    </span>
                   ))}
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
