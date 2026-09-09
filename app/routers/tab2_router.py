@@ -104,7 +104,7 @@ class AddRuleToChapterPayload(BaseModel):
 
 # --- GET Chapters By Act Code ---
 @router.get("/chapters")
-def get_chapters_by_act(act_code: str, db: Session = Depends(get_db)):
+def get_chapters_by_act(act_code: str, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     chapters = db.query(LegalChapter).filter(LegalChapter.act_code == act_code).order_by(LegalChapter.id.asc()).all()
     
     result = []
