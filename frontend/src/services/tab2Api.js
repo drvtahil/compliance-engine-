@@ -3,7 +3,7 @@ import { authFetch } from "./authApi";
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/tab2`;
 
 export const fetchChaptersByActApi = async (actCode) => {
-  const res = await fetch(`${API_BASE}/chapters?act_code=${encodeURIComponent(actCode)}`);
+  const res = await authFetch(`${API_BASE}/chapters?act_code=${encodeURIComponent(actCode)}`);
   if (!res.ok) throw new Error("Failed to load legal chapters for the selected act.");
   return await res.json();
 };
