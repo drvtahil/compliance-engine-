@@ -24,6 +24,19 @@ router = APIRouter(prefix="/api/v1/account/sops", tags=["Account Portal SOPs"])
 UPLOAD_DIR = Path(settings.upload_dir).resolve()
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+# Generous enough for a photo, an Excel workbook, or a large scanned PDF,
+# while still bounding how much a single upload can consume.
+MAX_UPLOAD_SIZE_MB = 25
+MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+
+
+def assert_upload_within_size_limit(file: UploadFile):
+    if file.size is not None and file.size > MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            f"File exceeds the {MAX_UPLOAD_SIZE_MB} MB upload limit.",
+        )
+
 
 def is_manager(admin: AccountAdmin) -> bool:
     return admin.role.role_name == "Account Admin"
@@ -492,6 +505,7 @@ def upload_sop_file(
     orig_name = None
     f_ext = None
     if file and file.filename:
+        assert_upload_within_size_limit(file)
         orig_name = file.filename
         f_ext = orig_name.split(".")[-1].upper() if "." in orig_name else "FILE"
         safe_filename = f"{int(datetime.utcnow().timestamp())}_{orig_name.replace(' ', '_')}"
@@ -557,6 +571,7 @@ def update_sop_file(
     sop_file.process_name = process_name.strip()
 
     if file and file.filename:
+        assert_upload_within_size_limit(file)
         if sop_file.file_path and os.path.exists(sop_file.file_path):
             try:
                 os.remove(sop_file.file_path)

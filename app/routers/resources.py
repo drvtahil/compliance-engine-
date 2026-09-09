@@ -78,7 +78,7 @@ def seed_demo_tab3_data(db: Session, act_code: str):
     db.commit()
 
 @router.get("/sections")
-def get_sections(act_code: str, db: Session = Depends(get_db)):
+def get_sections(act_code: str, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     is_new_act = ensure_sample_policy_section(db, act_code)
     if is_new_act and settings.enable_demo_seed and act_code == "DPDPA 2023":
         seed_demo_tab3_data(db, act_code)
@@ -157,7 +157,7 @@ def delete_section(section_id: int, db: Session = Depends(get_db), current_admin
 
 @router.get("")
 @router.get("/")
-def get_all_resources(act_code: str, db: Session = Depends(get_db)):
+def get_all_resources(act_code: str, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     is_new_act = ensure_sample_policy_section(db, act_code)
     if is_new_act and settings.enable_demo_seed and act_code == "DPDPA 2023":
         seed_demo_tab3_data(db, act_code)
