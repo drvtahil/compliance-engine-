@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   GraduationCap,
+  LayoutDashboard,
 } from "lucide-react";
 import RulesTab from "./components/RulesTab";
 import ResourcesTab from "./components/ResourcesTab";
@@ -27,6 +28,7 @@ import DocumentLibraryTab from "./components/sops/DocumentLibraryTab";
 import EvidenceLibraryTab from "./components/sops/EvidenceLibraryTab";
 import ComplianceScoreTab from "./components/sops/ComplianceScoreTab";
 import TrainingTab from "./components/training/TrainingTab";
+import TeamTrainingDashboard from "./components/TeamTrainingDashboard";
 import NotificationBell from "./components/NotificationBell";
 import NotificationsPage from "./components/NotificationsPage";
 
@@ -34,6 +36,7 @@ const NAV_ITEMS = [
   { key: "rules", label: "Rules & Acts", icon: BookOpen, enabled: true },
   { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: true },
   { key: "training", label: "Training", icon: GraduationCap, enabled: true },
+  { key: "team_training", label: "Team Training", icon: LayoutDashboard, enabled: true },
   { key: "sops", label: "SOPs", icon: ListChecks, enabled: true },
   { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: true },
   { key: "activity", label: "Activity Tracker", icon: Activity, enabled: true },
@@ -139,6 +142,7 @@ export default function AccountAdminApp({ session, onLogout }) {
         {activeTab === "rules" && <RulesTab />}
         {activeTab === "readiness" && <AdminReadinessTab />}
         {activeTab === "training" && <TrainingTab />}
+        {activeTab === "team_training" && <TeamTrainingDashboard />}
         {activeTab === "notifications" && <NotificationsPage />}
         {activeTab === "sops" && <SopTab />}
         {activeTab === "compliance" && <ComplianceScoreTab />}

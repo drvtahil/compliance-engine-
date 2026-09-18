@@ -3,7 +3,7 @@ import {
   GraduationCap, PlusCircle, Edit2, Trash2, Archive, UploadCloud, Download,
   Loader2, ChevronLeft, Video, FileText, Presentation, Link2, Music, FileSpreadsheet, Image, File as FileIcon,
   Eye, Users, History, Layers, GripVertical, X, Copy, Send, EyeOff,
-  ChevronUp, ChevronDown, ChevronsUpDown
+  ChevronUp, ChevronDown, ChevronsUpDown, LayoutDashboard
 } from "lucide-react";
 import { fetchTab1BootstrapApi } from "../../services/tab1Api";
 import {
@@ -14,6 +14,11 @@ import {
   viewContentFile, listAllocationsApi, createAllocationApi, deleteAllocationApi,
   bulkAllocateCsvApi, getAuditLogApi
 } from "../../services/tab4TrainingApi";
+import {
+  fetchDashboardSummaryApi, fetchDashboardAccountsApi, fetchDashboardCoursesApi,
+  fetchDashboardCourseModulesApi, fetchDashboardRecordsApi
+} from "../../services/tab4DashboardApi";
+import TrainingDashboardView from "../../shared/TrainingDashboardView";
 
 // File type is the authoritative signal when a real file was uploaded (exact
 // extension); content_type (from the Master Registry list) is the fallback
@@ -100,6 +105,25 @@ function SortableTh({ label, sortKeyName, currentKey, currentDir, onSort, classN
   );
 }
 
+function ViewModeToggle({ viewMode, setViewMode }) {
+  return (
+    <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+      <button
+        onClick={() => setViewMode("courses")}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold ${viewMode === "courses" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"}`}
+      >
+        <GraduationCap className="w-3.5 h-3.5" /> Courses
+      </button>
+      <button
+        onClick={() => setViewMode("dashboard")}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold ${viewMode === "dashboard" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"}`}
+      >
+        <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+      </button>
+    </div>
+  );
+}
+
 function StatusBadge({ status }) {
   return (
     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${STATUS_STYLES[status] || STATUS_STYLES.draft}`}>
@@ -109,6 +133,7 @@ function StatusBadge({ status }) {
 }
 
 export default function TabFourTraining() {
+  const [viewMode, setViewMode] = useState("courses"); // courses | dashboard
   const [registries, setRegistries] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -208,6 +233,30 @@ export default function TabFourTraining() {
     return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
   }
 
+  if (viewMode === "dashboard") {
+    return (
+      <div>
+        <div className="p-6 pb-0 max-w-7xl mx-auto flex justify-end">
+          <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
+        </div>
+        <TrainingDashboardView
+          scope="super_admin"
+          title="Training Dashboard"
+          api={{
+            fetchSummary: fetchDashboardSummaryApi,
+            fetchAccounts: fetchDashboardAccountsApi,
+            fetchCourses: fetchDashboardCoursesApi,
+            fetchCourseModules: fetchDashboardCourseModulesApi,
+            fetchRecords: fetchDashboardRecordsApi,
+          }}
+          departmentList={departmentList}
+          processList={processList}
+          roles={roles}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-4">
       {error && (
@@ -224,12 +273,15 @@ export default function TabFourTraining() {
               <GraduationCap className="w-5 h-5 text-blue-600" />
               <h2 className="text-lg font-bold text-slate-800">Training - Course Builder</h2>
             </div>
-            <button
-              onClick={() => setCourseModal({ editing: null })}
-              className="flex items-center gap-1.5 bg-blue-600 text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-blue-700"
-            >
-              <PlusCircle className="w-4 h-4" /> New Course
-            </button>
+            <div className="flex items-center gap-2">
+              <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
+              <button
+                onClick={() => setCourseModal({ editing: null })}
+                className="flex items-center gap-1.5 bg-blue-600 text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-blue-700"
+              >
+                <PlusCircle className="w-4 h-4" /> New Course
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
