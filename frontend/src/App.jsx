@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import { ShieldCheck, Building2, BookOpen, FolderArchive, Activity, LogOut } from "lucide-react";
+import { ShieldCheck, Building2, BookOpen, FolderArchive, Activity, LogOut, GraduationCap } from "lucide-react";
 import TabOneAccounts from "./components/tab1_accounts/TabOneAccounts";
 import TabTwoRules from "./components/tab2_rules/TabTwoRules";
 import TabThreeResources from "./components/tab3_resources/TabThreeResources";
+import TabFourTraining from "./components/tab4_training/TabFourTraining";
 import { loginApi, loadSession, saveSession, clearSession } from "./services/authApi";
 import AccountPortalRoot from "./account-portal/AccountPortalRoot";
 
@@ -181,6 +182,17 @@ function SuperAdminApp() {
             <FolderArchive className="w-4 h-4" />
             Tab 3: Resources
           </button>
+          <button
+            onClick={() => setActiveTab("tab4")}
+            className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === "tab4"
+                ? "border-blue-600 text-blue-600 bg-blue-50/50"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <GraduationCap className="w-4 h-4" />
+            Tab 4: Training
+          </button>
         </div>
       </header>
 
@@ -191,6 +203,8 @@ function SuperAdminApp() {
         {activeTab === "tab2" && <TabTwoRules />}
 
         {activeTab === "tab3" && <TabThreeResources />}
+
+        {activeTab === "tab4" && <TabFourTraining />}
       </main>
     </div>
   );

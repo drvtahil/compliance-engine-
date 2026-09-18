@@ -13,6 +13,7 @@ import {
   KeyRound,
   ChevronLeft,
   ChevronRight,
+  GraduationCap,
 } from "lucide-react";
 import RulesTab from "./components/RulesTab";
 import ResourcesTab from "./components/ResourcesTab";
@@ -23,12 +24,16 @@ import ActivityTrackerTab from "./components/sops/ActivityTrackerTab";
 import DocumentLibraryTab from "./components/sops/DocumentLibraryTab";
 import EvidenceLibraryTab from "./components/sops/EvidenceLibraryTab";
 import ComplianceScoreTab from "./components/sops/ComplianceScoreTab";
+import TrainingTab from "./components/training/TrainingTab";
+import NotificationBell from "./components/NotificationBell";
+import NotificationsPage from "./components/NotificationsPage";
 
 // Same tab list as the Account Admin App, minus Admin — Users are scoped to
 // their own account's view-only data, never to user/question management.
 const NAV_ITEMS = [
   { key: "rules", label: "Rules & Acts", icon: BookOpen, enabled: true },
   { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: true },
+  { key: "training", label: "Training", icon: GraduationCap, enabled: true },
   { key: "sops", label: "SOPs", icon: ListChecks, enabled: true },
   { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: true },
   { key: "activity", label: "Activity Tracker", icon: Activity, enabled: true },
@@ -113,6 +118,7 @@ export default function UserPortalRoot({ session, onLogout }) {
             {session.name?.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex items-center gap-1">
+            <NotificationBell onNavigateToTraining={() => setActiveTab("training")} onViewAll={() => setActiveTab("notifications")} />
             <button
               onClick={() => setShowChangePassword(true)}
               title="Change Password"
@@ -134,6 +140,8 @@ export default function UserPortalRoot({ session, onLogout }) {
       <main className="flex-1 min-w-0">
         {activeTab === "rules" && <RulesTab />}
         {activeTab === "readiness" && <UserReadinessTab />}
+        {activeTab === "training" && <TrainingTab />}
+        {activeTab === "notifications" && <NotificationsPage />}
         {activeTab === "sops" && <SopTab />}
         {activeTab === "compliance" && <ComplianceScoreTab />}
         {activeTab === "activity" && <ActivityTrackerTab />}
