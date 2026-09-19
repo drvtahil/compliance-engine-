@@ -9,11 +9,12 @@ from datetime import datetime, date
 
 from app.core.config import settings
 from app.core.deps import get_current_super_admin
+from app.core.portal_tabs import PORTAL_TABS, SELECTABLE_TAB_KEYS
 from app.core.security import hash_password
 from app.database.connection import get_db
 from app.models.super_admin import SuperAdmin
 from app.models.tab1_models import (
-    MasterRegistry, MasterRegistryItem, EnterpriseAccount, AccountEnrolledAct, AccountAdmin, Role
+    MasterRegistry, MasterRegistryItem, EnterpriseAccount, AccountEnrolledAct, AccountEnabledTab, AccountAdmin, Role
 )
 from app.models.tab2_models import LegalRule, QuestionAssignment, ReadinessSubmission
 from app.models.sops import SopStatus, SopProcessStatus, SopActivity, SopFile
@@ -51,6 +52,7 @@ class AccountPayload(BaseModel):
     contact_person_name: str
     contact_person_phone: str
     enrolled_acts: List[str]
+    enabled_tabs: List[str] = []
     admins: List[AccountAdminPayload]
     removed_admin_ids: List[int] = []
 
@@ -76,6 +78,22 @@ def seed_default_registries(db: Session):
             for itm in d["items"]:
                 db.add(MasterRegistryItem(registry_id=reg.id, item_name=itm))
             db.commit()
+
+
+def validate_enabled_tabs(enabled_tabs: List[str]) -> List[str]:
+    keys = list(dict.fromkeys(k.strip() for k in enabled_tabs))
+    if not keys:
+        raise HTTPException(status_code=400, detail="Select at least one tab to activate for this account.")
+    invalid = sorted(set(keys) - set(SELECTABLE_TAB_KEYS))
+    if invalid:
+        raise HTTPException(status_code=400, detail=f"Unknown or non-selectable tab(s): {', '.join(invalid)}")
+    return keys
+
+
+# The tabs the Super Admin can switch on per account (every portal tab except always-on ones like Admin).
+@router.get("/portal-tabs")
+def list_selectable_portal_tabs(current_admin: SuperAdmin = Depends(get_current_super_admin)):
+    return [{"key": t["key"], "label": t["label"], "audience": t["audience"]} for t in PORTAL_TABS if not t["always_on"]]
 
 
 # --- Bootstrap / Fetch Everything ---
@@ -130,6 +148,7 @@ def get_bootstrap_data(db: Session = Depends(get_db), current_admin: SuperAdmin 
             "contact_person_phone": a.contact_person_phone,
             "status": status_val,
             "enrolled_acts": acts,
+            "enabled_tabs": [t.tab_key for t in a.enabled_tabs],
             "admins": admins,
             "created_at": a.created_at
         })
@@ -383,6 +402,7 @@ def create_account(payload: AccountPayload, db: Session = Depends(get_db), curre
     if not payload.admins:
         raise HTTPException(status_code=400, detail="At least one Account Admin must be created.")
     validate_enrolled_acts(db, payload.enrolled_acts)
+    enabled_tab_keys = validate_enabled_tabs(payload.enabled_tabs)
     if any(not adm.password.strip() for adm in payload.admins):
         raise HTTPException(status_code=400, detail="A password is required for every new Account Admin.")
     assert_admin_emails_available(db, payload.admins)
@@ -411,6 +431,8 @@ def create_account(payload: AccountPayload, db: Session = Depends(get_db), curre
 
     for act_name in payload.enrolled_acts:
         db.add(AccountEnrolledAct(account_id=acc.id, act_name=act_name.strip()))
+    for tab_key in enabled_tab_keys:
+        db.add(AccountEnabledTab(account_id=acc.id, tab_key=tab_key))
 
     account_admin_role_id = get_account_admin_role_id(db)
     admin_counter = 1
@@ -443,6 +465,7 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
     if not payload.admins:
         raise HTTPException(status_code=400, detail="At least one Account Admin is required.")
     validate_enrolled_acts(db, payload.enrolled_acts)
+    enabled_tab_keys = validate_enabled_tabs(payload.enabled_tabs)
     if any(not adm.id and not adm.password.strip() for adm in payload.admins):
         raise HTTPException(status_code=400, detail="A password is required for every new Account Admin.")
     assert_admin_emails_available(db, payload.admins)
@@ -464,6 +487,10 @@ def update_account(account_id: int, payload: AccountPayload, db: Session = Depen
     db.query(AccountEnrolledAct).filter(AccountEnrolledAct.account_id == acc.id).delete()
     for act_name in payload.enrolled_acts:
         db.add(AccountEnrolledAct(account_id=acc.id, act_name=act_name.strip()))
+
+    db.query(AccountEnabledTab).filter(AccountEnabledTab.account_id == acc.id).delete()
+    for tab_key in enabled_tab_keys:
+        db.add(AccountEnabledTab(account_id=acc.id, tab_key=tab_key))
 
     # Only delete an admin when the frontend explicitly says to remove it
     # (removed_admin_ids). An admin simply absent from payload.admins is left

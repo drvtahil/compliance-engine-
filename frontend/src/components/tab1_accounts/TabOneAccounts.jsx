@@ -33,7 +33,8 @@ import {
   deleteRegistryItemApi,
   createAccountApi,
   updateAccountApi,
-  checkAdminDeletionApi
+  checkAdminDeletionApi,
+  fetchPortalTabsApi
 } from "../../services/tab1Api";
 
 export default function TabOneAccounts() {
@@ -79,11 +80,13 @@ export default function TabOneAccounts() {
     contact_person_name: "",
     contact_person_phone: "",
     enrolled_acts: [],
+    enabled_tabs: [],
     admins: [
       { name: "", phone: "", email: "", password: "", admin_code: "" }
     ]
   };
   const [accountForm, setAccountForm] = useState(initialAccountForm);
+  const [portalTabs, setPortalTabs] = useState([]);
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [removedAdminIds, setRemovedAdminIds] = useState([]);
 
@@ -94,8 +97,9 @@ export default function TabOneAccounts() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await fetchTab1BootstrapApi();
+      const [res, tabs] = await Promise.all([fetchTab1BootstrapApi(), fetchPortalTabsApi()]);
       setData(res);
+      setPortalTabs(tabs);
     } catch (err) {
       console.error(err);
       alert("Error loading master registries: " + err.message);
@@ -194,6 +198,7 @@ export default function TabOneAccounts() {
       contact_person_name: acc.contact_person_name,
       contact_person_phone: acc.contact_person_phone,
       enrolled_acts: acc.enrolled_acts || [],
+      enabled_tabs: acc.enabled_tabs || [],
       admins: acc.admins?.length > 0 ? acc.admins.map(a => ({
         id: a.id,
         admin_code: a.admin_code,
@@ -219,6 +224,16 @@ export default function TabOneAccounts() {
         return { ...prev, enrolled_acts: [...prev.enrolled_acts, actName] };
       }
     });
+  };
+
+  const handleToggleTab = (tabKey) => {
+    if (showAccountModal.isViewOnly) return;
+    setAccountForm(prev => ({
+      ...prev,
+      enabled_tabs: prev.enabled_tabs.includes(tabKey)
+        ? prev.enabled_tabs.filter(k => k !== tabKey)
+        : [...prev.enabled_tabs, tabKey]
+    }));
   };
 
   const handleAddAdminField = () => {
@@ -269,6 +284,10 @@ export default function TabOneAccounts() {
     e.preventDefault();
     if (accountForm.enrolled_acts.length === 0) {
       alert("Please select at least one Enrolled Act.");
+      return;
+    }
+    if (accountForm.enabled_tabs.length === 0) {
+      alert("Please select at least one tab to activate for this account.");
       return;
     }
     try {
@@ -1003,6 +1022,44 @@ export default function TabOneAccounts() {
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-700 block">Tabs Activated For This Account (Select Multiple) *</label>
+                  {!showAccountModal.isViewOnly && (
+                    <div className="flex items-center gap-3 text-[11px] font-bold">
+                      <button type="button" onClick={() => setAccountForm(prev => ({ ...prev, enabled_tabs: portalTabs.map(t => t.key) }))} className="text-blue-600 hover:text-blue-800">Select all</button>
+                      <button type="button" onClick={() => setAccountForm(prev => ({ ...prev, enabled_tabs: [] }))} className="text-slate-500 hover:text-slate-800">Clear</button>
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border border-slate-300 rounded-lg p-3 bg-slate-50/50">
+                  {portalTabs.map((tab) => {
+                    const isChecked = accountForm.enabled_tabs.includes(tab.key);
+                    return (
+                      <label
+                        key={tab.key}
+                        className={`flex items-center gap-2 p-2 rounded-md border text-xs font-semibold transition ${
+                          showAccountModal.isViewOnly ? "cursor-default" : "cursor-pointer"
+                        } ${isChecked ? "bg-blue-50 border-blue-400 text-blue-800" : "bg-white border-slate-200 text-slate-600"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          disabled={showAccountModal.isViewOnly}
+                          checked={isChecked}
+                          onChange={() => handleToggleTab(tab.key)}
+                          className="rounded text-blue-600"
+                        />
+                        <span className="flex-1">{tab.label}</span>
+                        {tab.audience === "account_admin" && <span className="text-[9px] font-bold text-slate-400">Admin only</span>}
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Unticked tabs stay visible but greyed out and inactive for this account's Account Admins and Users. The Admin tab is always active for Account Admins.
+                </p>
               </div>
 
               <div className="space-y-2 pt-2 border-t border-slate-200">

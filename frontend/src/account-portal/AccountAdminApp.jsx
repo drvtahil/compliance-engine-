@@ -1,22 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ShieldCheck,
-  BookOpen,
-  ClipboardCheck,
-  ListChecks,
-  Gauge,
-  Activity,
-  FolderOpen,
-  Archive,
-  ShieldPlus,
-  UserCog,
   LogOut,
   KeyRound,
   ChevronLeft,
   ChevronRight,
-  GraduationCap,
-  LayoutDashboard,
 } from "lucide-react";
+import { usePortalTabs, PortalNav, NoTabsEnabled } from "./portalTabs.jsx";
 import RulesTab from "./components/RulesTab";
 import ResourcesTab from "./components/ResourcesTab";
 import ChangePasswordModal from "./components/ChangePasswordModal";
@@ -32,22 +22,16 @@ import TeamTrainingDashboard from "./components/TeamTrainingDashboard";
 import NotificationBell from "./components/NotificationBell";
 import NotificationsPage from "./components/NotificationsPage";
 
-const NAV_ITEMS = [
-  { key: "rules", label: "Rules & Acts", icon: BookOpen, enabled: true },
-  { key: "readiness", label: "Readiness", icon: ClipboardCheck, enabled: true },
-  { key: "training", label: "Training", icon: GraduationCap, enabled: true },
-  { key: "team_training", label: "Team Training", icon: LayoutDashboard, enabled: true },
-  { key: "sops", label: "SOPs", icon: ListChecks, enabled: true },
-  { key: "compliance", label: "Compliance Score", icon: Gauge, enabled: true },
-  { key: "activity", label: "Activity Tracker", icon: Activity, enabled: true },
-  { key: "library", label: "Document Library", icon: FolderOpen, enabled: true },
-  { key: "evidence", label: "Evidences", icon: ShieldPlus, enabled: true },
-  { key: "resources", label: "Resources", icon: Archive, enabled: true },
-  { key: "admin", label: "Admin", icon: UserCog, enabled: true },
-];
-
 export default function AccountAdminApp({ session, onLogout }) {
-  const [activeTab, setActiveTab] = useState("rules");
+  const { tabs, loading: tabsLoading, isEnabled, firstEnabledKey } = usePortalTabs();
+  const [activeTab, setActiveTab] = useState(null);
+
+  // Open the first active tab once the list loads, and step off a tab that is no longer active.
+  useEffect(() => {
+    if (tabsLoading) return;
+    if (activeTab !== "notifications" && (!activeTab || !isEnabled(activeTab))) setActiveTab(firstEnabledKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabsLoading, tabs]);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem("mood9_sidebar_collapsed") === "1"; } catch { return false; }
@@ -78,33 +62,7 @@ export default function AccountAdminApp({ session, onLogout }) {
           )}
         </div>
 
-        <nav className="flex-1 p-1.5 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const active = activeTab === item.key;
-            return (
-              <button
-                key={item.key}
-                disabled={!item.enabled}
-                onClick={() => item.enabled && setActiveTab(item.key)}
-                title={sidebarCollapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium text-left ${sidebarCollapsed ? "justify-center" : ""} ${
-                  active
-                    ? "bg-blue-50 text-blue-700"
-                    : item.enabled
-                    ? "text-slate-600 hover:bg-slate-50"
-                    : "text-slate-300 cursor-not-allowed"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="flex-1">{item.label}</span>}
-                {!sidebarCollapsed && !item.enabled && (
-                  <span className="text-[9px] font-bold text-slate-300 border border-slate-200 rounded px-1 py-0.5">Soon</span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+        <PortalNav tabs={tabs} activeTab={activeTab} onSelect={setActiveTab} collapsed={sidebarCollapsed} />
 
         <button
           onClick={toggleSidebar}
@@ -119,7 +77,7 @@ export default function AccountAdminApp({ session, onLogout }) {
             {session.name?.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex items-center gap-1">
-            <NotificationBell onNavigateToTraining={() => setActiveTab("training")} onViewAll={() => setActiveTab("notifications")} />
+            <NotificationBell onNavigateToTraining={() => isEnabled("training") && setActiveTab("training")} onViewAll={() => setActiveTab("notifications")} />
             <button
               onClick={() => setShowChangePassword(true)}
               title="Change Password"
@@ -139,6 +97,7 @@ export default function AccountAdminApp({ session, onLogout }) {
       </aside>
 
       <main className="flex-1 min-w-0">
+        {!tabsLoading && !activeTab && <NoTabsEnabled />}
         {activeTab === "rules" && <RulesTab />}
         {activeTab === "readiness" && <AdminReadinessTab />}
         {activeTab === "training" && <TrainingTab />}

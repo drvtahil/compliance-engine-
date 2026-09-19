@@ -116,3 +116,10 @@ export const checkAdminDeletionApi = async (account_id, admin_id) => {
   }
   return await res.json();
 };
+
+// The tabs a Super Admin can switch on per account (everything except always-on tabs like Admin).
+export const fetchPortalTabsApi = async () => {
+  const res = await authFetch(`${API_BASE}/portal-tabs`);
+  if (!res.ok) throw new Error("Failed to load the portal tab list.");
+  return await res.json();
+};

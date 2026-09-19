@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Date
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Date, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database.connection import Base
@@ -50,6 +50,7 @@ class EnterpriseAccount(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     enrolled_acts = relationship("AccountEnrolledAct", back_populates="account", cascade="all, delete-orphan")
+    enabled_tabs = relationship("AccountEnabledTab", back_populates="account", cascade="all, delete-orphan")
     admins = relationship("AccountAdmin", back_populates="account", cascade="all, delete-orphan", order_by="AccountAdmin.id.asc()")
 
 
@@ -60,6 +61,16 @@ class AccountEnrolledAct(Base):
     act_name = Column(String(255), nullable=False)
 
     account = relationship("EnterpriseAccount", back_populates="enrolled_acts")
+
+
+class AccountEnabledTab(Base):
+    __tablename__ = "account_enabled_tabs"
+    __table_args__ = (UniqueConstraint("account_id", "tab_key", name="uq_account_enabled_tab"),)
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(Integer, ForeignKey("enterprise_accounts.id", ondelete="CASCADE"), nullable=False, index=True)
+    tab_key = Column(String(50), nullable=False)  # a key from app.core.portal_tabs.PORTAL_TABS
+
+    account = relationship("EnterpriseAccount", back_populates="enabled_tabs")
 
 
 class Role(Base):
