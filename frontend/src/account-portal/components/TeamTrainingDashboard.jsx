@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import TrainingDashboardView from "../../shared/TrainingDashboardView";
 import {
-  fetchTeamFilterOptionsApi, fetchTeamSummaryApi, fetchTeamCoursesApi,
+  fetchTeamFilterOptionsApi, fetchTeamActTreeApi, fetchTeamSummaryApi, fetchTeamCoursesApi,
   fetchTeamCourseModulesApi, fetchTeamRecordsApi
 } from "../services/teamDashboardApi";
 
@@ -22,6 +22,7 @@ export default function TeamTrainingDashboard() {
       scope="account_admin"
       title="Team Training Dashboard"
       api={{
+        fetchActTree: fetchTeamActTreeApi,
         fetchSummary: fetchTeamSummaryApi,
         fetchCourses: fetchTeamCoursesApi,
         fetchCourseModules: fetchTeamCourseModulesApi,

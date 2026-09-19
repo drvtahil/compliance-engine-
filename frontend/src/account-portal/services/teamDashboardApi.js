@@ -21,6 +21,11 @@ export const fetchTeamFilterOptionsApi = async () => {
   return handle(res, "Failed to load filter options.");
 };
 
+export const fetchTeamActTreeApi = async () => {
+  const res = await accountFetch(`${API_BASE}/acts`);
+  return handle(res, "Failed to load acts.");
+};
+
 export const fetchTeamSummaryApi = async () => {
   const res = await accountFetch(`${API_BASE}/summary`);
   return handle(res, "Failed to load team dashboard summary.");

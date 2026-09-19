@@ -8,10 +8,10 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.models.tab1_models import EnterpriseAccount, AccountAdmin, Role
+from app.models.tab1_models import EnterpriseAccount, AccountAdmin, AccountEnrolledAct, Role
 from app.models.tab4_models import (
     TrainingCourse, TrainingModule, TrainingContentItem,
-    TrainingContentProgress, TrainingCourseAllocation,
+    TrainingContentProgress, TrainingCourseAllocation, TrainingAssignment, TrainingAttempt,
 )
 
 
@@ -152,6 +152,132 @@ def build_summary(db: Session, account_id: Optional[int] = None) -> dict:
         "mandatory_count": mandatory,
         "optional_count": optional,
     }
+
+
+def build_act_tree(db: Session, account_id: Optional[int] = None) -> list:
+    """Act -> enrolled accounts -> every active Account Admin/User in that
+    account (whether or not training is allocated to them), with the training
+    status of those who have been allocated a course under that Act.
+    account_id restricts everything to a single account (Account Admin scope)."""
+    q = db.query(AccountEnrolledAct)
+    if account_id is not None:
+        q = q.filter(AccountEnrolledAct.account_id == account_id)
+    enrolled = q.all()
+    if not enrolled:
+        return []
+
+    account_ids = {e.account_id for e in enrolled}
+    accounts = {a.id: a for a in db.query(EnterpriseAccount).filter(EnterpriseAccount.id.in_(account_ids)).all()}
+    roles = {r.id: r.role_name for r in db.query(Role).all()}
+    members_by_account = {}
+    for m in db.query(AccountAdmin).filter(AccountAdmin.account_id.in_(account_ids), AccountAdmin.is_active == True).order_by(AccountAdmin.id.asc()).all():
+        members_by_account.setdefault(m.account_id, []).append(m)
+
+    allocations = db.query(TrainingCourseAllocation).filter(
+        TrainingCourseAllocation.status == "active",
+        TrainingCourseAllocation.account_id.in_(account_ids),
+    ).all()
+    course_ids = {a.course_id for a in allocations}
+    courses = {c.id: c for c in db.query(TrainingCourse).filter(TrainingCourse.id.in_(course_ids)).all()} if course_ids else {}
+    course_content, module_content, modules_by_id = get_course_content_map(db, course_ids) if course_ids else ({}, {}, {})
+    modules_by_course = {}
+    for mod in sorted(modules_by_id.values(), key=lambda x: x.sequence_order or 0):
+        modules_by_course.setdefault(mod.course_id, []).append(mod)
+    member_ids = {m.id for ms in members_by_account.values() for m in ms}
+    completed_set, _ = get_completed_map(db, member_ids)
+
+    # Assignments (tests) per module - only ones that have questions, as learners see them
+    assignments_by_module = {}
+    if modules_by_id:
+        for asg in db.query(TrainingAssignment).filter(TrainingAssignment.module_id.in_(modules_by_id.keys())).order_by(TrainingAssignment.sequence_order.asc()).all():
+            if asg.questions:
+                assignments_by_module.setdefault(asg.module_id, []).append(asg)
+
+    # Submitted attempts per (member, assignment): count and the latest one
+    attempt_count = {}
+    latest_attempt = {}
+    if member_ids:
+        for at in db.query(TrainingAttempt).filter(TrainingAttempt.admin_id.in_(member_ids), TrainingAttempt.status == "submitted").all():
+            key = (at.admin_id, at.assignment_id)
+            attempt_count[key] = attempt_count.get(key, 0) + 1
+            if key not in latest_attempt or at.submitted_at > latest_attempt[key].submitted_at:
+                latest_attempt[key] = at
+
+    def module_rows(course_id, admin_id):
+        rows = []
+        for mod in modules_by_course.get(course_id, []):
+            ids = module_content.get(mod.id, [])
+            status, pct = compute_status(ids, admin_id, completed_set)
+            done = sum(1 for cid in ids if (admin_id, cid) in completed_set)
+            tests = []
+            for asg in assignments_by_module.get(mod.id, []):
+                at = latest_attempt.get((admin_id, asg.id))
+                tests.append({
+                    "assignment_id": asg.id, "title": asg.title,
+                    "attempt_count": attempt_count.get((admin_id, asg.id), 0),
+                    "latest_score_percent": at.score_percent if at else None,
+                    "latest_test_at": at.submitted_at if at else None,
+                })
+            rows.append({
+                "module_id": mod.id, "module_name": mod.module_name, "sequence_order": mod.sequence_order,
+                "status": status, "progress_percent": pct, "sections_done": done, "sections_total": len(ids),
+                "is_complete": len(ids) > 0 and done == len(ids), "assignments": tests,
+            })
+        return rows
+
+    allocs_by_key = {}
+    for a in allocations:
+        course = courses.get(a.course_id)
+        if course:
+            allocs_by_key.setdefault((a.account_id, a.role_id, course.act_code), []).append(a)
+
+    acts = {}
+    for e in enrolled:
+        acts.setdefault(e.act_name, set()).add(e.account_id)
+
+    result = []
+    for act_name in sorted(acts):
+        act_accounts = []
+        for account_id in sorted((i for i in acts[act_name] if i in accounts), key=lambda i: accounts[i].account_name.lower()):
+            account = accounts[account_id]
+            members = []
+            counts = {"not_started": 0, "in_progress": 0, "completed": 0}
+            for m in members_by_account.get(account_id, []):
+                course_rows = []
+                for alloc in allocs_by_key.get((account_id, m.role_id, act_name), []):
+                    ids = course_content.get(alloc.course_id, [])
+                    status, pct = compute_status(ids, m.id, completed_set)
+                    course_rows.append({
+                        "course_id": alloc.course_id, "course_name": courses[alloc.course_id].name,
+                        "status": status, "progress_percent": pct, "is_mandatory": alloc.is_mandatory,
+                        "assigned_at": alloc.assigned_at,
+                        "sections_done": sum(1 for cid in ids if (m.id, cid) in completed_set), "sections_total": len(ids),
+                        "modules": module_rows(alloc.course_id, m.id),
+                    })
+                if not course_rows:
+                    status, pct = "no_training", 0
+                else:
+                    statuses = {c["status"] for c in course_rows}
+                    pct = round(sum(c["progress_percent"] for c in course_rows) / len(course_rows))
+                    status = "completed" if statuses == {"completed"} else "not_started" if statuses == {"not_started"} else "in_progress"
+                    counts[status] += 1
+                members.append({
+                    "admin_id": m.id, "name": m.name, "email": m.email,
+                    "role_name": roles.get(m.role_id, ""), "has_training": bool(course_rows),
+                    "status": status, "progress_percent": pct, "courses": course_rows,
+                    "courses_completed": sum(1 for c in course_rows if c["status"] == "completed"),
+                })
+            act_accounts.append({
+                "account_id": account.id, "account_name": account.account_name, "account_code": account.account_code,
+                "account_admin_count": sum(1 for m in members if m["role_name"] == "Account Admin"),
+                "user_count": sum(1 for m in members if m["role_name"] != "Account Admin"),
+                "member_count": len(members),
+                "training_count": sum(1 for m in members if m["has_training"]),
+                "not_started_count": counts["not_started"], "in_progress_count": counts["in_progress"],
+                "completed_count": counts["completed"], "members": members,
+            })
+        result.append({"act_code": act_name, "account_count": len(act_accounts), "accounts": act_accounts})
+    return result
 
 
 def build_accounts_rollup(db: Session) -> list:

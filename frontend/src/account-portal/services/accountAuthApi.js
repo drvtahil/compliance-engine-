@@ -14,21 +14,40 @@ export const accountLoginApi = async (email, password, loginAs) => {
   return await res.json();
 };
 
+// localStorage is shared by every tab, so a login in another tab would silently
+// swap the identity used by this tab's requests (a User tab would start acting
+// as the Account Admin). Each tab therefore pins the session it loaded or
+// logged in with, and only that session's token is ever sent from this tab.
+let activeSession;
+
 export const saveAccountSession = (session) => {
+  activeSession = session;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 };
 
 export const loadAccountSession = () => {
+  if (activeSession !== undefined) return activeSession;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    activeSession = raw ? JSON.parse(raw) : null;
   } catch {
-    return null;
+    activeSession = null;
   }
+  return activeSession;
 };
 
 export const clearAccountSession = () => {
-  localStorage.removeItem(STORAGE_KEY);
+  // Don't log out a different user who signed in from another tab.
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const stored = raw ? JSON.parse(raw) : null;
+    if (!stored || !activeSession || stored.access_token === activeSession.access_token) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+  activeSession = null;
 };
 
 export const accountAuthHeaders = () => {

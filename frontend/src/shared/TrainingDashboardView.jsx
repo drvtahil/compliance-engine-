@@ -82,11 +82,17 @@ export default function TrainingDashboardView({
   roles = [],
 }) {
   const [tab, setTab] = useState("overview"); // overview | accounts | courses
-  const [drill, setDrill] = useState(null); // null | { type: 'account'|'course'|'module', ...context }
+  // Screens opened by drilling in, oldest first; Back pops one level at a time.
+  const [drillStack, setDrillStack] = useState([]);
+  const drill = drillStack[drillStack.length - 1] || null; // { type: 'account'|'course'|'module', ...context }
+  const setDrill = (d) => setDrillStack([d]);
+  const pushDrill = (d) => setDrillStack((s) => [...s, d]);
+  const popDrill = () => setDrillStack((s) => s.slice(0, -1));
 
   const [summary, setSummary] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [actTree, setActTree] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -96,8 +102,9 @@ export default function TrainingDashboardView({
       api.fetchSummary(),
       api.fetchAccounts ? api.fetchAccounts() : Promise.resolve([]),
       api.fetchCourses(),
+      api.fetchActTree ? api.fetchActTree() : Promise.resolve([]),
     ])
-      .then(([s, a, c]) => { setSummary(s); setAccounts(a); setCourses(c); })
+      .then(([s, a, c, t]) => { setSummary(s); setAccounts(a); setCourses(c); setActTree(t); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [api]);
@@ -111,8 +118,8 @@ export default function TrainingDashboardView({
     return (
       <DrillDown
         drill={drill}
-        onBack={() => setDrill(null)}
-        onNavigate={setDrill}
+        onBack={popDrill}
+        onNavigate={pushDrill}
         api={api}
         scope={scope}
         departmentList={departmentList}
@@ -138,7 +145,9 @@ export default function TrainingDashboardView({
         <TabButton active={tab === "courses"} onClick={() => setTab("courses")} label="Courses & Acts" />
       </div>
 
-      {tab === "overview" && summary && (
+      {tab === "overview" && api.fetchActTree && <ActTree acts={actTree} single={scope === "account_admin"} />}
+
+      {tab === "overview" && !api.fetchActTree && summary && (
         <div className="space-y-3">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {scope === "super_admin" && <Tile label="Accounts w/ Training" value={summary.accounts_with_training} />}
@@ -239,6 +248,275 @@ export default function TrainingDashboardView({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// Above 75 green, 50 to 75 orange, below 50 red (same rule as the learner screens).
+function scoreChipClasses(percent) {
+  if (percent > 75) return "bg-green-50 text-green-700 border-green-200";
+  if (percent >= 50) return "bg-orange-50 text-orange-600 border-orange-200";
+  return "bg-red-50 text-red-600 border-red-200";
+}
+
+// Timestamps come from the API without a zone marker and are UTC.
+function formatTestDate(value) {
+  const d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value}Z`);
+  return d.toLocaleDateString();
+}
+
+const STATUS_BAR = { not_started: "bg-slate-300", in_progress: "bg-blue-600", completed: "bg-green-600" };
+
+function ProgressBar({ percent, status, className = "" }) {
+  return (
+    <div className={`bg-slate-100 rounded-full h-1.5 ${className}`}>
+      <div className={`h-1.5 rounded-full transition-all ${STATUS_BAR[status] || "bg-blue-600"}`} style={{ width: `${percent}%` }} />
+    </div>
+  );
+}
+
+function initials(name) {
+  return (name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+}
+
+function NoTrainingBadge() {
+  return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border bg-white text-slate-400 border-slate-200">No training</span>;
+}
+
+function ScoreCell({ test, moduleComplete }) {
+  if (test.latest_score_percent != null) {
+    return <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold border ${scoreChipClasses(test.latest_score_percent)}`}>{test.latest_score_percent}%</span>;
+  }
+  return <span className="text-[11px] text-slate-400">{moduleComplete ? "Not taken" : "Locked"}</span>;
+}
+
+// One row per module; a module with several assignments gets one line per assignment.
+function ModuleTable({ modules }) {
+  if (modules.length === 0) {
+    return <div className="text-xs text-slate-400 px-4 py-3">This course has no modules yet.</div>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs whitespace-nowrap">
+        <thead className="text-[10.5px] uppercase tracking-wide text-slate-400 border-b border-slate-100">
+          <tr>
+            <th className="py-2 pl-4 pr-4 font-semibold text-left">Module</th>
+            <th className="py-2 pr-4 font-semibold text-left">Sections</th>
+            <th className="py-2 pr-4 font-semibold text-left">Status</th>
+            <th className="py-2 pr-4 font-semibold text-left">Test</th>
+            <th className="py-2 pr-4 font-semibold text-left">Score</th>
+            <th className="py-2 pr-4 font-semibold text-left">Test Date</th>
+            <th className="py-2 pr-4 font-semibold text-left">Attempts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {modules.map((mo) => {
+            const lines = mo.assignments.length ? mo.assignments : [null];
+            return lines.map((t, i) => (
+              <tr key={`${mo.module_id}-${t ? t.assignment_id : "none"}`} className={i === lines.length - 1 ? "border-b border-slate-50 last:border-0" : ""}>
+                {i === 0 && (
+                  <>
+                    <td rowSpan={lines.length} className="py-2 pl-4 pr-4 align-top">
+                      <span className="text-slate-400 font-semibold mr-1.5">{mo.sequence_order}.</span>
+                      <span className="font-semibold text-slate-700">{mo.module_name}</span>
+                    </td>
+                    <td rowSpan={lines.length} className="py-2 pr-4 align-top">
+                      <div className="flex items-center gap-2">
+                        <ProgressBar percent={mo.progress_percent} status={mo.status} className="w-16" />
+                        <span className="text-slate-500 font-semibold">{mo.sections_done}/{mo.sections_total}</span>
+                      </div>
+                    </td>
+                    <td rowSpan={lines.length} className="py-2 pr-4 align-top"><StatusBadge status={mo.status} /></td>
+                  </>
+                )}
+                {t ? (
+                  <>
+                    <td className="py-1.5 pr-4 text-slate-600">{t.title}</td>
+                    <td className="py-1.5 pr-4"><ScoreCell test={t} moduleComplete={mo.is_complete} /></td>
+                    <td className="py-1.5 pr-4 text-slate-600">{t.latest_test_at ? formatTestDate(t.latest_test_at) : <span className="text-slate-300">&mdash;</span>}</td>
+                    <td className="py-1.5 pr-4 text-slate-600 font-semibold">{t.attempt_count || <span className="text-slate-300 font-normal">&mdash;</span>}</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="py-2 pr-4 text-slate-400 italic">No test</td>
+                    <td className="py-2 pr-4 text-slate-300">&mdash;</td>
+                    <td className="py-2 pr-4 text-slate-300">&mdash;</td>
+                    <td className="py-2 pr-4 text-slate-300">&mdash;</td>
+                  </>
+                )}
+              </tr>
+            ));
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CourseBlock({ course }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div className="px-4 py-2.5 bg-slate-50/70 border-b border-slate-100 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <GraduationCap className="w-4 h-4 text-blue-600 flex-shrink-0" />
+          <span className="font-bold text-[13px] text-slate-800">{course.course_name}</span>
+          {course.is_mandatory && <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">Mandatory</span>}
+          <StatusBadge status={course.status} />
+        </div>
+        <div className="flex items-center gap-2 min-w-[190px]">
+          <ProgressBar percent={course.progress_percent} status={course.status} className="flex-1" />
+          <span className="text-[11px] font-semibold text-slate-600 whitespace-nowrap">{course.sections_done}/{course.sections_total} sections &middot; {course.progress_percent}%</span>
+        </div>
+        <div className="text-[11px] text-slate-400 whitespace-nowrap">Assigned {course.assigned_at ? formatTestDate(course.assigned_at) : "-"}</div>
+      </div>
+      <ModuleTable modules={course.modules} />
+    </div>
+  );
+}
+
+// Person -> their courses (with progress) -> each course's modules (with test scores).
+function PeopleProgress({ members }) {
+  const [open, setOpen] = useState(() => new Set());
+  if (members.length === 0) {
+    return <div className="text-xs text-slate-400 py-3 px-4">No active Account Admins or Users in this account.</div>;
+  }
+  const trainable = members.filter((m) => m.has_training).map((m) => m.admin_id);
+  const allOpen = trainable.length > 0 && trainable.every((id) => open.has(id));
+  const toggle = (id) => setOpen((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
+  return (
+    <div className="space-y-2.5">
+      {trainable.length > 0 && (
+        <div className="flex justify-end">
+          <button onClick={() => setOpen(allOpen ? new Set() : new Set(trainable))} className="text-[11px] font-bold text-blue-600 hover:text-blue-800">
+            {allOpen ? "Collapse all" : "Expand all"}
+          </button>
+        </div>
+      )}
+      {members.map((m) => {
+        const isOpen = open.has(m.admin_id) && m.has_training;
+        return (
+          <div key={m.admin_id} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <button
+              onClick={() => m.has_training && toggle(m.admin_id)}
+              className={`w-full flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-left ${m.has_training ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"}`}
+            >
+              {m.has_training
+                ? (isOpen ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />)
+                : <span className="w-4 flex-shrink-0" />}
+              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-[11px] font-bold flex-shrink-0">{initials(m.name)}</div>
+              <div className="min-w-[150px] flex-1">
+                <div className="font-bold text-[13px] text-slate-800 leading-tight">{m.name}</div>
+                <div className="text-[10.5px] text-slate-400">{m.email}</div>
+              </div>
+              <span className="text-[10.5px] font-semibold text-slate-500 bg-slate-100 rounded px-2 py-0.5">{m.role_name}</span>
+              {m.has_training ? (
+                <>
+                  <span className="text-[11px] text-slate-500 whitespace-nowrap">{m.courses_completed} of {m.courses.length} {m.courses.length === 1 ? "course" : "courses"} completed</span>
+                  <div className="flex items-center gap-2 min-w-[140px]">
+                    <ProgressBar percent={m.progress_percent} status={m.status} className="flex-1" />
+                    <span className="text-[11px] font-bold text-slate-700 w-9 text-right">{m.progress_percent}%</span>
+                  </div>
+                  <StatusBadge status={m.status} />
+                </>
+              ) : <NoTrainingBadge />}
+            </button>
+            {isOpen && (
+              <div className="border-t border-slate-100 bg-slate-50/50 p-3 space-y-3">
+                {m.courses.map((c) => <CourseBlock key={c.course_id} course={c} />)}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ActTree({ acts, single = false }) {
+  const [openAccounts, setOpenAccounts] = useState(() => new Set());
+  const toggle = (key) => setOpenAccounts((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
+
+  if (acts.length === 0) {
+    return <div className="text-center text-sm text-slate-400 py-12 bg-white border border-slate-200 rounded-xl">No accounts are enrolled in any Act yet.</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      {acts.map((act) => (
+        <div key={act.act_code} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <h3 className="font-bold text-sm text-slate-800">{act.act_code}</h3>
+            {single ? (
+              <span className="text-[11px] font-semibold text-slate-500">
+                {act.accounts[0].member_count} {act.accounts[0].member_count === 1 ? "person" : "people"} &middot; {act.accounts[0].training_count} getting training &middot;{" "}
+                <span className="text-slate-600">{act.accounts[0].not_started_count} not started</span> &middot;{" "}
+                <span className="text-blue-600">{act.accounts[0].in_progress_count} in progress</span> &middot;{" "}
+                <span className="text-green-600">{act.accounts[0].completed_count} completed</span>
+              </span>
+            ) : (
+              <span className="text-[11px] font-semibold text-slate-500">{act.account_count} {act.account_count === 1 ? "account" : "accounts"}</span>
+            )}
+          </div>
+
+          {single ? (
+            <div className="p-3"><PeopleProgress members={act.accounts[0].members} /></div>
+          ) : (
+          <table className="w-full text-xs">
+            <thead className="text-slate-500 border-b border-slate-100">
+              <tr>
+                <th className="py-2 pl-4 font-semibold text-left">Account</th>
+                <th className="py-2 font-semibold text-center">Account Admins</th>
+                <th className="py-2 font-semibold text-center">Users</th>
+                <th className="py-2 font-semibold text-center">Getting Training</th>
+                <th className="py-2 font-semibold text-center">Not Started</th>
+                <th className="py-2 font-semibold text-center">In Progress</th>
+                <th className="py-2 pr-4 font-semibold text-center">Completed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {act.accounts.map((acc) => {
+                const key = `${act.act_code}::${acc.account_id}`;
+                const open = openAccounts.has(key);
+                return (
+                  <React.Fragment key={key}>
+                    <tr onClick={() => toggle(key)} className="border-b border-slate-50 cursor-pointer hover:bg-slate-50/60">
+                      <td className="py-2.5 pl-4 font-bold text-slate-800">
+                        <span className="inline-flex items-center gap-1.5">
+                          {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+                          {acc.account_name} <span className="text-slate-400 font-normal">({acc.account_code})</span>
+                        </span>
+                      </td>
+                      <td className="py-2.5 text-center">{acc.account_admin_count}</td>
+                      <td className="py-2.5 text-center">{acc.user_count}</td>
+                      <td className="py-2.5 text-center font-semibold">{acc.training_count}</td>
+                      <td className="py-2.5 text-center text-slate-600">{acc.not_started_count}</td>
+                      <td className="py-2.5 text-center text-blue-600">{acc.in_progress_count}</td>
+                      <td className="py-2.5 pr-4 text-center text-green-600">{acc.completed_count}</td>
+                    </tr>
+                    {open && (
+                      <tr className="border-b border-slate-100">
+                        <td colSpan={7} className="bg-slate-50/60 pl-10 pr-4 py-3">
+                          <PeopleProgress members={acc.members} />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

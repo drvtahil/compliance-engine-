@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, UniqueConstraint, Index, text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database.connection import Base
@@ -39,6 +39,7 @@ class TrainingModule(Base):
 
     course = relationship("TrainingCourse", back_populates="modules")
     content_items = relationship("TrainingContentItem", back_populates="module", cascade="all, delete-orphan", order_by="TrainingContentItem.sequence_order.asc()")
+    assignments = relationship("TrainingAssignment", back_populates="module", cascade="all, delete-orphan", order_by="TrainingAssignment.sequence_order.asc()")
     department_item = relationship("MasterRegistryItem", foreign_keys=[department_item_id])
     process_item = relationship("MasterRegistryItem", foreign_keys=[process_item_id])
 
@@ -72,6 +73,77 @@ class TrainingContentProgress(Base):
     completed_at = Column(DateTime, nullable=True)
 
     content_item = relationship("TrainingContentItem")
+
+
+class TrainingAssignment(Base):
+    __tablename__ = "training_assignments"
+    id = Column(Integer, primary_key=True, index=True)
+    module_id = Column(Integer, ForeignKey("training_modules.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    sequence_order = Column(Integer, default=1)
+    created_by = Column(Integer, ForeignKey("super_admins.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    module = relationship("TrainingModule", back_populates="assignments")
+    questions = relationship("TrainingQuestion", back_populates="assignment", cascade="all, delete-orphan", order_by="TrainingQuestion.sequence_order.asc()")
+
+
+class TrainingQuestion(Base):
+    __tablename__ = "training_questions"
+    id = Column(Integer, primary_key=True, index=True)
+    assignment_id = Column(Integer, ForeignKey("training_assignments.id", ondelete="CASCADE"), nullable=False, index=True)
+    question_text = Column(Text, nullable=False)
+    question_type = Column(String(10), nullable=False, default="single")  # single (radio) | multi (checkbox)
+    sequence_order = Column(Integer, default=1)
+
+    assignment = relationship("TrainingAssignment", back_populates="questions")
+    options = relationship("TrainingQuestionOption", back_populates="question", cascade="all, delete-orphan", order_by="TrainingQuestionOption.sequence_order.asc()")
+
+
+class TrainingQuestionOption(Base):
+    __tablename__ = "training_question_options"
+    id = Column(Integer, primary_key=True, index=True)
+    question_id = Column(Integer, ForeignKey("training_questions.id", ondelete="CASCADE"), nullable=False, index=True)
+    option_text = Column(Text, nullable=False)
+    is_correct = Column(Boolean, default=False)  # each correct option is worth 1 mark
+    sequence_order = Column(Integer, default=1)
+
+    question = relationship("TrainingQuestion", back_populates="options")
+
+
+class TrainingAttempt(Base):
+    __tablename__ = "training_attempts"
+    __table_args__ = (
+        # At most one unfinished attempt per learner per assignment, even if two
+        # "start" requests arrive at the same moment.
+        Index("uq_training_attempt_one_in_progress", "assignment_id", "admin_id", unique=True, postgresql_where=text("status = 'in_progress'")),
+    )
+    id = Column(Integer, primary_key=True, index=True)
+    assignment_id = Column(Integer, ForeignKey("training_assignments.id", ondelete="CASCADE"), nullable=False, index=True)
+    admin_id = Column(Integer, ForeignKey("account_admins.id", ondelete="CASCADE"), nullable=False, index=True)
+    attempt_number = Column(Integer, nullable=False, default=1)
+    status = Column(String(20), nullable=False, default="in_progress")  # in_progress | submitted
+    started_at = Column(DateTime, default=datetime.utcnow)
+    submitted_at = Column(DateTime, nullable=True)
+    marks_obtained = Column(Integer, nullable=True)
+    total_marks = Column(Integer, nullable=True)
+    score_percent = Column(Integer, nullable=True)
+
+    assignment = relationship("TrainingAssignment")
+    answers = relationship("TrainingAttemptAnswer", back_populates="attempt", cascade="all, delete-orphan")
+
+
+class TrainingAttemptAnswer(Base):
+    __tablename__ = "training_attempt_answers"
+    __table_args__ = (UniqueConstraint("attempt_id", "question_id", name="uq_training_answer_attempt_question"),)
+    id = Column(Integer, primary_key=True, index=True)
+    attempt_id = Column(Integer, ForeignKey("training_attempts.id", ondelete="CASCADE"), nullable=False, index=True)
+    question_id = Column(Integer, nullable=False)  # plain int (no FK) so editing an assignment never breaks past attempts
+    selected_option_ids = Column(Text, nullable=False, default="[]")  # JSON list of option ids
+
+    attempt = relationship("TrainingAttempt", back_populates="answers")
 
 
 class TrainingCourseAllocation(Base):

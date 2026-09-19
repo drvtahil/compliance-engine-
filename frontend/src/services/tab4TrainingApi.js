@@ -182,3 +182,27 @@ export const getAuditLogApi = async (entityType, entityId) => {
   const res = await authFetch(`${API_BASE}/audit-log?${params.toString()}`);
   return handle(res, "Failed to load audit log.");
 };
+
+// --- Assignments (module tests) ---
+export const createAssignmentApi = async (moduleId, payload) => {
+  const res = await authFetch(`${API_BASE}/modules/${moduleId}/assignments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handle(res, "Failed to create assignment.");
+};
+
+export const updateAssignmentApi = async (id, payload) => {
+  const res = await authFetch(`${API_BASE}/assignments/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handle(res, "Failed to update assignment.");
+};
+
+export const deleteAssignmentApi = async (id) => {
+  const res = await authFetch(`${API_BASE}/assignments/${id}`, { method: "DELETE" });
+  return handle(res, "Failed to delete assignment.");
+};

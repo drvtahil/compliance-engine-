@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   GraduationCap, ChevronLeft, ChevronRight, ChevronDown, Lock, CheckCircle2, Circle, PlayCircle, AlertCircle,
-  Video, FileText, Presentation, Loader2, Music, FileSpreadsheet, Image, File as FileIcon
+  Video, FileText, Presentation, Loader2, Music, FileSpreadsheet, Image, File as FileIcon, ClipboardList
 } from "lucide-react";
 import { fetchMyCoursesApi, fetchMyCourseDetailApi, markContentCompleteApi, fetchContentBlobUrl } from "../../services/trainingApi";
+import AssignmentPlayer from "./AssignmentPlayer";
+import AssignmentResultsLog from "./AssignmentResultsLog";
+import { ScorePill } from "./assignmentUtils.jsx";
 
 // Mirrors the Super Admin builder's icon logic: file_type (the real
 // extension) is authoritative when a file was uploaded; content_type (the
@@ -68,6 +71,7 @@ export default function TrainingTab() {
   const [error, setError] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [selectedAct, setSelectedAct] = useState("");
+  const [view, setView] = useState("courses"); // courses | results
 
   const loadCourses = useCallback(async () => {
     setLoading(true);
@@ -113,7 +117,18 @@ export default function TrainingTab() {
           <GraduationCap className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-bold text-slate-800">My Training</h2>
         </div>
-        {actCodes.length > 0 && (
+        <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+          {[["courses", "My Courses"], ["results", "My Results"]].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setView(key)}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold ${view === key ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {view === "courses" && actCodes.length > 0 && (
           <div className="flex items-center gap-2">
             <label className="text-xs font-bold text-slate-500">Act:</label>
             <select
@@ -129,7 +144,9 @@ export default function TrainingTab() {
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-2 rounded">{error}</div>}
 
-      {loading ? (
+      {view === "results" ? (
+        <AssignmentResultsLog />
+      ) : loading ? (
         <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
       ) : courses.length === 0 ? (
         <div className="text-center text-sm text-slate-400 py-16 border border-dashed border-slate-200 rounded-xl">
@@ -173,7 +190,7 @@ export default function TrainingTab() {
                         <div className={`h-1.5 rounded-full transition-all ${status.bar}`} style={{ width: `${c.progress_percent}%` }} />
                       </div>
                       <span className="text-[11px] font-semibold text-slate-500 flex-shrink-0">
-                        {c.completed_count}/{c.content_count} items &middot; {c.progress_percent}%
+                        {c.completed_count}/{c.content_count} sections &middot; {c.progress_percent}%
                       </span>
                     </div>
                   </div>
@@ -211,6 +228,7 @@ function CoursePlayer({ courseId, onBack }) {
   const [expandedModuleIds, setExpandedModuleIds] = useState(new Set());
   const [marking, setMarking] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeAssignment, setActiveAssignment] = useState(null); // null | { assignmentId, moduleName }
 
   const toggleModule = (moduleId) => {
     setExpandedModuleIds((prev) => {
@@ -222,6 +240,7 @@ function CoursePlayer({ courseId, onBack }) {
   };
 
   const selectContent = (moduleId, contentId) => {
+    setActiveAssignment(null);
     setSelectedModuleId(moduleId);
     setSelectedContentId(contentId);
     setExpandedModuleIds((prev) => new Set(prev).add(moduleId));
@@ -290,7 +309,7 @@ function CoursePlayer({ courseId, onBack }) {
                 <div className="bg-blue-600 h-1.5 rounded-full transition-all" style={{ width: `${progressPercent}%` }} />
               </div>
               <span className="text-[11px] font-semibold text-slate-500 flex-shrink-0">
-                {completedCount}/{totalCount} items &middot; {progressPercent}%
+                {completedCount}/{totalCount} sections &middot; {progressPercent}%
               </span>
             </div>
           </div>
@@ -360,7 +379,7 @@ function CoursePlayer({ courseId, onBack }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[12px] font-bold text-slate-800 leading-snug">{m.module_name}</div>
-                      <div className="text-[9.5px] text-slate-400 mt-0.5">{moduleCompletedCount}/{moduleContentCount} items completed</div>
+                      <div className="text-[9.5px] text-slate-400 mt-0.5">{moduleCompletedCount}/{moduleContentCount} sections completed</div>
                       {(m.department_name || m.process_name || m.chapter || m.rules) && (
                         <div className="flex items-center gap-1 flex-wrap mt-1">
                           {m.department_name && (
@@ -407,15 +426,30 @@ function CoursePlayer({ courseId, onBack }) {
                           </button>
                         );
                       })}
-                      {m.test_required && (
-                        <div className="px-3 py-2.5 text-[11.5px] font-bold flex items-center gap-1.5">
-                          {m.is_complete ? (
-                            <span className="text-blue-600">Take Test (coming soon)</span>
-                          ) : (
-                            <span className="text-slate-400 flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Test locked until module complete</span>
-                          )}
-                        </div>
-                      )}
+                      {m.assignments.map((a) => {
+                        const isActive = activeAssignment?.assignmentId === a.id;
+                        const label = a.has_in_progress ? "Continue Assignment" : a.attempt_count > 0 ? "Retake Assignment" : "Take Assignment";
+                        return (
+                          <div key={a.id} className={`mt-1 rounded-md border px-2.5 py-2 ${isActive ? "border-blue-300 bg-white" : "border-slate-200 bg-white"}`}>
+                            <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-slate-700">
+                              <ClipboardList className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                              <span className="flex-1 leading-snug">{a.title}</span>
+                              <ScorePill percent={a.latest_score_percent} />
+                            </div>
+                            <button
+                              disabled={!m.is_complete}
+                              onClick={() => { setSelectedModuleId(m.id); setActiveAssignment({ assignmentId: a.id, moduleName: `Module ${m.sequence_order} · ${m.module_name}` }); }}
+                              className={`mt-2 w-full flex items-center justify-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-md ${
+                                m.is_complete ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                              }`}
+                            >
+                              {!m.is_complete && <Lock className="w-3 h-3" />}
+                              {m.is_complete ? label : "Complete all sections to unlock"}
+                            </button>
+                            {a.attempt_count > 0 && <div className="text-[9.5px] text-slate-400 mt-1">{a.attempt_count} {a.attempt_count === 1 ? "attempt" : "attempts"} &middot; latest score shown</div>}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -425,6 +459,15 @@ function CoursePlayer({ courseId, onBack }) {
         )}
 
         <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl p-5">
+          {activeAssignment ? (
+            <AssignmentPlayer
+              assignmentId={activeAssignment.assignmentId}
+              moduleName={activeAssignment.moduleName}
+              onExit={() => { setActiveAssignment(null); load(); }}
+              onSubmitted={load}
+            />
+          ) : (
+          <>
           {selectedContent && selectedModule && (
             <div className="text-[11px] font-semibold text-slate-400 mb-3">
               Module {selectedModule.sequence_order} &middot; {selectedModule.module_name}
@@ -435,9 +478,11 @@ function CoursePlayer({ courseId, onBack }) {
             </div>
           )}
           {!selectedContent ? (
-            <div className="text-center text-sm text-slate-400 py-12">Select content to view.</div>
+            <div className="text-center text-sm text-slate-400 py-12">Select a section to view.</div>
           ) : (
             <ContentViewer content={selectedContent} onComplete={() => handleComplete(selectedContent.id)} marking={marking} />
+          )}
+          </>
           )}
         </div>
       </div>

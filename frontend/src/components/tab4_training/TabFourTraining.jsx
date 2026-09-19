@@ -3,7 +3,7 @@ import {
   GraduationCap, PlusCircle, Edit2, Trash2, Archive, UploadCloud, Download,
   Loader2, ChevronLeft, Video, FileText, Presentation, Link2, Music, FileSpreadsheet, Image, File as FileIcon,
   Eye, Users, History, Layers, GripVertical, X, Copy, Send, EyeOff,
-  ChevronUp, ChevronDown, ChevronsUpDown, LayoutDashboard
+  ChevronUp, ChevronDown, ChevronsUpDown, LayoutDashboard, ClipboardList
 } from "lucide-react";
 import { fetchTab1BootstrapApi } from "../../services/tab1Api";
 import {
@@ -12,10 +12,10 @@ import {
   createModuleApi, updateModuleApi, deleteModuleApi, duplicateModuleApi, reorderModulesApi,
   createContentItemApi, updateContentItemApi, deleteContentItemApi, reorderContentItemsApi,
   viewContentFile, listAllocationsApi, createAllocationApi, deleteAllocationApi,
-  bulkAllocateCsvApi, getAuditLogApi
+  bulkAllocateCsvApi, getAuditLogApi, createAssignmentApi, updateAssignmentApi, deleteAssignmentApi
 } from "../../services/tab4TrainingApi";
 import {
-  fetchDashboardSummaryApi, fetchDashboardAccountsApi, fetchDashboardCoursesApi,
+  fetchDashboardSummaryApi, fetchDashboardActTreeApi, fetchDashboardAccountsApi, fetchDashboardCoursesApi,
   fetchDashboardCourseModulesApi, fetchDashboardRecordsApi
 } from "../../services/tab4DashboardApi";
 import TrainingDashboardView from "../../shared/TrainingDashboardView";
@@ -155,6 +155,7 @@ export default function TabFourTraining() {
   const [courseModal, setCourseModal] = useState(null); // null | { editing: course|null }
   const [moduleModal, setModuleModal] = useState(null); // null | { editing: module|null }
   const [contentModal, setContentModal] = useState(null); // null | { editing: item|null }
+  const [assignmentModal, setAssignmentModal] = useState(null); // null | { editing: assignment|null }
   const [allocationModal, setAllocationModal] = useState(false);
   const [allocationRefreshKey, setAllocationRefreshKey] = useState(0);
   const [previewData, setPreviewData] = useState(null);
@@ -244,6 +245,7 @@ export default function TabFourTraining() {
           title="Training Dashboard"
           api={{
             fetchSummary: fetchDashboardSummaryApi,
+            fetchActTree: fetchDashboardActTreeApi,
             fetchAccounts: fetchDashboardAccountsApi,
             fetchCourses: fetchDashboardCoursesApi,
             fetchCourseModules: fetchDashboardCourseModulesApi,
@@ -335,6 +337,7 @@ export default function TabFourTraining() {
           onEditCourse={() => setCourseModal({ editing: course })}
           onOpenModuleModal={(editing) => setModuleModal({ editing })}
           onOpenContentModal={(editing) => setContentModal({ editing })}
+          onOpenAssignmentModal={(editing) => setAssignmentModal({ editing })}
           onOpenAllocationModal={() => setAllocationModal(true)}
           allocationRefreshKey={allocationRefreshKey}
           onPreview={async () => setPreviewData(await previewCourseApi(course.id))}
@@ -372,6 +375,16 @@ export default function TabFourTraining() {
           contentTypes={contentTypes}
           onClose={() => setContentModal(null)}
           onSaved={() => { setContentModal(null); refreshCourse(); }}
+          setError={setError}
+        />
+      )}
+
+      {assignmentModal && selectedModuleId && (
+        <AssignmentBuilderModal
+          moduleId={selectedModuleId}
+          editing={assignmentModal.editing}
+          onClose={() => setAssignmentModal(null)}
+          onSaved={() => { setAssignmentModal(null); refreshCourse(); }}
           setError={setError}
         />
       )}
@@ -444,7 +457,7 @@ function CourseListTable({ courses, onView, onEdit, onPublish, onUnpublish, onAr
 function CourseDetail({
   course, loading, subTab, setSubTab, selectedModuleId, setSelectedModuleId,
   departmentList, processList, accounts, roles, onBack, onRefresh,
-  onEditCourse, onOpenModuleModal, onOpenContentModal, onOpenAllocationModal, allocationRefreshKey, onPreview, setError
+  onEditCourse, onOpenModuleModal, onOpenContentModal, onOpenAssignmentModal, onOpenAllocationModal, allocationRefreshKey, onPreview, setError
 }) {
   if (loading || !course) {
     return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
@@ -472,13 +485,18 @@ function CourseDetail({
   };
 
   const handleDeleteModule = async (id) => {
-    if (!window.confirm("Delete this module and all its content?")) return;
+    if (!window.confirm("Delete this module and all its sections and assignments?")) return;
     doAction(() => deleteModuleApi(id));
   };
 
   const handleDeleteContent = async (id) => {
-    if (!window.confirm("Delete this content item?")) return;
+    if (!window.confirm("Delete this section?")) return;
     doAction(() => deleteContentItemApi(id));
+  };
+
+  const handleDeleteAssignment = async (a) => {
+    if (!window.confirm(`Delete assignment "${a.title}"? All learner attempts for it will be deleted too.`)) return;
+    doAction(() => deleteAssignmentApi(a.id));
   };
 
   return (
@@ -511,7 +529,7 @@ function CourseDetail({
 
       <div className="flex gap-1 border-b border-slate-200">
         {[
-          { key: "builder", label: "Modules & Content", icon: Layers },
+          { key: "builder", label: "Modules & Sections", icon: Layers },
           { key: "allocations", label: "Allocations", icon: Users },
           { key: "audit", label: "Audit Log", icon: History },
         ].map((t) => (
@@ -552,7 +570,7 @@ function CourseDetail({
 
           <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl p-4">
             {!selectedModule ? (
-              <div className="text-center text-sm text-slate-400 py-12">Select or create a module to manage its content.</div>
+              <div className="text-center text-sm text-slate-400 py-12">Select or create a module to manage its sections and assignments.</div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
@@ -572,7 +590,7 @@ function CourseDetail({
                       {selectedModule.rules && (
                         <span className="text-[9px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded px-1.5 py-0.5">{selectedModule.rules}</span>
                       )}
-                      <span className="text-[9px] font-semibold text-slate-400">Test required: {selectedModule.test_required ? "Yes" : "No"}</span>
+                      <span className="text-[9px] font-semibold text-slate-400">Assignments: {selectedModule.assignments.length}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
@@ -616,8 +634,33 @@ function CourseDetail({
                   onClick={() => onOpenContentModal(null)}
                   className="w-full flex items-center justify-center gap-1.5 border border-dashed border-slate-300 rounded-lg py-2 text-xs font-bold text-slate-500 hover:border-blue-300 hover:text-blue-600"
                 >
-                  <PlusCircle className="w-3.5 h-3.5" /> Add Content Item
+                  <PlusCircle className="w-3.5 h-3.5" /> Add Section
                 </button>
+
+                <div className="pt-3 mt-1 border-t border-slate-100 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Assignments</div>
+                    <button
+                      onClick={() => onOpenAssignmentModal(null)}
+                      className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
+                    >
+                      <ClipboardList className="w-3.5 h-3.5" /> Create Assignment
+                    </button>
+                  </div>
+                  {selectedModule.assignments.length === 0 ? (
+                    <div className="text-xs text-slate-400 py-2">No assignments yet. Learners see no test for this module until you create one.</div>
+                  ) : selectedModule.assignments.map((a) => (
+                    <div key={a.id} className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2">
+                      <ClipboardList className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-slate-700 truncate">{a.title}</div>
+                        <div className="text-[10px] text-slate-400">{a.questions.length} {a.questions.length === 1 ? "question" : "questions"} &middot; {a.total_marks} {a.total_marks === 1 ? "mark" : "marks"}</div>
+                      </div>
+                      <button onClick={() => onOpenAssignmentModal(a)} title="Edit" className="p-1 rounded text-slate-400 hover:text-slate-700"><Edit2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => handleDeleteAssignment(a)} title="Delete" className="p-1 rounded text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -690,7 +733,6 @@ function ModuleFormModal({ courseId, editing, departmentList, processList, onClo
   const [processItemId, setProcessItemId] = useState(editing?.process_item_id || "");
   const [chapter, setChapter] = useState(editing?.chapter || "");
   const [rules, setRules] = useState(editing?.rules || "");
-  const [testRequired, setTestRequired] = useState(editing?.test_required || false);
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -704,7 +746,6 @@ function ModuleFormModal({ courseId, editing, departmentList, processList, onClo
         process_item_id: processItemId ? Number(processItemId) : null,
         chapter,
         rules,
-        test_required: testRequired,
       };
       const result = editing ? await updateModuleApi(editing.id, payload) : await createModuleApi(courseId, payload);
       onSaved(result);
@@ -746,10 +787,6 @@ function ModuleFormModal({ courseId, editing, departmentList, processList, onClo
             <input value={rules} onChange={(e) => setRules(e.target.value)} className="w-full border border-slate-300 rounded-lg text-sm px-3 py-2" placeholder="e.g. Rule 5, 7" />
           </Field>
         </div>
-        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-          <input type="checkbox" checked={testRequired} onChange={(e) => setTestRequired(e.target.checked)} />
-          Require a test after this module (test engine coming in a future feature)
-        </label>
       </div>
       <ModalFooter onClose={onClose} onSubmit={submit} saving={saving} label={editing ? "Save Changes" : "Add Module"} />
     </ModalShell>
@@ -766,7 +803,7 @@ function ContentFormModal({ moduleId, editing, contentTypes, onClose, onSaved, s
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (!title.trim()) return setError("Content title is required.");
+    if (!title.trim()) return setError("Section title is required.");
     if (sourceType === "upload" && !editing && !file) return setError("Please choose a file to upload.");
     if (sourceType === "external_url" && !externalUrl.trim()) return setError("Please enter an external URL.");
     setSaving(true);
@@ -789,7 +826,7 @@ function ContentFormModal({ moduleId, editing, contentTypes, onClose, onSaved, s
   };
 
   return (
-    <ModalShell title={editing ? "Edit Content Item" : "Add Content Item"} onClose={onClose}>
+    <ModalShell title={editing ? "Edit Section" : "Add Section"} onClose={onClose}>
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Content Type">
@@ -820,8 +857,166 @@ function ContentFormModal({ moduleId, editing, contentTypes, onClose, onSaved, s
           </Field>
         )}
       </div>
-      <ModalFooter onClose={onClose} onSubmit={submit} saving={saving} label={editing ? "Save Changes" : "Add Content"} />
+      <ModalFooter onClose={onClose} onSubmit={submit} saving={saving} label={editing ? "Save Changes" : "Add Section"} />
     </ModalShell>
+  );
+}
+
+const blankQuestion = () => ({
+  question_text: "",
+  question_type: "single",
+  options: [{ option_text: "", is_correct: false }, { option_text: "", is_correct: false }],
+});
+
+function AssignmentBuilderModal({ moduleId, editing, onClose, onSaved, setError }) {
+  const [title, setTitle] = useState(editing?.title || "");
+  const [description, setDescription] = useState(editing?.description || "");
+  const [questions, setQuestions] = useState(
+    editing ? editing.questions.map((q) => ({ question_text: q.question_text, question_type: q.question_type, options: q.options.map((o) => ({ option_text: o.option_text, is_correct: o.is_correct })) })) : [blankQuestion()]
+  );
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const totalMarks = questions.reduce((sum, q) => sum + q.options.filter((o) => o.option_text.trim() && o.is_correct).length, 0);
+
+  const updateQuestion = (qi, patch) => setQuestions((qs) => qs.map((q, i) => (i === qi ? { ...q, ...patch } : q)));
+  const updateOption = (qi, oi, patch) => setQuestions((qs) => qs.map((q, i) => (i === qi ? { ...q, options: q.options.map((o, j) => (j === oi ? { ...o, ...patch } : o)) } : q)));
+
+  const setCorrect = (qi, oi, checked) => {
+    setQuestions((qs) => qs.map((q, i) => {
+      if (i !== qi) return q;
+      return {
+        ...q,
+        options: q.options.map((o, j) => ({
+          ...o,
+          is_correct: q.question_type === "single" ? j === oi : j === oi ? checked : o.is_correct,
+        })),
+      };
+    }));
+  };
+
+  const changeType = (qi, type) => setQuestions((qs) => qs.map((q, i) => {
+    if (i !== qi) return q;
+    let options = q.options;
+    if (type === "single") {
+      const firstCorrect = options.findIndex((o) => o.is_correct);
+      options = options.map((o, j) => ({ ...o, is_correct: j === firstCorrect }));
+    }
+    return { ...q, question_type: type, options };
+  }));
+
+  const submit = async () => {
+    setFormError("");
+    if (!title.trim()) return setFormError("Assignment title is required.");
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const filled = q.options.filter((o) => o.option_text.trim());
+      if (!q.question_text.trim()) return setFormError(`Question ${i + 1}: enter the question text.`);
+      if (filled.length < 2) return setFormError(`Question ${i + 1}: add at least two answer choices.`);
+      if (!filled.some((o) => o.is_correct)) {
+        return setFormError(`Question ${i + 1}: tick the right choice${q.question_type === "multi" ? "s" : ""} using the ${q.question_type === "multi" ? "checkbox" : "radio button"} next to the answer. Each right choice is worth 1 mark.`);
+      }
+    }
+    setSaving(true);
+    try {
+      const payload = { title, description, questions };
+      if (editing) await updateAssignmentApi(editing.id, payload);
+      else await createAssignmentApi(moduleId, payload);
+      onSaved();
+    } catch (e) {
+      setFormError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+          <h3 className="font-bold text-slate-800 text-sm">{editing ? "Edit Assignment" : "Create Assignment"}</h3>
+          <button onClick={onClose}><X className="w-4 h-4 text-slate-400 hover:text-slate-700" /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Assignment Title">
+              <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border border-slate-300 rounded-lg text-sm px-3 py-2" placeholder="e.g. Module 1 Knowledge Check" />
+            </Field>
+            <Field label="Description (optional)">
+              <input value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border border-slate-300 rounded-lg text-sm px-3 py-2" />
+            </Field>
+          </div>
+
+          {editing && (
+            <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Saving replaces the questions. Scores from attempts already submitted stay as they were.
+            </div>
+          )}
+
+          {questions.map((q, qi) => (
+            <div key={qi} className="border border-slate-200 rounded-xl p-3 space-y-2.5 bg-slate-50/50">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs font-bold text-slate-600">Question {qi + 1}</div>
+                <div className="flex items-center gap-2">
+                  <select value={q.question_type} onChange={(e) => changeType(qi, e.target.value)} className="border border-slate-300 rounded-lg text-xs px-2 py-1 bg-white">
+                    <option value="single">Single answer (radio)</option>
+                    <option value="multi">Multiple answers (checkbox)</option>
+                  </select>
+                  {questions.length > 1 && (
+                    <button onClick={() => setQuestions((qs) => qs.filter((_, i) => i !== qi))} title="Remove question" className="p-1 rounded text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+                  )}
+                </div>
+              </div>
+              <textarea value={q.question_text} onChange={(e) => updateQuestion(qi, { question_text: e.target.value })} rows={2} className="w-full border border-slate-300 rounded-lg text-sm px-3 py-2 bg-white" placeholder="Type the question" />
+
+              <div className="space-y-1.5">
+                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
+                  Answer choices &mdash; {q.question_type === "single" ? "select the one right choice" : "tick every right choice (1 mark each)"}
+                </div>
+                {q.options.map((o, oi) => (
+                  <div key={oi} className="flex items-center gap-2">
+                    <input
+                      type={q.question_type === "single" ? "radio" : "checkbox"}
+                      name={`correct-${qi}`}
+                      checked={o.is_correct}
+                      onChange={(e) => setCorrect(qi, oi, e.target.checked)}
+                      title="Mark as right choice"
+                      className="flex-shrink-0"
+                    />
+                    <input value={o.option_text} onChange={(e) => updateOption(qi, oi, { option_text: e.target.value })} className="flex-1 border border-slate-300 rounded-lg text-sm px-3 py-1.5 bg-white" placeholder={`Choice ${oi + 1}`} />
+                    {q.options.length > 2 && (
+                      <button onClick={() => updateQuestion(qi, { options: q.options.filter((_, j) => j !== oi) })} title="Remove choice" className="p-1 rounded text-slate-400 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+                    )}
+                  </div>
+                ))}
+                <button onClick={() => updateQuestion(qi, { options: [...q.options, { option_text: "", is_correct: false }] })} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                  <PlusCircle className="w-3 h-3" /> Add choice
+                </button>
+              </div>
+            </div>
+          ))}
+
+          <button onClick={() => setQuestions((qs) => [...qs, blankQuestion()])} className="w-full flex items-center justify-center gap-1.5 border border-dashed border-slate-300 rounded-lg py-2 text-xs font-bold text-slate-500 hover:border-blue-300 hover:text-blue-600">
+            <PlusCircle className="w-3.5 h-3.5" /> Add Question
+          </button>
+        </div>
+
+        {formError && <div className="mx-5 mb-2 bg-red-50 border border-red-200 text-red-700 text-xs p-2.5 rounded-lg">{formError}</div>}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200">
+          <div className="text-xs font-semibold text-slate-500">
+            {questions.length} {questions.length === 1 ? "question" : "questions"} &middot; Total marks: {totalMarks}
+            <span className="font-normal text-slate-400"> (1 per right choice ticked)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={onClose} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800">Cancel</button>
+            <button onClick={submit} disabled={saving} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-1.5 rounded-lg">
+              {saving ? "Saving..." : editing ? "Save Changes" : "Create Assignment"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1053,7 +1248,7 @@ function PreviewModal({ data, onClose }) {
                 );
               })}
             </div>
-            {m.test_required && <div className="text-[10px] font-bold text-amber-600 mt-2">Test required after this module</div>}
+            {m.assignments?.length > 0 && <div className="text-[10px] font-bold text-amber-600 mt-2">{m.assignments.length} {m.assignments.length === 1 ? "assignment" : "assignments"} after this module</div>}
           </div>
         ))}
       </div>

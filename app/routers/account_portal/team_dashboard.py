@@ -33,6 +33,11 @@ def get_filter_options(db: Session = Depends(get_db), current_admin: AccountAdmi
     }
 
 
+@router.get("/acts")
+def get_act_tree(db: Session = Depends(get_db), current_admin: AccountAdmin = Depends(get_current_account_admin_manager)):
+    return svc.build_act_tree(db, account_id=current_admin.account_id)
+
+
 @router.get("/summary")
 def get_summary(db: Session = Depends(get_db), current_admin: AccountAdmin = Depends(get_current_account_admin_manager)):
     return svc.build_summary(db, account_id=current_admin.account_id)

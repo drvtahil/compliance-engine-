@@ -8,7 +8,7 @@ from app.database.connection import get_db
 from app.models.tab1_models import AccountAdmin
 from app.models.tab4_models import (
     TrainingCourse, TrainingModule, TrainingContentItem,
-    TrainingContentProgress, TrainingCourseAllocation,
+    TrainingContentProgress, TrainingCourseAllocation, TrainingAttempt,
 )
 
 router = APIRouter(prefix="/api/v1/account/training", tags=["Account Portal Training"])
@@ -33,6 +33,12 @@ def list_my_courses(db: Session = Depends(get_db), current_admin: AccountAdmin =
         TrainingCourse.id.in_(course_ids), TrainingCourse.status == "published"
     ).order_by(TrainingCourse.id.desc()).all()
 
+    attempted_assignment_ids = {
+        r[0] for r in db.query(TrainingAttempt.assignment_id).filter(
+            TrainingAttempt.admin_id == current_admin.id, TrainingAttempt.status == "submitted",
+        ).all()
+    }
+
     result = []
     for c in courses:
         content_ids = [ci.id for m in c.modules for ci in m.content_items]
@@ -52,7 +58,7 @@ def list_my_courses(db: Session = Depends(get_db), current_admin: AccountAdmin =
             "module_count": len(c.modules),
             "content_count": total,
             "completed_count": completed,
-            "has_test_required": any(m.test_required for m in c.modules),
+            "has_test_required": any(a.questions and a.id not in attempted_assignment_ids for m in c.modules for a in m.assignments),
             "progress_percent": round((completed / total) * 100) if total else 0,
         })
     return result
@@ -73,6 +79,30 @@ def get_my_course(course_id: int, db: Session = Depends(get_db), current_admin: 
         TrainingContentProgress.content_item_id.in_(all_content_ids),
     ).all() if all_content_ids else []
     completed_ids = {p.content_item_id for p in progress_rows if p.status == "completed"}
+
+    assignment_ids = [a.id for m in course.modules for a in m.assignments]
+    attempts_by_assignment = {}
+    if assignment_ids:
+        for at in db.query(TrainingAttempt).filter(
+            TrainingAttempt.admin_id == current_admin.id,
+            TrainingAttempt.assignment_id.in_(assignment_ids),
+        ).order_by(TrainingAttempt.attempt_number.asc()).all():
+            attempts_by_assignment.setdefault(at.assignment_id, []).append(at)
+
+    def assignment_summary(a):
+        attempts = attempts_by_assignment.get(a.id, [])
+        submitted = [x for x in attempts if x.status == "submitted"]
+        latest = submitted[-1] if submitted else None
+        return {
+            "id": a.id,
+            "title": a.title,
+            "description": a.description or "",
+            "question_count": len(a.questions),
+            "attempt_count": len(submitted),
+            "has_in_progress": any(x.status == "in_progress" for x in attempts),
+            "latest_score_percent": latest.score_percent if latest else None,
+            "latest_submitted_at": latest.submitted_at if latest else None,
+        }
 
     modules_out = []
     for m in course.modules:
@@ -102,7 +132,8 @@ def get_my_course(course_id: int, db: Session = Depends(get_db), current_admin: 
             "process_name": m.process_item.item_name if m.process_item else None,
             "chapter": m.chapter or "",
             "rules": m.rules or "",
-            "test_required": m.test_required,
+            "test_required": len(m.assignments) > 0,
+            "assignments": [assignment_summary(a) for a in m.assignments if a.questions],
             "is_complete": len(m.content_items) > 0 and all(ci.id in completed_ids for ci in m.content_items),
             "content_items": content_out,
         })

@@ -17,6 +17,11 @@ def get_summary(db: Session = Depends(get_db), current_admin: SuperAdmin = Depen
     return svc.build_summary(db)
 
 
+@router.get("/acts")
+def get_act_tree(db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
+    return svc.build_act_tree(db)
+
+
 @router.get("/accounts")
 def get_accounts_rollup(db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     return svc.build_accounts_rollup(db)

@@ -34,3 +34,28 @@ export const fetchContentBlobUrl = async (contentId) => {
   const blob = await res.blob();
   return URL.createObjectURL(blob);
 };
+
+// --- Assignments (module tests) ---
+export const startAssignmentAttemptApi = async (assignmentId) => {
+  const res = await accountFetch(`${API_BASE}/assignments/${assignmentId}/start`, { method: "POST" });
+  return handle(res, "Failed to open the assignment.");
+};
+
+export const saveAttemptAnswerApi = async (attemptId, questionId, optionIds) => {
+  const res = await accountFetch(`${API_BASE}/attempts/${attemptId}/answer`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question_id: questionId, option_ids: optionIds }),
+  });
+  return handle(res, "Failed to save your answer.");
+};
+
+export const submitAttemptApi = async (attemptId) => {
+  const res = await accountFetch(`${API_BASE}/attempts/${attemptId}/submit`, { method: "POST" });
+  return handle(res, "Failed to submit the assignment.");
+};
+
+export const fetchMyAttemptsApi = async () => {
+  const res = await accountFetch(`${API_BASE}/attempts`);
+  return handle(res, "Failed to load your results.");
+};

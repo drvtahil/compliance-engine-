@@ -21,6 +21,7 @@ from app.models.tab4_models import (
     TrainingCourseAllocation, TrainingAuditLog,
 )
 from app.models.notifications import Notification
+from app.services.training_assignments import serialize_assignment_admin
 
 router = APIRouter(prefix="/api/v1/tab4/training", tags=["Tab 4 Training - Course Builder"])
 
@@ -133,9 +134,10 @@ def serialize_module(m: TrainingModule) -> dict:
         "process_name": m.process_item.item_name if m.process_item else None,
         "chapter": m.chapter or "",
         "rules": m.rules or "",
-        "test_required": m.test_required,
+        "test_required": len(m.assignments) > 0,
         "status": m.status,
         "content_items": [serialize_content_item(ci) for ci in m.content_items],
+        "assignments": [serialize_assignment_admin(a) for a in m.assignments],
     }
 
 

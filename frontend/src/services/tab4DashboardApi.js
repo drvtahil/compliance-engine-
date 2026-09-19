@@ -21,6 +21,11 @@ export const fetchDashboardSummaryApi = async () => {
   return handle(res, "Failed to load dashboard summary.");
 };
 
+export const fetchDashboardActTreeApi = async () => {
+  const res = await authFetch(`${API_BASE}/acts`);
+  return handle(res, "Failed to load acts and accounts.");
+};
+
 export const fetchDashboardAccountsApi = async () => {
   const res = await authFetch(`${API_BASE}/accounts`);
   return handle(res, "Failed to load accounts rollup.");
