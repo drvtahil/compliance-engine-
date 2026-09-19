@@ -556,7 +556,7 @@ function CourseDetail({
                   selectedModuleId === m.id ? "bg-blue-50 text-blue-700 border-l-2 border-blue-600" : "text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                <span className="truncate">{m.sequence_order}. {m.module_name}</span>
+                <span className="truncate"><span className="text-slate-400 font-bold">Module {m.sequence_order}</span> &middot; {m.module_name}</span>
                 <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">{m.content_items.length}</span>
               </button>
             ))}
@@ -575,6 +575,7 @@ function CourseDetail({
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
+                    <div className="text-[10.5px] font-bold text-blue-600 uppercase tracking-wide">Module {selectedModule.sequence_order}</div>
                     <div className="font-bold text-sm text-slate-800">{selectedModule.module_name}</div>
                     <div className="text-xs text-slate-500">{selectedModule.short_description}</div>
                     <div className="flex items-center flex-wrap gap-1 mt-1.5">
@@ -601,13 +602,14 @@ function CourseDetail({
                 </div>
 
                 <div className="space-y-1.5">
-                  {selectedModule.content_items.map((ci) => {
+                  {selectedModule.content_items.map((ci, idx) => {
                     const Icon = getContentIcon(ci);
                     return (
                       <div key={ci.id} className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2">
                         <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
                         <Icon className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Section {idx + 1}</div>
                           <div className="text-xs font-semibold text-slate-700 truncate">{ci.title}</div>
                           {ci.description && (
                             <div className="text-[10.5px] text-slate-500 mt-0.5 line-clamp-1">{ci.description}</div>
@@ -1236,14 +1238,14 @@ function PreviewModal({ data, onClose }) {
         <div className="text-xs text-slate-500">{data.description}</div>
         {data.modules.map((m) => (
           <div key={m.id} className="border border-slate-200 rounded-lg p-3">
-            <div className="font-bold text-sm text-slate-800">{m.sequence_order}. {m.module_name}</div>
+            <div className="font-bold text-sm text-slate-800"><span className="text-blue-600">Module {m.sequence_order}</span> &middot; {m.module_name}</div>
             <div className="text-xs text-slate-500 mb-2">{m.short_description}</div>
             <div className="space-y-1">
-              {m.content_items.map((ci) => {
+              {m.content_items.map((ci, idx) => {
                 const Icon = getContentIcon(ci);
                 return (
                   <div key={ci.id} className="flex items-center gap-2 text-xs text-slate-600">
-                    <Icon className="w-3.5 h-3.5 text-slate-400" /> {ci.title}
+                    <Icon className="w-3.5 h-3.5 text-slate-400" /> <span className="font-semibold text-slate-400">Section {idx + 1}</span> {ci.title}
                   </div>
                 );
               })}

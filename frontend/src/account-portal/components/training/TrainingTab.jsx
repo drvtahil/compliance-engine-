@@ -378,6 +378,7 @@ function CoursePlayer({ courseId, onBack }) {
                       {m.is_complete ? <CheckCircle2 className="w-3.5 h-3.5" /> : m.sequence_order}
                     </div>
                     <div className="flex-1 min-w-0">
+                      <div className="text-[9.5px] font-bold text-blue-600 uppercase tracking-wide">Module {m.sequence_order}</div>
                       <div className="text-[12px] font-bold text-slate-800 leading-snug">{m.module_name}</div>
                       <div className="text-[9.5px] text-slate-400 mt-0.5">{moduleCompletedCount}/{moduleContentCount} sections completed</div>
                       {(m.department_name || m.process_name || m.chapter || m.rules) && (
@@ -415,8 +416,8 @@ function CoursePlayer({ courseId, onBack }) {
                               ci.is_unlocked ? "text-slate-600 hover:bg-white" : "text-slate-300 cursor-not-allowed"
                             }`}
                           >
-                            <span className={`text-[9.5px] font-bold flex-shrink-0 w-6 ${isActive ? "text-blue-600" : "text-slate-400"}`}>
-                              {m.sequence_order}.{idx + 1}
+                            <span className={`text-[9.5px] font-bold flex-shrink-0 w-14 whitespace-nowrap ${isActive ? "text-blue-600" : "text-slate-400"}`}>
+                              Section {idx + 1}
                             </span>
                             {ci.is_completed ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0" /> :
                              ci.is_unlocked ? <Circle className="w-3.5 h-3.5 flex-shrink-0" /> :
@@ -473,14 +474,19 @@ function CoursePlayer({ courseId, onBack }) {
               Module {selectedModule.sequence_order} &middot; {selectedModule.module_name}
               <span className="text-slate-300"> &nbsp;/&nbsp; </span>
               <span className="text-slate-500">
-                {selectedModule.sequence_order}.{selectedModule.content_items.findIndex((ci) => ci.id === selectedContent.id) + 1}
+                Section {selectedModule.content_items.findIndex((ci) => ci.id === selectedContent.id) + 1}
               </span>
             </div>
           )}
           {!selectedContent ? (
             <div className="text-center text-sm text-slate-400 py-12">Select a section to view.</div>
           ) : (
-            <ContentViewer content={selectedContent} onComplete={() => handleComplete(selectedContent.id)} marking={marking} />
+            <ContentViewer
+              content={selectedContent}
+              sectionNumber={selectedModule.content_items.findIndex((ci) => ci.id === selectedContent.id) + 1}
+              onComplete={() => handleComplete(selectedContent.id)}
+              marking={marking}
+            />
           )}
           </>
           )}
@@ -497,7 +503,7 @@ function CoursePlayer({ courseId, onBack }) {
 // the real "played to the end" event instead, which IS fully reliable.
 const MIN_REVIEW_SECONDS = 8;
 
-function ContentViewer({ content, onComplete, marking }) {
+function ContentViewer({ content, sectionNumber, onComplete, marking }) {
   const [blobUrl, setBlobUrl] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [mediaEnded, setMediaEnded] = useState(false);
@@ -550,6 +556,7 @@ function ContentViewer({ content, onComplete, marking }) {
   return (
     <div className="space-y-3">
       <div>
+        <div className="text-[10.5px] font-bold text-blue-600 uppercase tracking-wide">Section {sectionNumber}</div>
         <div className="font-bold text-base text-slate-800">{content.title}</div>
         {content.description && (
           <div className="text-xs text-slate-500 mt-1 leading-relaxed">{content.description}</div>

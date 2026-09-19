@@ -317,7 +317,7 @@ function ModuleTable({ modules }) {
                 {i === 0 && (
                   <>
                     <td rowSpan={lines.length} className="py-2 pl-4 pr-4 align-top">
-                      <span className="text-slate-400 font-semibold mr-1.5">{mo.sequence_order}.</span>
+                      <span className="text-slate-400 font-semibold mr-1.5">Module {mo.sequence_order} &middot;</span>
                       <span className="font-semibold text-slate-700">{mo.module_name}</span>
                     </td>
                     <td rowSpan={lines.length} className="py-2 pr-4 align-top">
@@ -595,7 +595,7 @@ function CourseModulesDrillDown({ drill, onBack, onNavigate, api, setError }) {
               {sort.sorted.map((m) => (
                 <tr key={m.module_id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
                   <td className="py-2.5 pl-4">
-                    <div className="font-bold text-slate-800">{m.sequence_order}. {m.module_name}</div>
+                    <div className="font-bold text-slate-800"><span className="text-slate-400">Module {m.sequence_order} &middot;</span> {m.module_name}</div>
                     <div className="text-slate-400 text-[10px]">{m.short_description}</div>
                   </td>
                   <td className="py-2.5">
