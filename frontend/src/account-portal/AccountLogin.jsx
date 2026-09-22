@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { ShieldCheck } from "lucide-react";
 import { accountLoginApi, saveAccountSession } from "./services/accountAuthApi";
 
 export default function AccountLogin({ onLoggedIn }) {
@@ -28,8 +27,8 @@ export default function AccountLogin({ onLoggedIn }) {
     <div className="min-h-screen bg-[#f7f6f3] flex items-center justify-center px-4">
       <div className="bg-white border border-[#ece9e2] rounded-xl shadow-sm p-8 w-full max-w-sm space-y-4">
         <div className="flex items-center gap-3 mb-2">
-          <div className="bg-[#ff5a36] text-white p-2 rounded-lg shadow-sm">
-            <ShieldCheck className="w-6 h-6" />
+          <div className="bg-[#0b3f3c] w-10 h-10 flex-shrink-0 rounded-lg shadow-sm flex items-center justify-center">
+            <span className="text-[#ff5a36] font-extrabold text-sm tracking-tight">M9</span>
           </div>
           <div>
             <h1 className="text-lg font-bold text-[#0b3f3c]">Mood9 Compliance</h1>

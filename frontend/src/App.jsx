@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import { ShieldCheck, Building2, BookOpen, FolderArchive, Activity, LogOut, GraduationCap } from "lucide-react";
+import { Building2, BookOpen, FolderArchive, Activity, LogOut, GraduationCap } from "lucide-react";
 import TabOneAccounts from "./components/tab1_accounts/TabOneAccounts";
 import TabTwoRules from "./components/tab2_rules/TabTwoRules";
 import TabThreeResources from "./components/tab3_resources/TabThreeResources";
@@ -33,8 +33,8 @@ function LoginScreen({ onLoggedIn }) {
     <div className="min-h-screen bg-[#f7f6f3] flex items-center justify-center px-4">
       <form onSubmit={handleSubmit} className="bg-white border border-[#ece9e2] rounded-xl shadow-sm p-8 w-full max-w-sm space-y-4">
         <div className="flex items-center gap-3 mb-2">
-          <div className="bg-[#ff5a36] text-white p-2 rounded-lg shadow-sm">
-            <ShieldCheck className="w-6 h-6" />
+          <div className="bg-[#0b3f3c] w-10 h-10 flex-shrink-0 rounded-lg shadow-sm flex items-center justify-center">
+            <span className="text-[#ff5a36] font-extrabold text-sm tracking-tight">M9</span>
           </div>
           <div>
             <h1 className="text-lg font-bold text-[#0b3f3c]">Mood9 Compliance</h1>
@@ -117,8 +117,8 @@ function SuperAdminApp() {
       <header className="bg-white border-b border-[#ece9e2] sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="bg-[#ff5a36] text-white p-2 rounded-lg shadow-sm">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="bg-[#0b3f3c] w-10 h-10 flex-shrink-0 rounded-lg shadow-sm flex items-center justify-center">
+              <span className="text-[#ff5a36] font-extrabold text-sm tracking-tight">M9</span>
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-[#0b3f3c]">Mood9 Compliance</h1>
