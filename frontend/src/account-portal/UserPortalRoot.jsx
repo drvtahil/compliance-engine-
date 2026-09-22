@@ -47,7 +47,7 @@ export default function UserPortalRoot({ session, onLogout }) {
     <div className="min-h-screen bg-[#f7f6f3] text-[#1a1a1a] flex font-sans">
       <aside className={`${sidebarCollapsed ? "w-16" : "w-52"} flex-shrink-0 bg-[#0b3f3c] flex flex-col transition-all duration-200`}>
         <div className={`flex items-center gap-2 px-3.5 py-3.5 ${sidebarCollapsed ? "justify-center" : ""}`}>
-          <div className="bg-[#0b3f3c] w-7 h-7 flex-shrink-0 rounded-lg shadow-sm flex items-center justify-center">
+          <div className="bg-white w-7 h-7 flex-shrink-0 rounded-lg shadow-sm flex items-center justify-center">
             <span className="text-[#ff5a36] font-extrabold text-[9px] tracking-tight">M9</span>
           </div>
           {!sidebarCollapsed && (
