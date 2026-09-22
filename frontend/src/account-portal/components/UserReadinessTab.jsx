@@ -69,7 +69,7 @@ export default function UserReadinessTab() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-4">
         <div className="border-b border-slate-100 pb-3">
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5 text-blue-600" /> Readiness
+            <ClipboardCheck className="w-5 h-5 text-[#ff5a36]" /> Readiness
           </h2>
           <p className="text-xs text-slate-500">Questions allocated to you. Set a response for each — click a selected option again to clear it.</p>
         </div>
@@ -110,7 +110,7 @@ export default function UserReadinessTab() {
 
       {loading ? (
         <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-2">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" />
           <span className="text-xs font-semibold">Loading questions...</span>
         </div>
       ) : locked ? (

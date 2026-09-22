@@ -51,7 +51,7 @@ export default function ChangePasswordModal({ onClose }) {
             </div>
             <button
               onClick={onClose}
-              className="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2"
+              className="w-full bg-[#ff5a36] text-white text-sm font-semibold rounded-lg py-2"
             >
               Close
             </button>
@@ -94,7 +94,7 @@ export default function ChangePasswordModal({ onClose }) {
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2 disabled:opacity-60"
+              className="w-full bg-[#ff5a36] text-white text-sm font-semibold rounded-lg py-2 disabled:opacity-60"
             >
               {saving ? "Saving..." : "Update Password"}
             </button>

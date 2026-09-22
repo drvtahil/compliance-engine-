@@ -400,7 +400,7 @@ export default function TabOneAccounts() {
   if (loading) {
     return (
       <div className="p-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#ff5a36]" />
         <span className="text-xs font-semibold">Synchronizing Master Registries & Enterprise Accounts...</span>
       </div>
     );
@@ -452,7 +452,7 @@ export default function TabOneAccounts() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
         <div>
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-blue-600" /> Tab 1: Management Center
+            <Building2 className="w-5 h-5 text-[#ff5a36]" /> Tab 1: Management Center
           </h2>
           <p className="text-xs text-slate-500">Configure enterprise multi-tenant accounts, compliance registries, and custom taxonomies.</p>
         </div>
@@ -461,7 +461,7 @@ export default function TabOneAccounts() {
           <button
             onClick={() => setActiveSubTab("accounts")}
             className={`px-4 py-2 rounded-md transition flex items-center gap-2 ${
-              activeSubTab === "accounts" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              activeSubTab === "accounts" ? "bg-white text-[#ff5a36] shadow-xs" : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <Building2 className="w-4 h-4" /> Account Registry ({data?.accounts?.length || 0})
@@ -469,7 +469,7 @@ export default function TabOneAccounts() {
           <button
             onClick={() => setActiveSubTab("masters")}
             className={`px-4 py-2 rounded-md transition flex items-center gap-2 ${
-              activeSubTab === "masters" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              activeSubTab === "masters" ? "bg-white text-[#ff5a36] shadow-xs" : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <Database className="w-4 h-4" /> Master Registries ({data?.registries?.length || 0})
@@ -487,13 +487,13 @@ export default function TabOneAccounts() {
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-blue-600" /> Enterprise Accounts Registry
+                  <Building2 className="w-4 h-4 text-[#ff5a36]" /> Enterprise Accounts Registry
                 </h3>
                 <p className="text-xs text-slate-500">Multi-tenant client accounts with project lifecycles, enrolled regulatory acts, and admin provisioning.</p>
               </div>
               <button
                 onClick={handleOpenCreateAccount}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto shadow-xs transition"
+                className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto shadow-xs transition"
               >
                 <PlusCircle className="w-4 h-4" /> Register New Account
               </button>
@@ -508,7 +508,7 @@ export default function TabOneAccounts() {
                   placeholder="Search by Account Name, ID (ACC-0001), Act, or Admin..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-hidden"
+                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#ff5a36] outline-hidden"
                 />
               </div>
 
@@ -516,7 +516,7 @@ export default function TabOneAccounts() {
                 <div className="flex items-center gap-1 bg-slate-200 p-1 rounded-lg text-xs font-bold">
                   <button
                     onClick={() => setStatusFilter("ALL")}
-                    className={`px-3 py-1 rounded-md transition ${statusFilter === "ALL" ? "bg-white text-blue-600 shadow-2xs" : "text-slate-600"}`}
+                    className={`px-3 py-1 rounded-md transition ${statusFilter === "ALL" ? "bg-white text-[#ff5a36] shadow-2xs" : "text-slate-600"}`}
                   >
                     All ({data?.accounts?.length || 0})
                   </button>
@@ -550,7 +550,7 @@ export default function TabOneAccounts() {
                     <div className="flex items-center gap-1">
                       <span>Account ID</span>
                       {sortConfig.field === "account_code" ? (
-                        sortConfig.direction === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-blue-600" /> : <ArrowDown className="w-3.5 h-3.5 text-blue-600" />
+                        sortConfig.direction === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-[#ff5a36]" /> : <ArrowDown className="w-3.5 h-3.5 text-[#ff5a36]" />
                       ) : (
                         <ArrowUpDown className="w-3 h-3 text-slate-400" />
                       )}
@@ -565,7 +565,7 @@ export default function TabOneAccounts() {
                     <div className="flex items-center gap-1">
                       <span>Account Name &amp; Org Type</span>
                       {sortConfig.field === "account_name" ? (
-                        sortConfig.direction === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-blue-600" /> : <ArrowDown className="w-3.5 h-3.5 text-blue-600" />
+                        sortConfig.direction === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-[#ff5a36]" /> : <ArrowDown className="w-3.5 h-3.5 text-[#ff5a36]" />
                       ) : (
                         <ArrowUpDown className="w-3 h-3 text-slate-400" />
                       )}
@@ -583,7 +583,7 @@ export default function TabOneAccounts() {
                     <div className="flex items-center gap-1">
                       <span>Project End Date</span>
                       {sortConfig.field === "project_end_date" ? (
-                        sortConfig.direction === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-blue-600" /> : <ArrowDown className="w-3.5 h-3.5 text-blue-600" />
+                        sortConfig.direction === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-[#ff5a36]" /> : <ArrowDown className="w-3.5 h-3.5 text-[#ff5a36]" />
                       ) : (
                         <ArrowUpDown className="w-3 h-3 text-slate-400" />
                       )}
@@ -598,7 +598,7 @@ export default function TabOneAccounts() {
                 {paginatedAccounts.length > 0 ? (
                   paginatedAccounts.map((acc) => (
                     <tr key={acc.id} className="hover:bg-slate-50/80 transition">
-                      <td className="p-3.5 font-bold text-blue-700 font-mono">
+                      <td className="p-3.5 font-bold text-[#c8431f] font-mono">
                         {acc.account_code}
                       </td>
 
@@ -615,7 +615,7 @@ export default function TabOneAccounts() {
                         <div className="flex flex-wrap gap-1 max-w-xs">
                           {acc.enrolled_acts && acc.enrolled_acts.length > 0 ? (
                             acc.enrolled_acts.map((act, i) => (
-                              <span key={i} className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                              <span key={i} className="bg-[#fff1ec] text-[#c8431f] border border-[#ffc7ae] text-[10px] font-bold px-1.5 py-0.5 rounded">
                                 {act}
                               </span>
                             ))
@@ -649,7 +649,7 @@ export default function TabOneAccounts() {
                         </button>
                         <button
                           onClick={() => handleOpenEditAccount(acc, false)}
-                          className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded text-xs font-bold inline-flex items-center gap-1 transition"
+                          className="bg-[#fff1ec] hover:bg-[#ffe4da] text-[#c8431f] border border-[#ffc7ae] px-2.5 py-1 rounded text-xs font-bold inline-flex items-center gap-1 transition"
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit
                         </button>
@@ -738,13 +738,13 @@ export default function TabOneAccounts() {
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-3">
             <div>
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <Database className="w-4 h-4 text-blue-600" /> Master Registries Catalog
+                <Database className="w-4 h-4 text-[#ff5a36]" /> Master Registries Catalog
               </h3>
               <p className="text-xs text-slate-500">Configure master taxonomies, acts, organizational types, and add/edit custom master lists.</p>
             </div>
             <button
               onClick={handleOpenCreateList}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto shadow-xs transition"
+              className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto shadow-xs transition"
             >
               <PlusCircle className="w-4 h-4" /> Add New Master List
             </button>
@@ -764,7 +764,7 @@ export default function TabOneAccounts() {
                       <button
                         onClick={() => handleOpenAddItem(reg)}
                         title="Add Item"
-                        className="text-blue-600 hover:text-blue-800 text-[11px] font-bold flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200"
+                        className="text-[#ff5a36] hover:text-[#9c3417] text-[11px] font-bold flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#fff1ec] border border-[#ffc7ae]"
                       >
                         <PlusCircle className="w-3 h-3" /> Add
                       </button>
@@ -772,7 +772,7 @@ export default function TabOneAccounts() {
                       <button
                         onClick={() => handleOpenEditList(reg)}
                         title="Edit Master List"
-                        className="text-slate-500 hover:text-blue-600 p-1 rounded hover:bg-slate-200"
+                        className="text-slate-500 hover:text-[#ff5a36] p-1 rounded hover:bg-slate-200"
                       >
                         <FolderEdit className="w-3.5 h-3.5" />
                       </button>
@@ -802,7 +802,7 @@ export default function TabOneAccounts() {
                         <div className="flex items-center gap-1 shrink-0">
                           <button
                             onClick={() => handleOpenEditItem(reg, item)}
-                            className="text-slate-400 hover:text-blue-600 p-0.5"
+                            className="text-slate-400 hover:text-[#ff5a36] p-0.5"
                           >
                             <Edit2 className="w-3 h-3" />
                           </button>
@@ -888,7 +888,7 @@ export default function TabOneAccounts() {
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1 flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-blue-600" /> Project Start *
+                    <Calendar className="w-3.5 h-3.5 text-[#ff5a36]" /> Project Start *
                   </label>
                   <input
                     type="date"
@@ -901,7 +901,7 @@ export default function TabOneAccounts() {
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 block mb-1 flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-blue-600" /> Project End *
+                    <Calendar className="w-3.5 h-3.5 text-[#ff5a36]" /> Project End *
                   </label>
                   <input
                     type="date"
@@ -1007,7 +1007,7 @@ export default function TabOneAccounts() {
                       <label
                         key={act.id}
                         className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer text-xs font-semibold transition ${
-                          isChecked ? "bg-blue-50 border-blue-400 text-blue-800" : "bg-white border-slate-200 text-slate-600"
+                          isChecked ? "bg-[#fff1ec] border-[#ff9269] text-[#9c3417]" : "bg-white border-slate-200 text-slate-600"
                         }`}
                       >
                         <input
@@ -1015,7 +1015,7 @@ export default function TabOneAccounts() {
                           disabled={showAccountModal.isViewOnly}
                           checked={isChecked}
                           onChange={() => handleToggleActSelection(act.item_name)}
-                          className="rounded text-blue-600"
+                          className="rounded text-[#ff5a36]"
                         />
                         <span>{act.item_name}</span>
                       </label>
@@ -1029,7 +1029,7 @@ export default function TabOneAccounts() {
                   <label className="font-bold text-slate-700 block">Tabs Activated For This Account (Select Multiple) *</label>
                   {!showAccountModal.isViewOnly && (
                     <div className="flex items-center gap-3 text-[11px] font-bold">
-                      <button type="button" onClick={() => setAccountForm(prev => ({ ...prev, enabled_tabs: portalTabs.map(t => t.key) }))} className="text-blue-600 hover:text-blue-800">Select all</button>
+                      <button type="button" onClick={() => setAccountForm(prev => ({ ...prev, enabled_tabs: portalTabs.map(t => t.key) }))} className="text-[#ff5a36] hover:text-[#9c3417]">Select all</button>
                       <button type="button" onClick={() => setAccountForm(prev => ({ ...prev, enabled_tabs: [] }))} className="text-slate-500 hover:text-slate-800">Clear</button>
                     </div>
                   )}
@@ -1042,14 +1042,14 @@ export default function TabOneAccounts() {
                         key={tab.key}
                         className={`flex items-center gap-2 p-2 rounded-md border text-xs font-semibold transition ${
                           showAccountModal.isViewOnly ? "cursor-default" : "cursor-pointer"
-                        } ${isChecked ? "bg-blue-50 border-blue-400 text-blue-800" : "bg-white border-slate-200 text-slate-600"}`}
+                        } ${isChecked ? "bg-[#fff1ec] border-[#ff9269] text-[#9c3417]" : "bg-white border-slate-200 text-slate-600"}`}
                       >
                         <input
                           type="checkbox"
                           disabled={showAccountModal.isViewOnly}
                           checked={isChecked}
                           onChange={() => handleToggleTab(tab.key)}
-                          className="rounded text-blue-600"
+                          className="rounded text-[#ff5a36]"
                         />
                         <span className="flex-1">{tab.label}</span>
                         {tab.audience === "account_admin" && <span className="text-[9px] font-bold text-slate-400">Admin only</span>}
@@ -1072,7 +1072,7 @@ export default function TabOneAccounts() {
                     <button
                       type="button"
                       onClick={handleAddAdminField}
-                      className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200"
+                      className="text-[#ff5a36] hover:text-[#9c3417] text-xs font-bold flex items-center gap-1 bg-[#fff1ec] px-2.5 py-1 rounded-md border border-[#ffc7ae]"
                     >
                       <PlusCircle className="w-3.5 h-3.5" /> Add Account Admin
                     </button>
@@ -1087,7 +1087,7 @@ export default function TabOneAccounts() {
                           <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border ${
                             (adm.role_name || "Account Admin") === "User"
                               ? "bg-purple-50 text-purple-700 border-purple-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200"
+                              : "bg-[#fff1ec] text-[#c8431f] border-[#ffc7ae]"
                           }`}>
                             {adm.role_name || "Account Admin"}
                           </span>
@@ -1182,7 +1182,7 @@ export default function TabOneAccounts() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-xs"
+                    className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-5 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-xs"
                   >
                     {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     {showAccountModal.isEdit ? "Update Account" : "Register Account"}
@@ -1230,7 +1230,7 @@ export default function TabOneAccounts() {
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button type="button" onClick={() => setShowNewListModal({ open: false, isEdit: false, regId: null })} className="bg-slate-100 px-3 py-1.5 rounded-lg font-bold">Cancel</button>
-                <button type="submit" disabled={saving} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold flex items-center gap-1">
+                <button type="submit" disabled={saving} className="bg-[#ff5a36] text-white px-4 py-1.5 rounded-lg font-bold flex items-center gap-1">
                   {saving && <Loader2 className="w-3 h-3 animate-spin" />} {showNewListModal.isEdit ? "Update List" : "Create List"}
                 </button>
               </div>
@@ -1271,7 +1271,7 @@ export default function TabOneAccounts() {
                 >
                   Cancel
                 </button>
-                <button type="submit" disabled={saving} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold flex items-center gap-1">
+                <button type="submit" disabled={saving} className="bg-[#ff5a36] text-white px-4 py-1.5 rounded-lg font-bold flex items-center gap-1">
                   {saving && <Loader2 className="w-3 h-3 animate-spin" />} Save
                 </button>
               </div>

@@ -70,7 +70,7 @@ export default function UploadFileModal({ assessmentId, kind, owners, typeOption
             <input
               type="text" required value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#ff5a36] outline-hidden"
             />
           </div>
 
@@ -79,7 +79,7 @@ export default function UploadFileModal({ assessmentId, kind, owners, typeOption
             <textarea
               rows={2} value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg p-2 text-xs resize-y focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full border border-slate-300 rounded-lg p-2 text-xs resize-y focus:ring-2 focus:ring-[#ff5a36] outline-hidden"
             />
           </div>
 
@@ -152,12 +152,12 @@ export default function UploadFileModal({ assessmentId, kind, owners, typeOption
 
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
             <label className="font-bold text-slate-700 block text-[11px] uppercase flex items-center gap-1.5">
-              <Upload className="w-3.5 h-3.5 text-blue-600" /> Browse &amp; Upload
+              <Upload className="w-3.5 h-3.5 text-[#ff5a36]" /> Browse &amp; Upload
             </label>
             <input
               type="file"
               onChange={(e) => e.target.files?.[0] && setForm({ ...form, file: e.target.files[0] })}
-              className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer"
+              className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#ff5a36] file:text-white hover:file:bg-[#c8431f] file:cursor-pointer"
             />
             {isEditing && editingFile.file_name && !form.file && (
               <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
@@ -173,7 +173,7 @@ export default function UploadFileModal({ assessmentId, kind, owners, typeOption
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5"
+              className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5"
             >
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {isEditing ? "Save Changes" : "Upload"}

@@ -80,7 +80,7 @@ export default function NotificationBell({ onNavigateToTraining, onViewAll }) {
       <button
         onClick={togglePanel}
         title="Notifications"
-        className="relative p-1.5 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+        className="relative p-1.5 rounded-md text-[#d3ece8] hover:bg-[#0b3f3c] hover:text-white"
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
@@ -95,7 +95,7 @@ export default function NotificationBell({ onNavigateToTraining, onViewAll }) {
           <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100">
             <span className="text-xs font-bold text-slate-700">Notifications</span>
             {unreadCount > 0 && (
-              <button onClick={handleMarkAllRead} className="text-[10px] font-bold text-blue-600 hover:text-blue-800">
+              <button onClick={handleMarkAllRead} className="text-[10px] font-bold text-[#ff5a36] hover:text-[#9c3417]">
                 Mark all read
               </button>
             )}
@@ -110,10 +110,10 @@ export default function NotificationBell({ onNavigateToTraining, onViewAll }) {
                 <button
                   key={n.id}
                   onClick={() => handleClickNotification(n)}
-                  className={`w-full text-left px-3 py-2.5 border-b border-slate-50 hover:bg-slate-50 ${!n.is_read ? "bg-blue-50/50" : ""}`}
+                  className={`w-full text-left px-3 py-2.5 border-b border-slate-50 hover:bg-slate-50 ${!n.is_read ? "bg-[#fff1ec]/50" : ""}`}
                 >
                   <div className="flex items-start gap-1.5">
-                    {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1 flex-shrink-0" />}
+                    {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a36] mt-1 flex-shrink-0" />}
                     <div className="min-w-0">
                       <div className="text-[11.5px] font-bold text-slate-700">{n.title}</div>
                       <div className="text-[11px] text-slate-500">{n.message}</div>
@@ -126,7 +126,7 @@ export default function NotificationBell({ onNavigateToTraining, onViewAll }) {
           </div>
           <button
             onClick={() => { setOpen(false); onViewAll && onViewAll(); }}
-            className="w-full text-center text-[11px] font-bold text-blue-600 hover:text-blue-800 py-2 border-t border-slate-100"
+            className="w-full text-center text-[11px] font-bold text-[#ff5a36] hover:text-[#9c3417] py-2 border-t border-slate-100"
           >
             View All
           </button>

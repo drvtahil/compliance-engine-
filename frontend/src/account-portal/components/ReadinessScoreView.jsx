@@ -24,7 +24,7 @@ export default function ReadinessScoreView({ actCode, showReopen, onReopen, reop
   if (loading) {
     return (
       <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-2">
-        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" />
         <span className="text-xs font-semibold">Calculating Readiness score...</span>
       </div>
     );

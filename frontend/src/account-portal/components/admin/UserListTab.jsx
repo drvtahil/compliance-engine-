@@ -45,7 +45,7 @@ export default function UserListTab({ users, onRefresh }) {
             {users.length > 0 ? (
               users.map((u) => (
                 <tr key={u.id} className="hover:bg-slate-50/80">
-                  <td className="p-3 font-bold text-blue-700 font-mono">{u.user_code}</td>
+                  <td className="p-3 font-bold text-[#c8431f] font-mono">{u.user_code}</td>
                   <td className="p-3 font-semibold text-slate-800">{u.name}</td>
                   <td className="p-3 text-slate-600">{u.email}</td>
                   <td className="p-3 text-slate-600">{u.phone}</td>
@@ -54,7 +54,7 @@ export default function UserListTab({ users, onRefresh }) {
                     <div className="flex flex-wrap gap-1 max-w-[180px]">
                       {u.industries.length > 0 ? (
                         u.industries.map((ind, i) => (
-                          <span key={i} className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                          <span key={i} className="bg-[#fff1ec] text-[#c8431f] border border-[#ffc7ae] text-[10px] font-bold px-1.5 py-0.5 rounded">
                             {ind}
                           </span>
                         ))
@@ -88,7 +88,7 @@ export default function UserListTab({ users, onRefresh }) {
                     <button
                       onClick={() => setEditingUser(u)}
                       title="Edit Profile"
-                      className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 p-1.5 rounded"
+                      className="bg-[#fff1ec] hover:bg-[#ffe4da] text-[#c8431f] border border-[#ffc7ae] p-1.5 rounded"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>

@@ -30,15 +30,15 @@ function LoginScreen({ onLoggedIn }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl shadow-sm p-8 w-full max-w-sm space-y-4">
+    <div className="min-h-screen bg-[#f7f6f3] flex items-center justify-center px-4">
+      <form onSubmit={handleSubmit} className="bg-white border border-[#ece9e2] rounded-xl shadow-sm p-8 w-full max-w-sm space-y-4">
         <div className="flex items-center gap-3 mb-2">
-          <div className="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
+          <div className="bg-[#ff5a36] text-white p-2 rounded-lg shadow-sm">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-800">Mood9 Compliance</h1>
-            <p className="text-xs text-slate-500">Sign in to continue</p>
+            <h1 className="text-lg font-bold text-[#0b3f3c]">Mood9 Compliance</h1>
+            <p className="text-xs text-[#8a8578]">Sign in to continue</p>
           </div>
         </div>
 
@@ -71,7 +71,7 @@ function LoginScreen({ onLoggedIn }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2 disabled:opacity-60"
+          className="w-full bg-[#ff5a36] hover:bg-[#e14a26] text-white text-sm font-semibold rounded-lg py-2 disabled:opacity-60"
         >
           {loading ? "Signing in..." : "Sign In"}
         </button>
@@ -112,17 +112,17 @@ function SuperAdminApp() {
   const isSuperAdmin = !!session.is_superadmin;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#f7f6f3] text-[#1a1a1a] flex flex-col font-sans">
       {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+      <header className="bg-white border-b border-[#ece9e2] sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
+            <div className="bg-[#ff5a36] text-white p-2 rounded-lg shadow-sm">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-800">Mood9 Compliance</h1>
-              <p className="text-xs text-slate-500">Compliance & Regulatory Management Portal</p>
+              <h1 className="text-xl font-bold tracking-tight text-[#0b3f3c]">Mood9 Compliance</h1>
+              <p className="text-xs text-[#8a8578]">Compliance & Regulatory Management Portal</p>
             </div>
           </div>
 
@@ -139,7 +139,7 @@ function SuperAdminApp() {
             </span>
             <button
               onClick={handleLogout}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-[#6b6a63] hover:bg-[#f7f6f3] flex items-center gap-1.5"
             >
               <LogOut className="w-3.5 h-3.5" />
               Logout
@@ -148,13 +148,13 @@ function SuperAdminApp() {
         </div>
 
         {/* 3 Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 border-t border-[#f0ede6]">
           <button
             onClick={() => setActiveTab("tab1")}
             className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
               activeTab === "tab1"
-                ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-800"
+                ? "border-[#ff5a36] text-[#c8431f] bg-[#fff1ec]/50"
+                : "border-transparent text-[#6b6a63] hover:text-[#1a1a1a]"
             }`}
           >
             <Building2 className="w-4 h-4" />
@@ -164,8 +164,8 @@ function SuperAdminApp() {
             onClick={() => setActiveTab("tab2")}
             className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
               activeTab === "tab2"
-                ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-800"
+                ? "border-[#ff5a36] text-[#c8431f] bg-[#fff1ec]/50"
+                : "border-transparent text-[#6b6a63] hover:text-[#1a1a1a]"
             }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -175,8 +175,8 @@ function SuperAdminApp() {
             onClick={() => setActiveTab("tab3")}
             className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
               activeTab === "tab3"
-                ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-800"
+                ? "border-[#ff5a36] text-[#c8431f] bg-[#fff1ec]/50"
+                : "border-transparent text-[#6b6a63] hover:text-[#1a1a1a]"
             }`}
           >
             <FolderArchive className="w-4 h-4" />
@@ -186,8 +186,8 @@ function SuperAdminApp() {
             onClick={() => setActiveTab("tab4")}
             className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
               activeTab === "tab4"
-                ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-800"
+                ? "border-[#ff5a36] text-[#c8431f] bg-[#fff1ec]/50"
+                : "border-transparent text-[#6b6a63] hover:text-[#1a1a1a]"
             }`}
           >
             <GraduationCap className="w-4 h-4" />

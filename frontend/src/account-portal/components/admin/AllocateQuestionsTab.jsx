@@ -127,7 +127,7 @@ export default function AllocateQuestionsTab({ acts }) {
 
   const SortIcon = ({ field }) =>
     sortConfig.field === field ? (
-      sortConfig.direction === "asc" ? <ArrowUp className="w-3 h-3 text-blue-600" /> : <ArrowDown className="w-3 h-3 text-blue-600" />
+      sortConfig.direction === "asc" ? <ArrowUp className="w-3 h-3 text-[#ff5a36]" /> : <ArrowDown className="w-3 h-3 text-[#ff5a36]" />
     ) : (
       <ArrowUpDown className="w-3 h-3 text-slate-400" />
     );
@@ -165,11 +165,11 @@ export default function AllocateQuestionsTab({ acts }) {
         </div>
 
         {selectedIds.length > 0 && (
-          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs font-semibold text-blue-800">
+          <div className="flex items-center gap-2 bg-[#fff1ec] border border-[#ffc7ae] rounded-lg p-2 text-xs font-semibold text-[#9c3417]">
             <span>{selectedIds.length} question(s) selected</span>
             <button
               onClick={() => openAssignModal(selectedIds)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-bold"
+              className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-3 py-1 rounded-lg font-bold"
             >
               Assign to User
             </button>
@@ -182,7 +182,7 @@ export default function AllocateQuestionsTab({ acts }) {
       <div className="overflow-x-auto">
         {loading ? (
           <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" />
             <span className="text-xs font-semibold">Loading questions...</span>
           </div>
         ) : (
@@ -233,7 +233,7 @@ export default function AllocateQuestionsTab({ acts }) {
                       <div className="flex flex-wrap gap-1 max-w-[160px]">
                         {q.industries.length > 0 ? (
                           q.industries.map((ind, i) => (
-                            <span key={i} className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            <span key={i} className="bg-[#fff1ec] text-[#c8431f] border border-[#ffc7ae] text-[10px] font-bold px-1.5 py-0.5 rounded">
                               {ind}
                             </span>
                           ))
@@ -254,7 +254,7 @@ export default function AllocateQuestionsTab({ acts }) {
                     <td className="p-3">
                       {q.assigned_user ? (
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] font-bold">
+                          <div className="w-5 h-5 rounded-full bg-[#ffe4da] text-[#c8431f] flex items-center justify-center text-[9px] font-bold">
                             {q.assigned_user.name.slice(0, 2).toUpperCase()}
                           </div>
                           <span className="font-semibold text-slate-700">{q.assigned_user.name}</span>
@@ -304,7 +304,7 @@ export default function AllocateQuestionsTab({ acts }) {
                     key={u.id}
                     disabled={assigning}
                     onClick={() => handleAssign(u.id)}
-                    className="w-full text-left p-2 rounded-lg border border-slate-200 hover:bg-blue-50 hover:border-blue-300 flex items-center justify-between"
+                    className="w-full text-left p-2 rounded-lg border border-slate-200 hover:bg-[#fff1ec] hover:border-[#ffb495] flex items-center justify-between"
                   >
                     <span className="font-semibold text-slate-700">{u.name}</span>
                     <span className="text-slate-400 font-mono">{u.user_code}</span>

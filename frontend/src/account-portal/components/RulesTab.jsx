@@ -20,7 +20,7 @@ function RuleCard({ rule, chapterActCode }) {
         className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-slate-50 text-left"
       >
         <ChevronRight className={`w-3.5 h-3.5 text-slate-400 flex-shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
-        <span className="text-[10.5px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5 flex-shrink-0">
+        <span className="text-[10.5px] font-bold text-[#c8431f] bg-[#fff1ec] border border-[#ffc7ae] rounded px-1.5 py-0.5 flex-shrink-0">
           Rule {rule.rule_order}
         </span>
         {!open && (
@@ -38,7 +38,7 @@ function RuleCard({ rule, chapterActCode }) {
               {rule.sample_policies.map((policy, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#c8431f] bg-[#fff1ec] border border-[#ffc7ae] rounded-full px-2 py-0.5"
                   title="Opens in Resources once that tab is built"
                 >
                   <ExternalLink className="w-2.5 h-2.5" />
@@ -63,7 +63,7 @@ function SectionCard({ section, chapterActCode }) {
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
       <div className="flex items-baseline justify-between gap-3 mb-1">
         <div className="text-[11.5px] font-bold text-slate-800">
-          <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600 mr-1.5">Section</span>
+          <span className="text-[9px] font-bold uppercase tracking-wide text-[#ff5a36] mr-1.5">Section</span>
           {section.section_title}
         </div>
         {displayActs.length > 0 && (
@@ -131,7 +131,7 @@ function ChapterCard({ chapter }) {
     <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-slate-900 text-white text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 bg-[#0b3f3c] text-white text-left"
       >
         <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
         <span className="text-[12px] font-semibold flex-1 min-w-0 truncate">{chapter.title}</span>
@@ -223,7 +223,7 @@ export default function RulesTab() {
               key={act}
               onClick={() => setActiveAct(act)}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold border-b-2 -mb-px ${
-                activeAct === act ? "border-blue-600 text-blue-700" : "border-transparent text-slate-400 hover:text-slate-600"
+                activeAct === act ? "border-[#ff5a36] text-[#c8431f]" : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />

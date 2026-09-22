@@ -81,10 +81,10 @@ export default function NotificationsPage() {
     <div className="p-6 max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Bell className="w-5 h-5 text-blue-600" />
+          <Bell className="w-5 h-5 text-[#ff5a36]" />
           <h2 className="text-lg font-bold text-slate-800">Notifications</h2>
           {unreadCount > 0 && (
-            <span className="bg-blue-100 text-blue-700 text-[11px] font-bold px-2 py-0.5 rounded-full">{unreadCount} unread</span>
+            <span className="bg-[#ffe4da] text-[#c8431f] text-[11px] font-bold px-2 py-0.5 rounded-full">{unreadCount} unread</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ export default function NotificationsPage() {
       {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-2 rounded">{error}</div>}
 
       {loading ? (
-        <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
+        <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" /></div>
       ) : notifications.length === 0 ? (
         <div className="text-center text-sm text-slate-400 py-16 border border-dashed border-slate-200 rounded-xl">
           No notifications yet.
@@ -116,8 +116,8 @@ export default function NotificationsPage() {
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
           {notifications.map((n) => (
-            <div key={n.id} className={`p-4 flex items-start gap-3 ${!n.is_read ? "bg-blue-50/40" : ""}`}>
-              {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />}
+            <div key={n.id} className={`p-4 flex items-start gap-3 ${!n.is_read ? "bg-[#fff1ec]/40" : ""}`}>
+              {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a36] mt-1.5 flex-shrink-0" />}
               <div className={`flex-1 min-w-0 ${n.is_read ? "ml-[18px]" : ""}`}>
                 <div className="text-sm font-bold text-slate-800">{n.title}</div>
                 <div className="text-xs text-slate-500 mt-0.5">{n.message}</div>

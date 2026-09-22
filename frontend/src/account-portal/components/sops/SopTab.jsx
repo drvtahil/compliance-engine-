@@ -122,7 +122,7 @@ export default function SopTab() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-4">
         <div className="border-b border-slate-100 pb-3">
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <ListChecks className="w-5 h-5 text-blue-600" /> SOPs
+            <ListChecks className="w-5 h-5 text-[#ff5a36]" /> SOPs
           </h2>
           <p className="text-xs text-slate-500">
             Standard operating procedures mapped to your account's Acts and Organization Type. View-only apart from status, activities, documents and evidence.
@@ -136,7 +136,7 @@ export default function SopTab() {
               onClick={() => setSelectedAct(a)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
                 selectedAct === a
-                  ? "bg-blue-600 text-white border-blue-600"
+                  ? "bg-[#ff5a36] text-white border-[#ff5a36]"
                   : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
               }`}
             >
@@ -153,7 +153,7 @@ export default function SopTab() {
 
       {loading ? (
         <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-2">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" />
           <span className="text-xs font-semibold">Loading SOPs...</span>
         </div>
       ) : sops.length === 0 ? (
@@ -190,7 +190,7 @@ export default function SopTab() {
                   key={size}
                   onClick={() => { setPageSize(size); setPage(1); }}
                   className={`px-2.5 py-1 rounded-md text-[11px] font-bold border transition ${
-                    pageSize === size ? "bg-blue-600 text-white border-blue-600" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                    pageSize === size ? "bg-[#ff5a36] text-white border-[#ff5a36]" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
                   {size}

@@ -40,7 +40,7 @@ export default function ResetUserPasswordModal({ user, onClose, onDone }) {
             <div className="text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2">
               Password reset to <span className="font-mono font-bold">{password}</span>. Share this with {user.name} now — it won't be shown again.
             </div>
-            <button onClick={onDone} className="w-full bg-blue-600 text-white text-xs font-bold rounded-lg py-2">
+            <button onClick={onDone} className="w-full bg-[#ff5a36] text-white text-xs font-bold rounded-lg py-2">
               Close
             </button>
           </div>
@@ -68,7 +68,7 @@ export default function ResetUserPasswordModal({ user, onClose, onDone }) {
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button type="button" onClick={onClose} className="bg-slate-100 px-3 py-1.5 rounded-lg font-bold">Cancel</button>
-              <button type="submit" disabled={saving} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold flex items-center gap-1">
+              <button type="submit" disabled={saving} className="bg-[#ff5a36] text-white px-4 py-1.5 rounded-lg font-bold flex items-center gap-1">
                 {saving && <Loader2 className="w-3 h-3 animate-spin" />} Reset Password
               </button>
             </div>

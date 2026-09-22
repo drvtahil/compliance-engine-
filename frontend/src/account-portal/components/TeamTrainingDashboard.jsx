@@ -15,7 +15,7 @@ export default function TeamTrainingDashboard() {
   }, []);
 
   if (error) return <div className="p-6 max-w-3xl mx-auto"><div className="bg-red-50 border border-red-200 text-red-700 text-xs p-2 rounded">{error}</div></div>;
-  if (!filterOptions) return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
+  if (!filterOptions) return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" /></div>;
 
   return (
     <TrainingDashboardView

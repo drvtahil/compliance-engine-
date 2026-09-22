@@ -66,7 +66,7 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
                   <div className="flex flex-wrap gap-1 max-w-[160px]">
                     {q.industries.length > 0 ? (
                       q.industries.map((ind, i) => (
-                        <span key={i} className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        <span key={i} className="bg-[#fff1ec] text-[#c8431f] border border-[#ffc7ae] text-[10px] font-bold px-1.5 py-0.5 rounded">
                           {ind}
                         </span>
                       ))
@@ -87,7 +87,7 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
                 {showAssignee && (
                   <td className="p-3">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] font-bold">
+                      <div className="w-5 h-5 rounded-full bg-[#ffe4da] text-[#c8431f] flex items-center justify-center text-[9px] font-bold">
                         {q.assigned_user.name.slice(0, 2).toUpperCase()}
                       </div>
                       <span className="font-semibold text-slate-700">{q.assigned_user.name}</span>

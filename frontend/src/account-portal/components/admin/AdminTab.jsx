@@ -59,7 +59,7 @@ export default function AdminTab() {
   if (loading) {
     return (
       <div className="p-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#ff5a36]" />
         <span className="text-xs font-semibold">Loading Admin console...</span>
       </div>
     );
@@ -81,7 +81,7 @@ export default function AdminTab() {
               type="button"
               onClick={() => (tab.key === "create" ? setShowCreateModal(true) : setActiveSubTab(tab.key))}
               className={`px-3.5 py-2 rounded-md transition flex items-center gap-1.5 ${
-                activeSubTab === tab.key ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
+                activeSubTab === tab.key ? "bg-white text-[#ff5a36] shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <Icon className="w-3.5 h-3.5" /> {tab.label}

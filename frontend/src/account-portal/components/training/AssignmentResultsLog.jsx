@@ -12,7 +12,7 @@ export default function AssignmentResultsLog() {
     fetchMyAttemptsApi().then(setRows).catch((e) => setError(e.message)).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
+  if (loading) return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" /></div>;
   if (error) return <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-2 rounded">{error}</div>;
   if (rows.length === 0) {
     return <div className="text-center text-sm text-slate-400 py-16 border border-dashed border-slate-200 rounded-xl">You haven't taken any assignments yet.</div>;

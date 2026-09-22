@@ -45,20 +45,20 @@ export default function UserPortalRoot({ session, onLogout }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex font-sans">
-      <aside className={`${sidebarCollapsed ? "w-16" : "w-52"} flex-shrink-0 bg-white border-r border-slate-200 flex flex-col transition-all duration-200`}>
-        <div className={`flex items-center gap-2 px-3.5 py-3.5 border-b border-slate-200 ${sidebarCollapsed ? "justify-center" : ""}`}>
-          <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm flex-shrink-0">
+    <div className="min-h-screen bg-[#f7f6f3] text-[#1a1a1a] flex font-sans">
+      <aside className={`${sidebarCollapsed ? "w-16" : "w-52"} flex-shrink-0 bg-[#0b3f3c] flex flex-col transition-all duration-200`}>
+        <div className={`flex items-center gap-2 px-3.5 py-3.5 ${sidebarCollapsed ? "justify-center" : ""}`}>
+          <div className="bg-[#ff5a36] text-white p-1.5 rounded-lg shadow-sm flex-shrink-0">
             <ShieldCheck className="w-4 h-4" />
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">
-              <div className="text-[12.5px] font-bold text-slate-800 leading-tight">Mood9 Compliance</div>
-              <div className="text-[9.5px] text-slate-400 truncate">{session.account_name}</div>
-              <div className="text-[9.5px] text-blue-600 font-bold truncate">{session.role}</div>
-              <div className="text-[9.5px] text-slate-500 font-semibold truncate">{session.name}</div>
+              <div className="text-[12.5px] font-bold text-white leading-tight">Mood9 Compliance</div>
+              <div className="text-[9.5px] text-[#9fd0cb] truncate">{session.account_name}</div>
+              <div className="text-[9.5px] text-[#ff9269] font-bold truncate">{session.role}</div>
+              <div className="text-[9.5px] text-[#d3ece8] font-semibold truncate">{session.name}</div>
               {session.job_title && (
-                <div className="text-[9.5px] text-purple-600 font-semibold truncate">{session.job_title}</div>
+                <div className="text-[9.5px] text-[#ffb495] font-semibold truncate">{session.job_title}</div>
               )}
             </div>
           )}
@@ -69,13 +69,13 @@ export default function UserPortalRoot({ session, onLogout }) {
         <button
           onClick={toggleSidebar}
           title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex items-center justify-center gap-1.5 py-2 text-[10.5px] font-bold text-slate-500 hover:bg-slate-50 border-t border-slate-100"
+          className="flex items-center justify-center gap-1.5 py-2 text-[10.5px] font-bold text-[#9fd0cb] hover:bg-[#12504c] border-t border-[#17423b]"
         >
           {sidebarCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <><ChevronLeft className="w-3.5 h-3.5" /> Collapse</>}
         </button>
 
-        <div className={`border-t border-slate-200 px-3 py-3 flex ${sidebarCollapsed ? "flex-col items-center gap-2" : "items-center justify-between gap-2"}`}>
-          <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+        <div className={`m-2 mt-2 bg-[#12504c] rounded-xl px-3 py-3 flex ${sidebarCollapsed ? "flex-col items-center gap-2" : "items-center justify-between gap-2"}`}>
+          <div className="w-8 h-8 rounded-full bg-[#ff7a4d] text-[#0b3f3c] flex items-center justify-center text-[11px] font-bold flex-shrink-0">
             {session.name?.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex items-center gap-1">
@@ -83,14 +83,14 @@ export default function UserPortalRoot({ session, onLogout }) {
             <button
               onClick={() => setShowChangePassword(true)}
               title="Change Password"
-              className="p-1.5 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+              className="p-1.5 rounded-md text-[#d3ece8] hover:bg-[#0b3f3c] hover:text-white"
             >
               <KeyRound className="w-4 h-4" />
             </button>
             <button
               onClick={onLogout}
               title="Logout"
-              className="p-1.5 rounded-md text-red-500 hover:bg-red-50 hover:text-red-700"
+              className="p-1.5 rounded-md text-[#ffb495] hover:bg-[#0b3f3c] hover:text-[#ff9269]"
             >
               <LogOut className="w-4 h-4" />
             </button>

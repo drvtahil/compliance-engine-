@@ -20,7 +20,7 @@ const getFileTypeBadgeColor = (ext) => {
   switch (ext?.toUpperCase()) {
     case "PDF": return "bg-red-50 text-red-700 border-red-200";
     case "XLS": case "XLSX": case "CSV": return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    case "DOC": case "DOCX": return "bg-blue-50 text-blue-700 border-blue-200";
+    case "DOC": case "DOCX": return "bg-[#fff1ec] text-[#c8431f] border-[#ffc7ae]";
     case "JPG": case "PNG": case "JPEG": return "bg-purple-50 text-purple-700 border-purple-200";
     default: return "bg-slate-100 text-slate-600 border-slate-200";
   }
@@ -58,7 +58,7 @@ function FileCard({ file, kind, isManager, onEdit, onDelete }) {
         <div className="flex items-center gap-0.5 flex-shrink-0">
           {file.has_file && (
             <>
-              <button onClick={() => viewSopFile(file.id)} title="View" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100">
+              <button onClick={() => viewSopFile(file.id)} title="View" className="text-slate-400 hover:text-[#ff5a36] p-1 rounded hover:bg-slate-100">
                 <Eye className="w-3.5 h-3.5" />
               </button>
               <button onClick={() => downloadSopFile(file.id, file.file_name)} title="Download" className="text-slate-400 hover:text-emerald-600 p-1 rounded hover:bg-slate-100">
@@ -66,7 +66,7 @@ function FileCard({ file, kind, isManager, onEdit, onDelete }) {
               </button>
             </>
           )}
-          <button onClick={() => onEdit(file)} title="Edit" className="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100">
+          <button onClick={() => onEdit(file)} title="Edit" className="text-slate-400 hover:text-[#ff5a36] p-1 rounded hover:bg-slate-100">
             <Edit2 className="w-3.5 h-3.5" />
           </button>
           {isManager && (
@@ -177,7 +177,7 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
                   {sop.processes.map((proc, i) => (
                     <tr key={i}>
                       <td className="p-2 align-top">
-                        <div className="font-bold text-blue-700">Process No. {i + 1}</div>
+                        <div className="font-bold text-[#c8431f]">Process No. {i + 1}</div>
                         <div className="text-slate-600">{proc.action}</div>
                       </td>
                       <td className="p-2 align-top text-slate-700 font-medium">{proc.task_name}</td>
@@ -214,13 +214,13 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
                 value={commentDraft}
                 onChange={(e) => setCommentDraft(e.target.value)}
                 placeholder="Add a comment..."
-                className="flex-1 text-[11px] text-slate-700 border border-slate-300 rounded-lg px-2 py-1.5 resize-none focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="flex-1 text-[11px] text-slate-700 border border-slate-300 rounded-lg px-2 py-1.5 resize-none focus:ring-2 focus:ring-[#ff5a36] outline-hidden"
               />
               {commentDirty && (
                 <button
                   type="button"
                   onClick={handleSaveComment}
-                  className="text-[10.5px] font-bold text-white bg-blue-600 hover:bg-blue-700 px-2.5 py-1.5 rounded-lg flex-shrink-0"
+                  className="text-[10.5px] font-bold text-white bg-[#ff5a36] hover:bg-[#c8431f] px-2.5 py-1.5 rounded-lg flex-shrink-0"
                 >
                   Save
                 </button>
@@ -257,7 +257,7 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
           <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
             <button
               onClick={onCreateActivity}
-              className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5"
+              className="bg-[#fff1ec] hover:bg-[#ffe4da] text-[#c8431f] border border-[#ffc7ae] px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5"
             >
               <PlusCircle className="w-3.5 h-3.5" /> Create Activity
             </button>

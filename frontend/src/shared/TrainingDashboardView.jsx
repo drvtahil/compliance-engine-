@@ -6,7 +6,7 @@ import {
 
 const STATUS_META = {
   not_started: { label: "Not Started", icon: Circle, badge: "bg-slate-100 text-slate-600 border-slate-200" },
-  in_progress: { label: "In Progress", icon: PlayCircle, badge: "bg-blue-50 text-blue-700 border-blue-200" },
+  in_progress: { label: "In Progress", icon: PlayCircle, badge: "bg-[#fff1ec] text-[#c8431f] border-[#ffc7ae]" },
   completed: { label: "Completed", icon: CheckCircle2, badge: "bg-green-50 text-green-700 border-green-200" },
 };
 
@@ -112,7 +112,7 @@ export default function TrainingDashboardView({
   const accountsSort = useSortedList(accounts, "account_name");
   const coursesSort = useSortedList(courses, "course_name");
 
-  if (loading) return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
+  if (loading) return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" /></div>;
 
   if (drill) {
     return (
@@ -133,7 +133,7 @@ export default function TrainingDashboardView({
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center gap-2">
-        <LayoutDashboard className="w-5 h-5 text-blue-600" />
+        <LayoutDashboard className="w-5 h-5 text-[#ff5a36]" />
         <h2 className="text-lg font-bold text-slate-800">{title}</h2>
       </div>
 
@@ -157,9 +157,9 @@ export default function TrainingDashboardView({
             <Tile label="Acts" value={summary.total_acts} />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Tile label="Overall Completion" value={`${summary.overall_completion_percent}%`} color="text-blue-600" />
+            <Tile label="Overall Completion" value={`${summary.overall_completion_percent}%`} color="text-[#ff5a36]" />
             <Tile label="Not Started" value={summary.not_started_count} color="text-slate-600" />
-            <Tile label="In Progress" value={summary.in_progress_count} color="text-blue-600" />
+            <Tile label="In Progress" value={summary.in_progress_count} color="text-[#ff5a36]" />
             <Tile label="Completed" value={summary.completed_count} color="text-green-600" />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -196,7 +196,7 @@ export default function TrainingDashboardView({
                     <td className="py-2.5">{a.account_admin_count}</td>
                     <td className="py-2.5 font-semibold">{a.completion_percent}%</td>
                     <td className="py-2.5 pr-4 text-right">
-                      <button onClick={() => setDrill({ type: "account", accountId: a.account_id, label: a.account_name })} className="text-blue-600 font-bold hover:text-blue-800 flex items-center gap-1 ml-auto">
+                      <button onClick={() => setDrill({ type: "account", accountId: a.account_id, label: a.account_name })} className="text-[#ff5a36] font-bold hover:text-[#9c3417] flex items-center gap-1 ml-auto">
                         View <ChevronRight className="w-3 h-3" />
                       </button>
                     </td>
@@ -237,7 +237,7 @@ export default function TrainingDashboardView({
                       {c.not_started_count} not started &middot; {c.in_progress_count} in progress &middot; {c.completed_count} completed
                     </td>
                     <td className="py-2.5 pr-4 text-right">
-                      <button onClick={() => setDrill({ type: "course", courseId: c.course_id, label: c.course_name })} className="text-blue-600 font-bold hover:text-blue-800 flex items-center gap-1 ml-auto">
+                      <button onClick={() => setDrill({ type: "course", courseId: c.course_id, label: c.course_name })} className="text-[#ff5a36] font-bold hover:text-[#9c3417] flex items-center gap-1 ml-auto">
                         View <ChevronRight className="w-3 h-3" />
                       </button>
                     </td>
@@ -265,12 +265,12 @@ function formatTestDate(value) {
   return d.toLocaleDateString();
 }
 
-const STATUS_BAR = { not_started: "bg-slate-300", in_progress: "bg-blue-600", completed: "bg-green-600" };
+const STATUS_BAR = { not_started: "bg-slate-300", in_progress: "bg-[#ff5a36]", completed: "bg-green-600" };
 
 function ProgressBar({ percent, status, className = "" }) {
   return (
     <div className={`bg-slate-100 rounded-full h-1.5 ${className}`}>
-      <div className={`h-1.5 rounded-full transition-all ${STATUS_BAR[status] || "bg-blue-600"}`} style={{ width: `${percent}%` }} />
+      <div className={`h-1.5 rounded-full transition-all ${STATUS_BAR[status] || "bg-[#ff5a36]"}`} style={{ width: `${percent}%` }} />
     </div>
   );
 }
@@ -358,7 +358,7 @@ function CourseBlock({ course }) {
     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
       <div className="px-4 py-2.5 bg-slate-50/70 border-b border-slate-100 flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <GraduationCap className="w-4 h-4 text-blue-600 flex-shrink-0" />
+          <GraduationCap className="w-4 h-4 text-[#ff5a36] flex-shrink-0" />
           <span className="font-bold text-[13px] text-slate-800">{course.course_name}</span>
           {course.is_mandatory && <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">Mandatory</span>}
           <StatusBadge status={course.status} />
@@ -392,7 +392,7 @@ function PeopleProgress({ members }) {
     <div className="space-y-2.5">
       {trainable.length > 0 && (
         <div className="flex justify-end">
-          <button onClick={() => setOpen(allOpen ? new Set() : new Set(trainable))} className="text-[11px] font-bold text-blue-600 hover:text-blue-800">
+          <button onClick={() => setOpen(allOpen ? new Set() : new Set(trainable))} className="text-[11px] font-bold text-[#ff5a36] hover:text-[#9c3417]">
             {allOpen ? "Collapse all" : "Expand all"}
           </button>
         </div>
@@ -408,7 +408,7 @@ function PeopleProgress({ members }) {
               {m.has_training
                 ? (isOpen ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />)
                 : <span className="w-4 flex-shrink-0" />}
-              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-[11px] font-bold flex-shrink-0">{initials(m.name)}</div>
+              <div className="w-8 h-8 rounded-full bg-[#fff1ec] text-[#c8431f] flex items-center justify-center text-[11px] font-bold flex-shrink-0">{initials(m.name)}</div>
               <div className="min-w-[150px] flex-1">
                 <div className="font-bold text-[13px] text-slate-800 leading-tight">{m.name}</div>
                 <div className="text-[10.5px] text-slate-400">{m.email}</div>
@@ -459,7 +459,7 @@ function ActTree({ acts, single = false }) {
               <span className="text-[11px] font-semibold text-slate-500">
                 {act.accounts[0].member_count} {act.accounts[0].member_count === 1 ? "person" : "people"} &middot; {act.accounts[0].training_count} getting training &middot;{" "}
                 <span className="text-slate-600">{act.accounts[0].not_started_count} not started</span> &middot;{" "}
-                <span className="text-blue-600">{act.accounts[0].in_progress_count} in progress</span> &middot;{" "}
+                <span className="text-[#ff5a36]">{act.accounts[0].in_progress_count} in progress</span> &middot;{" "}
                 <span className="text-green-600">{act.accounts[0].completed_count} completed</span>
               </span>
             ) : (
@@ -499,7 +499,7 @@ function ActTree({ acts, single = false }) {
                       <td className="py-2.5 text-center">{acc.user_count}</td>
                       <td className="py-2.5 text-center font-semibold">{acc.training_count}</td>
                       <td className="py-2.5 text-center text-slate-600">{acc.not_started_count}</td>
-                      <td className="py-2.5 text-center text-blue-600">{acc.in_progress_count}</td>
+                      <td className="py-2.5 text-center text-[#ff5a36]">{acc.in_progress_count}</td>
                       <td className="py-2.5 pr-4 text-center text-green-600">{acc.completed_count}</td>
                     </tr>
                     {open && (
@@ -525,7 +525,7 @@ function TabButton({ active, onClick, label }) {
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-2 text-xs font-bold border-b-2 ${active ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+      className={`px-3 py-2 text-xs font-bold border-b-2 ${active ? "border-[#ff5a36] text-[#ff5a36]" : "border-transparent text-slate-500 hover:text-slate-800"}`}
     >
       {label}
     </button>
@@ -569,12 +569,12 @@ function CourseModulesDrillDown({ drill, onBack, onNavigate, api, setError }) {
         <ChevronLeft className="w-3.5 h-3.5" /> Back
       </button>
       <div className="flex items-center gap-2">
-        <Layers className="w-5 h-5 text-blue-600" />
+        <Layers className="w-5 h-5 text-[#ff5a36]" />
         <h2 className="text-base font-bold text-slate-800">{drill.label} &middot; Modules</h2>
       </div>
 
       {loading ? (
-        <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
+        <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" /></div>
       ) : modules.length === 0 ? (
         <div className="text-center text-sm text-slate-400 py-12 bg-white border border-slate-200 rounded-xl">No modules in this course yet.</div>
       ) : (
@@ -619,7 +619,7 @@ function CourseModulesDrillDown({ drill, onBack, onNavigate, api, setError }) {
                     )}
                   </td>
                   <td className="py-2.5 pr-4 text-right">
-                    <button onClick={() => onNavigate({ type: "module", courseId: drill.courseId, moduleId: m.module_id, label: `${drill.label} – ${m.module_name}` })} className="text-blue-600 font-bold hover:text-blue-800 flex items-center gap-1 ml-auto">
+                    <button onClick={() => onNavigate({ type: "module", courseId: drill.courseId, moduleId: m.module_id, label: `${drill.label} – ${m.module_name}` })} className="text-[#ff5a36] font-bold hover:text-[#9c3417] flex items-center gap-1 ml-auto">
                       Learners <ChevronRight className="w-3 h-3" />
                     </button>
                   </td>
@@ -659,7 +659,7 @@ function RecordsDrillDown({ drill, onBack, api, scope, departmentList, processLi
         <ChevronLeft className="w-3.5 h-3.5" /> Back
       </button>
       <div className="flex items-center gap-2">
-        {drill.type === "account" ? <Building2 className="w-5 h-5 text-blue-600" /> : <GraduationCap className="w-5 h-5 text-blue-600" />}
+        {drill.type === "account" ? <Building2 className="w-5 h-5 text-[#ff5a36]" /> : <GraduationCap className="w-5 h-5 text-[#ff5a36]" />}
         <h2 className="text-base font-bold text-slate-800">{drill.label}</h2>
       </div>
 
@@ -685,7 +685,7 @@ function RecordsDrillDown({ drill, onBack, api, scope, departmentList, processLi
       </div>
 
       {loading ? (
-        <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
+        <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" /></div>
       ) : records.length === 0 ? (
         <div className="text-center text-sm text-slate-400 py-12 bg-white border border-slate-200 rounded-xl">No matching records.</div>
       ) : (

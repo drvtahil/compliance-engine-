@@ -43,13 +43,13 @@ export default function AssignmentPlayer({ assignmentId, moduleName, onExit, onS
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignmentId]);
 
-  if (loading) return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
+  if (loading) return <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" /></div>;
 
   if (error && !state) {
     return (
       <div className="space-y-3">
         <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-2 rounded">{error}</div>
-        <button onClick={onExit} className="text-xs font-bold text-blue-600">Back to course</button>
+        <button onClick={onExit} className="text-xs font-bold text-[#ff5a36]">Back to course</button>
       </div>
     );
   }
@@ -96,7 +96,7 @@ export default function AssignmentPlayer({ assignmentId, moduleName, onExit, onS
         <div className="min-w-0">
           <div className="text-[11px] font-semibold text-slate-400 truncate">{moduleName}</div>
           <div className="flex items-center gap-2">
-            <ClipboardList className="w-4 h-4 text-blue-600 flex-shrink-0" />
+            <ClipboardList className="w-4 h-4 text-[#ff5a36] flex-shrink-0" />
             <h3 className="text-base font-bold text-slate-800 leading-snug">{assignment.title}</h3>
           </div>
           <div className="text-[11px] text-slate-400 mt-0.5">Attempt {attemptNumber}</div>
@@ -110,7 +110,7 @@ export default function AssignmentPlayer({ assignmentId, moduleName, onExit, onS
           <span>{answeredCount}/{total} answered</span>
         </div>
         <div className="bg-slate-100 rounded-full h-1.5">
-          <div className="bg-blue-600 h-1.5 rounded-full transition-all" style={{ width: `${(answeredCount / total) * 100}%` }} />
+          <div className="bg-[#ff5a36] h-1.5 rounded-full transition-all" style={{ width: `${(answeredCount / total) * 100}%` }} />
         </div>
       </div>
 
@@ -166,7 +166,7 @@ export default function AssignmentPlayer({ assignmentId, moduleName, onExit, onS
         {!onReview ? (
           <button
             onClick={() => setIndex((i) => i + 1)}
-            className="flex items-center gap-1 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700"
+            className="flex items-center gap-1 px-5 py-2.5 rounded-lg bg-[#ff5a36] text-white text-sm font-bold hover:bg-[#c8431f]"
           >
             {index === total - 1 ? "Review answers" : "Next"} <ChevronRight className="w-4 h-4" />
           </button>
@@ -199,7 +199,7 @@ function QuestionPage({ question, number, selected, onPick }) {
             <label
               key={o.id}
               className={`flex items-center gap-3 border rounded-xl px-4 py-3.5 cursor-pointer transition-colors ${
-                checked ? "border-blue-500 bg-blue-50 ring-1 ring-blue-200" : "border-slate-200 hover:bg-slate-50"
+                checked ? "border-[#ff5a36] bg-[#fff1ec] ring-1 ring-[#ffc7ae]" : "border-slate-200 hover:bg-slate-50"
               }`}
             >
               <input
@@ -231,7 +231,7 @@ function ResultCard({ result, onExit, onRetake }) {
       </div>
       <div className="flex items-center justify-center gap-3 mt-7">
         <button onClick={onExit} className="px-4 py-2.5 rounded-lg border border-slate-300 text-sm font-bold text-slate-600 hover:bg-slate-50">Back to course</button>
-        <button onClick={onRetake} className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700">
+        <button onClick={onRetake} className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#ff5a36] text-white text-sm font-bold hover:bg-[#c8431f]">
           <RotateCcw className="w-4 h-4" /> Retake
         </button>
       </div>

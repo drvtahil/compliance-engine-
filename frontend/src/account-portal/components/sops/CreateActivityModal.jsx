@@ -68,7 +68,7 @@ export default function CreateActivityModal({ assessmentId, owners, onClose, onC
               required
               value={form.activity_name}
               onChange={(e) => setForm({ ...form, activity_name: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#ff5a36] outline-hidden"
             />
           </div>
 
@@ -78,7 +78,7 @@ export default function CreateActivityModal({ assessmentId, owners, onClose, onC
               rows={3}
               value={form.detail}
               onChange={(e) => setForm({ ...form, detail: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg p-2 text-xs resize-y focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full border border-slate-300 rounded-lg p-2 text-xs resize-y focus:ring-2 focus:ring-[#ff5a36] outline-hidden"
             />
           </div>
 
@@ -118,7 +118,7 @@ export default function CreateActivityModal({ assessmentId, owners, onClose, onC
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5"
+              className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5"
             >
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Create

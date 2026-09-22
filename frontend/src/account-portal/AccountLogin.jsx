@@ -25,24 +25,24 @@ export default function AccountLogin({ onLoggedIn }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8 w-full max-w-sm space-y-4">
+    <div className="min-h-screen bg-[#f7f6f3] flex items-center justify-center px-4">
+      <div className="bg-white border border-[#ece9e2] rounded-xl shadow-sm p-8 w-full max-w-sm space-y-4">
         <div className="flex items-center gap-3 mb-2">
-          <div className="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
+          <div className="bg-[#ff5a36] text-white p-2 rounded-lg shadow-sm">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-800">Mood9 Compliance</h1>
-            <p className="text-xs text-slate-500">Account Portal &middot; sign in</p>
+            <h1 className="text-lg font-bold text-[#0b3f3c]">Mood9 Compliance</h1>
+            <p className="text-xs text-[#8a8578]">Account Portal &middot; sign in</p>
           </div>
         </div>
 
-        <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-bold">
+        <div className="flex items-center bg-[#eeece5] p-1 rounded-lg border border-[#ece9e2] text-xs font-bold">
           <button
             type="button"
             onClick={() => setLoginAs("admin")}
             className={`flex-1 px-3 py-1.5 rounded-md transition ${
-              loginAs === "admin" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              loginAs === "admin" ? "bg-white text-[#c8431f] shadow-xs" : "text-[#6b6a63] hover:text-[#1a1a1a]"
             }`}
           >
             Account Admin
@@ -51,7 +51,7 @@ export default function AccountLogin({ onLoggedIn }) {
             type="button"
             onClick={() => setLoginAs("user")}
             className={`flex-1 px-3 py-1.5 rounded-md transition ${
-              loginAs === "user" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              loginAs === "user" ? "bg-white text-[#c8431f] shadow-xs" : "text-[#6b6a63] hover:text-[#1a1a1a]"
             }`}
           >
             User
@@ -88,7 +88,7 @@ export default function AccountLogin({ onLoggedIn }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2 disabled:opacity-60"
+            className="w-full bg-[#ff5a36] hover:bg-[#e14a26] text-white text-sm font-semibold rounded-lg py-2 disabled:opacity-60"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>

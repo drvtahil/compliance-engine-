@@ -56,10 +56,10 @@ export function PortalNav({ tabs, activeTab, onSelect, collapsed }) {
             title={item.enabled ? (collapsed ? item.label : undefined) : `${item.label} is not enabled for your account`}
             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] font-medium text-left ${collapsed ? "justify-center" : ""} ${
               active
-                ? "bg-blue-50 text-blue-700"
+                ? "bg-[#ff5a36] text-white font-semibold"
                 : item.enabled
-                ? "text-slate-600 hover:bg-slate-50"
-                : "text-slate-300 cursor-not-allowed"
+                ? "text-[#d3ece8] hover:bg-[#12504c]"
+                : "text-[#5f948f] cursor-not-allowed"
             }`}
           >
             <Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -74,8 +74,8 @@ export function PortalNav({ tabs, activeTab, onSelect, collapsed }) {
 
 export function NoTabsEnabled() {
   return (
-    <div className="p-10 max-w-md mx-auto text-center text-sm text-slate-400">
-      <Lock className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+    <div className="p-10 max-w-md mx-auto text-center text-sm text-[#8a8578]">
+      <Lock className="w-6 h-6 mx-auto mb-2 text-[#c7c3b8]" />
       No tabs are enabled for your account yet. Please contact your administrator.
     </div>
   );

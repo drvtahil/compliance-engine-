@@ -176,7 +176,7 @@ export default function UserFormModal({ editingUser, onClose, onSaved }) {
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-1.5"
+              className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-5 py-2 rounded-lg font-bold flex items-center gap-1.5"
             >
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {editingUser ? "Save Changes" : "Create User"}

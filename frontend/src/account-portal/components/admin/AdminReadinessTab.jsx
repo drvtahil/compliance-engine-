@@ -101,7 +101,7 @@ export default function AdminReadinessTab() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-4">
         <div className="border-b border-slate-100 pb-3">
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5 text-blue-600" /> Readiness
+            <ClipboardCheck className="w-5 h-5 text-[#ff5a36]" /> Readiness
           </h2>
           <p className="text-xs text-slate-500">All questions allocated across your users. You can edit any user's response.</p>
         </div>
@@ -148,7 +148,7 @@ export default function AdminReadinessTab() {
 
       {loading ? (
         <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-2">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#ff5a36]" />
           <span className="text-xs font-semibold">Loading questions...</span>
         </div>
       ) : locked ? (
@@ -169,7 +169,7 @@ export default function AdminReadinessTab() {
               <button
                 onClick={handleSubmit}
                 disabled={!canSubmit || submitting}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Submit Readiness
