@@ -7,7 +7,7 @@ class LegalChapter(Base):
     __tablename__ = "legal_chapters"
     id = Column(Integer, primary_key=True, index=True)
     act_code = Column(String(100), nullable=False, index=True)
-    title = Column(String(255), nullable=False)
+    title = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     rules = relationship("LegalRule", back_populates="chapter", cascade="all, delete-orphan", order_by="LegalRule.rule_order.asc()")
@@ -29,7 +29,7 @@ class LegalSection(Base):
     __tablename__ = "legal_sections"
     id = Column(Integer, primary_key=True, index=True)
     rule_id = Column(Integer, ForeignKey("legal_rules.id", ondelete="CASCADE"), nullable=False)
-    section_title = Column(String(255), nullable=False)
+    section_title = Column(Text, nullable=False)
     section_explanation = Column(Text, nullable=False)
     practical_examples = Column(Text, nullable=True)
     mapped_acts = Column(Text, nullable=True) # Stored as JSON string list
@@ -46,9 +46,9 @@ class LegalAssessment(Base):
     question = Column(Text, nullable=False)
     mapped_acts = Column(Text, nullable=True) # Stored as JSON string list
     industries = Column(Text, nullable=True) # Stored as JSON string list
-    industry_process = Column(String(255), nullable=False)
+    industry_process = Column(Text, nullable=False)
     mapped_org_types = Column(Text, nullable=True) # Stored as JSON string list
-    sop_name = Column(String(255), nullable=False)
+    sop_name = Column(Text, nullable=False)
     sop_details = Column(Text, nullable=False)
     processes = Column(Text, nullable=True) # Stored as structured JSON list of processes
     created_at = Column(DateTime, default=datetime.utcnow)

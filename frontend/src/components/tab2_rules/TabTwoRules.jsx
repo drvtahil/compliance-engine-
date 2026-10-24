@@ -766,8 +766,8 @@ export default function TabTwoRules() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-bold text-slate-700 block mb-1">Section Title / Number *</label>
-                        <input
-                          type="text"
+                        <textarea
+                          rows={2}
                           placeholder="e.g. Section 5(1) - Notice of Collection"
                           value={sec.section_title}
                           onChange={(e) => {
@@ -775,7 +775,7 @@ export default function TabTwoRules() {
                             copy[rIdx].sections[sIdx].section_title = e.target.value;
                             setBuilderRules(copy);
                           }}
-                          className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-medium"
+                          className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white font-medium resize-y"
                         />
                       </div>
 

@@ -9,7 +9,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     id = Column(Integer, primary_key=True, index=True)
     recipient_admin_id = Column(Integer, ForeignKey("account_admins.id", ondelete="CASCADE"), nullable=False, index=True)
-    title = Column(String(255), nullable=False)
+    title = Column(Text, nullable=False)
     message = Column(Text, nullable=True)
     entity_type = Column(String(50), nullable=True)  # e.g. "training_course"
     entity_id = Column(Integer, nullable=True)

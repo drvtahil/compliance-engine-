@@ -8,7 +8,7 @@ class TrainingCourse(Base):
     __tablename__ = "training_courses"
     id = Column(Integer, primary_key=True, index=True)
     act_code = Column(String(100), nullable=False, index=True)  # matches an item in the "acts" MasterRegistry (Tab 2's convention)
-    name = Column(String(255), nullable=False)
+    name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     default_roles = Column(Text, nullable=True)  # JSON string list, e.g. ["Account Admin", "User"]
     status = Column(String(20), nullable=False, default="draft")  # draft | published | archived
@@ -25,12 +25,12 @@ class TrainingModule(Base):
     __tablename__ = "training_modules"
     id = Column(Integer, primary_key=True, index=True)
     course_id = Column(Integer, ForeignKey("training_courses.id", ondelete="CASCADE"), nullable=False)
-    module_name = Column(String(255), nullable=False)
+    module_name = Column(Text, nullable=False)
     short_description = Column(Text, nullable=True)
     sequence_order = Column(Integer, default=1)
     department_item_id = Column(Integer, ForeignKey("master_registry_items.id", ondelete="SET NULL"), nullable=True)  # "industries" registry, relabeled Department
     process_item_id = Column(Integer, ForeignKey("master_registry_items.id", ondelete="SET NULL"), nullable=True)  # "industry_processes" registry, relabeled Process
-    chapter = Column(String(255), nullable=True)  # free text, not master-list-driven
+    chapter = Column(Text, nullable=True)  # free text, not master-list-driven
     rules = Column(Text, nullable=True)  # free text, not master-list-driven
     test_required = Column(Boolean, default=False)  # hook for the future test/assessment engine
     status = Column(String(20), nullable=False, default="draft")
@@ -49,7 +49,7 @@ class TrainingContentItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     module_id = Column(Integer, ForeignKey("training_modules.id", ondelete="CASCADE"), nullable=False)
     content_type = Column(String(255), nullable=False)  # free text from the "content_types" MasterRegistry
-    title = Column(String(255), nullable=False)
+    title = Column(Text, nullable=False)
     source_type = Column(String(20), nullable=False, default="upload")  # upload | external_url
     description = Column(Text, nullable=True)
     file_path = Column(Text, nullable=True)
@@ -79,7 +79,7 @@ class TrainingAssignment(Base):
     __tablename__ = "training_assignments"
     id = Column(Integer, primary_key=True, index=True)
     module_id = Column(Integer, ForeignKey("training_modules.id", ondelete="CASCADE"), nullable=False, index=True)
-    title = Column(String(255), nullable=False)
+    title = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     sequence_order = Column(Integer, default=1)
     created_by = Column(Integer, ForeignKey("super_admins.id", ondelete="SET NULL"), nullable=True)
