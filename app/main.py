@@ -4,6 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.security import create_access_token, decode_access_token
 from app.database.connection import get_db
 
 # Import routers
@@ -21,7 +22,24 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Refreshed-Token"],
 )
+
+
+# Sliding session: every request carrying a still-valid token gets a fresh one back, so
+# the login only expires after access_token_expire_minutes of inactivity.
+@app.middleware("http")
+async def refresh_token(request, call_next):
+    response = await call_next(request)
+    auth = request.headers.get("authorization", "")
+    if auth.lower().startswith("bearer ") and response.status_code != 401:
+        try:
+            claims = decode_access_token(auth[7:].strip())
+            claims.pop("exp", None)
+            response.headers["X-Refreshed-Token"] = create_access_token(claims)
+        except Exception:
+            pass
+    return response
 
 # Mount routers
 app.include_router(auth.router)

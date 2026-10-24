@@ -45,6 +45,11 @@ export const authFetch = async (url, options = {}) => {
     ...options,
     headers: { ...options.headers, ...authHeaders() },
   });
+  const refreshed = res.headers.get("X-Refreshed-Token");
+  if (refreshed) {
+    const session = loadSession();
+    if (session) saveSession({ ...session, access_token: refreshed });
+  }
   if (res.status === 401) {
     clearSession();
     window.location.reload();

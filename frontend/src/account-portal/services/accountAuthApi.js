@@ -63,6 +63,19 @@ export const accountFetch = async (url, options = {}) => {
     ...options,
     headers: { ...options.headers, ...accountAuthHeaders() },
   });
+  // Sliding session: swap in the renewed token. This tab's pinned session always updates;
+  // localStorage only if it still holds this tab's old token (never overwrite another tab's login).
+  const refreshed = res.headers.get("X-Refreshed-Token");
+  if (refreshed && activeSession?.access_token) {
+    const old = activeSession.access_token;
+    activeSession = { ...activeSession, access_token: refreshed };
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (stored && stored.access_token === old) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stored, access_token: refreshed }));
+      }
+    } catch {}
+  }
   if (res.status === 401) {
     clearAccountSession();
     window.location.reload();
