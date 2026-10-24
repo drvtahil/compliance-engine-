@@ -874,8 +874,8 @@ export default function TabTwoRules() {
                       {sec.sub_sections.map((sub, subIdx) => (
                         <div key={subIdx} className="space-y-2 border-l-2 border-slate-300 pl-3">
                           <div className="flex items-center gap-2">
-                            <input
-                              type="text"
+                            <textarea
+                              rows={1}
                               placeholder="Sub-section..."
                               value={sub.title}
                               onChange={(e) => {
@@ -883,7 +883,7 @@ export default function TabTwoRules() {
                                 copy[rIdx].sections[sIdx].sub_sections[subIdx].title = e.target.value;
                                 setBuilderRules(copy);
                               }}
-                              className="w-full border border-slate-300 rounded p-1.5 text-xs"
+                              className="w-full border border-slate-300 resize-y rounded p-1.5 text-xs"
                             />
                             <button
                               type="button"
@@ -905,8 +905,8 @@ export default function TabTwoRules() {
                           {sub.paragraphs?.map((p, pIdx) => (
                             <div key={pIdx} className="space-y-1.5 pl-3 border-l-2 border-slate-200">
                               <div className="flex items-center gap-2">
-                                <input
-                                  type="text"
+                                <textarea
+                                  rows={1}
                                   placeholder="Paragraph text..."
                                   value={p.text}
                                   onChange={(e) => {
@@ -914,7 +914,7 @@ export default function TabTwoRules() {
                                     copy[rIdx].sections[sIdx].sub_sections[subIdx].paragraphs[pIdx].text = e.target.value;
                                     setBuilderRules(copy);
                                   }}
-                                  className="w-full border border-slate-300 rounded p-1.5 text-xs"
+                                  className="w-full border border-slate-300 resize-y rounded p-1.5 text-xs"
                                 />
                                 <button
                                   type="button"
@@ -935,8 +935,8 @@ export default function TabTwoRules() {
 
                               {p.sub_paragraphs?.map((sp, spIdx) => (
                                 <div key={spIdx} className="pl-3 flex items-center gap-2">
-                                  <input
-                                    type="text"
+                                  <textarea
+                                    rows={1}
                                     placeholder="Sub-paragraph text..."
                                     value={sp}
                                     onChange={(e) => {
@@ -944,7 +944,7 @@ export default function TabTwoRules() {
                                       copy[rIdx].sections[sIdx].sub_sections[subIdx].paragraphs[pIdx].sub_paragraphs[spIdx] = e.target.value;
                                       setBuilderRules(copy);
                                     }}
-                                    className="w-full border border-slate-300 rounded p-1 text-xs"
+                                    className="w-full border border-slate-300 resize-y rounded p-1 text-xs"
                                   />
                                   <button
                                     type="button"
