@@ -82,6 +82,7 @@ export default function TabTwoRules() {
     try {
       const api = { chapter: deleteChapterApi, rule: deleteRuleApi, section: deleteSectionApi }[deleteModal.kind];
       await api(deleteModal.id);
+      deleteModal.onDeleted?.();
       setDeleteModal(null);
       await loadChapters(selectedAct);
     } catch (err) {
@@ -320,6 +321,22 @@ export default function TabTwoRules() {
   };
 
   const handleRemoveSection = (rIdx, sIdx) => {
+    const sec = builderRules[rIdx].sections[sIdx];
+    if (sec.id) {
+      // Saved section: removing it from the form would not delete it, so warn and delete it for real.
+      setDeleteModal({
+        kind: "section", id: sec.id, label: sec.section_title || "(untitled section)",
+        blocked: false,
+        detail: `This section is already saved, so this deletes it permanently, along with its ${sec.assessments?.length || 0} assessment question(s), SOPs and any answers or assignments recorded against them.`,
+        onDeleted: () => {
+          const c = cloneRules();
+          c[rIdx].sections = c[rIdx].sections.filter((x) => x.id !== sec.id);
+          if (c[rIdx].sections.length === 0) c[rIdx].sections.push(getBlankSection(selectedAct));
+          setBuilderRules(c);
+        }
+      });
+      return;
+    }
     const copy = cloneRules();
     if (copy[rIdx].sections.length === 1) {
       alert("At least one section is required per rule.");
@@ -774,7 +791,7 @@ export default function TabTwoRules() {
                   <div key={sIdx} className="bg-slate-50/70 p-4 rounded-xl border border-slate-200 space-y-4">
                     <div className="flex justify-between items-center pb-1">
                       <span className="text-xs font-bold text-[#7a2a13] uppercase">Section #{sIdx + 1}</span>
-                      {rule.sections.length > 1 && (
+                      {(rule.sections.length > 1 || sec.id) && (
                         <button
                           type="button"
                           onClick={() => handleRemoveSection(rIdx, sIdx)}
