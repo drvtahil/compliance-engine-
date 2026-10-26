@@ -331,3 +331,39 @@ def toggle_rule_hide(rule_id: int, db: Session = Depends(get_db), current_admin:
     db.commit()
     db.refresh(rule)
     return {"status": "updated", "id": rule.id, "is_hidden": rule.is_hidden}
+
+# --- 5. DELETE SECTION / RULE / CHAPTER (children must be removed first, bottom-up) ---
+@router.delete("/sections/{section_id}")
+def delete_section(section_id: int, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
+    sec = db.query(LegalSection).filter(LegalSection.id == section_id).first()
+    if not sec:
+        raise HTTPException(status_code=404, detail="Section not found.")
+    db.delete(sec)  # also removes its assessments (and their assignments)
+    db.commit()
+    return {"status": "deleted", "section_id": section_id}
+
+
+@router.delete("/rules/{rule_id}")
+def delete_rule(rule_id: int, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
+    rule = db.query(LegalRule).filter(LegalRule.id == rule_id).first()
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found.")
+    count = db.query(LegalSection).filter(LegalSection.rule_id == rule_id).count()
+    if count:
+        raise HTTPException(status_code=409, detail=f"This rule still has {count} section(s). Delete its sections first.")
+    db.delete(rule)
+    db.commit()
+    return {"status": "deleted", "rule_id": rule_id}
+
+
+@router.delete("/chapters/{chapter_id}")
+def delete_chapter(chapter_id: int, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
+    chap = db.query(LegalChapter).filter(LegalChapter.id == chapter_id).first()
+    if not chap:
+        raise HTTPException(status_code=404, detail="Chapter not found.")
+    count = db.query(LegalRule).filter(LegalRule.chapter_id == chapter_id).count()
+    if count:
+        raise HTTPException(status_code=409, detail=f"This chapter still has {count} rule(s). Delete its rules first.")
+    db.delete(chap)
+    db.commit()
+    return {"status": "deleted", "chapter_id": chapter_id}

@@ -57,3 +57,16 @@ export const toggleRuleHideApi = async (ruleId) => {
   }
   return await res.json();
 };
+
+const deleteNode = async (path, fallback) => {
+  const res = await authFetch(`${API_BASE}/${path}`, { method: "DELETE" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || fallback);
+  }
+  return await res.json();
+};
+
+export const deleteSectionApi = (id) => deleteNode(`sections/${id}`, "Failed to delete section.");
+export const deleteRuleApi = (id) => deleteNode(`rules/${id}`, "Failed to delete rule.");
+export const deleteChapterApi = (id) => deleteNode(`chapters/${id}`, "Failed to delete chapter.");

@@ -23,7 +23,10 @@ import {
   saveChapterTreeApi,
   updateSingleRuleApi,
   addRuleToChapterApi,
-  toggleRuleHideApi
+  toggleRuleHideApi,
+  deleteSectionApi,
+  deleteRuleApi,
+  deleteChapterApi
 } from "../../services/tab2Api";
 
 export default function TabTwoRules() {
@@ -68,6 +71,25 @@ export default function TabTwoRules() {
     title: ""
   });
   const [savingChapterTitle, setSavingChapterTitle] = useState(false);
+
+  // Delete confirmation popup: { kind: "chapter"|"rule"|"section", id, label, blocked, detail }
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal) return;
+    setDeleting(true);
+    try {
+      const api = { chapter: deleteChapterApi, rule: deleteRuleApi, section: deleteSectionApi }[deleteModal.kind];
+      await api(deleteModal.id);
+      setDeleteModal(null);
+      await loadChapters(selectedAct);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Editing Context for In-Place Updates
   const [editingContext, setEditingContext] = useState({
@@ -1339,6 +1361,17 @@ export default function TabTwoRules() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => setDeleteModal({
+                        kind: "chapter", id: chap.id, label: chap.title,
+                        blocked: rulesCount > 0,
+                        detail: `This chapter still has ${rulesCount} rule(s). Delete all of its rules first, then delete the chapter.`
+                      })}
+                      className="bg-[#5a1c0c] hover:bg-red-700 text-white px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-xs transition"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleOpenAddRuleModal(chap)}
                       className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-xs transition"
                     >
@@ -1402,6 +1435,17 @@ export default function TabTwoRules() {
                               >
                                 <Edit2 className="w-3.5 h-3.5" /> Edit Rule
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteModal({
+                                  kind: "rule", id: rule.id, label: `Rule No. ${rule.rule_order || (rIdx + 1)}`,
+                                  blocked: (rule.sections?.length || 0) > 0,
+                                  detail: `This rule still has ${rule.sections?.length || 0} section(s). Delete all of its sections first, then delete the rule.`
+                                })}
+                                className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1 rounded text-xs font-bold flex items-center gap-1 transition"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" /> Delete
+                              </button>
                             </div>
                           </div>
 
@@ -1420,6 +1464,17 @@ export default function TabTwoRules() {
                                         SECTION: {sec.section_title}
                                       </h4>
                                       <div className="flex items-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => setDeleteModal({
+                                            kind: "section", id: sec.id, label: sec.section_title,
+                                            blocked: false,
+                                            detail: `This will also permanently delete its ${sec.assessments?.length || 0} assessment question(s), SOPs and any answers or assignments recorded against them.`
+                                          })}
+                                          className="mr-2 text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1"
+                                        >
+                                          <Trash2 className="w-3 h-3" /> Delete Section
+                                        </button>
                                         <span className="text-[10px] text-slate-400 font-bold uppercase mr-1">Mapped Acts:</span>
                                         {withDefaultAct(sec.mapped_acts, chap.act_code).map((ma, mIdx) => (
                                           <span key={mIdx} className="bg-[#ffe4da] text-[#9c3417] text-[10px] font-bold px-1.5 py-0.5 rounded">
@@ -1590,6 +1645,45 @@ export default function TabTwoRules() {
       {/* ========================================================================= */}
       {/* STYLED IN-APP MODAL: RENAME CHAPTER (title only, no delete)               */}
       {/* ========================================================================= */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4 text-xs">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-800">
+                {deleteModal.blocked ? `Cannot delete ${deleteModal.kind} yet` : `Delete ${deleteModal.kind}?`}
+              </h3>
+            </div>
+            <p className="font-semibold text-slate-800 break-words line-clamp-4">{deleteModal.label}</p>
+            <p className={deleteModal.blocked ? "text-amber-700" : "text-red-700"}>
+              {deleteModal.blocked ? deleteModal.detail : `${deleteModal.detail ? deleteModal.detail + " " : ""}This cannot be undone.`}
+            </p>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeleteModal(null)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold"
+              >
+                {deleteModal.blocked ? "OK" : "Cancel"}
+              </button>
+              {!deleteModal.blocked && (
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={handleConfirmDelete}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 disabled:opacity-60"
+                >
+                  {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  Yes, Delete
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {editChapterModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-150">
