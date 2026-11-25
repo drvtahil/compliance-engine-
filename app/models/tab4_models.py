@@ -57,6 +57,7 @@ class TrainingContentItem(Base):
     file_type = Column(String(50), nullable=True)
     external_url = Column(Text, nullable=True)
     sequence_order = Column(Integer, default=1)
+    org_types = Column(Text, nullable=True)  # JSON list of Organization Types; empty = visible to all
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

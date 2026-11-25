@@ -14,6 +14,8 @@ from app.models.super_admin import SuperAdmin
 from app.models.tab1_models import AccountAdmin
 from app.models.tab4_models import TrainingContentItem, TrainingCourseAllocation
 
+from app.services.training_visibility import item_visible
+
 router = APIRouter(prefix="/api/v1/training/content", tags=["Training Content Files"])
 
 
@@ -51,6 +53,8 @@ def authorize_content_file_access(db: Session, credentials: HTTPAuthorizationCre
         ).first()
         if not allocated:
             raise HTTPException(status_code=403, detail="This training course is not allocated to your account.")
+        if not item_visible(content_item, admin.account.org_type):
+            raise HTTPException(status_code=403, detail="This training content is not available for your organization type.")
         return
 
     raise unauthorized

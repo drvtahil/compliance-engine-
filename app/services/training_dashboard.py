@@ -15,6 +15,9 @@ from app.models.tab4_models import (
 )
 
 
+from app.services.training_visibility import item_org_types, filter_ids
+
+
 def get_active_allocations(db: Session, account_id: Optional[int] = None, course_id: Optional[int] = None,
                             act_code: Optional[str] = None, role_id: Optional[int] = None):
     q = db.query(TrainingCourseAllocation).filter(TrainingCourseAllocation.status == "active")
@@ -64,6 +67,19 @@ def get_course_content_map(db: Session, course_ids=None):
     return course_content, module_content, modules_by_id
 
 
+def get_content_org_map(db: Session, course_ids=None) -> dict:
+    """{content_id: [Organization Types]} - an empty list means visible to all."""
+    q = db.query(TrainingContentItem).join(TrainingModule, TrainingContentItem.module_id == TrainingModule.id)
+    if course_ids is not None:
+        q = q.filter(TrainingModule.course_id.in_(course_ids))
+    return {ci.id: item_org_types(ci) for ci in q.all()}
+
+
+def learner_ids(ids, org_map: dict, learner):
+    """Content ids this learner's organization type can see; None if the course/module is hidden for them."""
+    return filter_ids(ids, org_map, learner.account.org_type if learner.account else None)
+
+
 def get_completed_map(db: Session, admin_ids):
     """Returns ({(admin_id, content_id)}, {(admin_id, content_id): completed_at})"""
     if not admin_ids:
@@ -107,6 +123,7 @@ def build_summary(db: Session, account_id: Optional[int] = None) -> dict:
     course_ids = {a.course_id for a in allocations}
     courses = {c.id: c for c in db.query(TrainingCourse).filter(TrainingCourse.id.in_(course_ids)).all()}
     course_content, _, _ = get_course_content_map(db, course_ids)
+    org_map = get_content_org_map(db, course_ids)
 
     pairs = {(a.account_id, a.role_id) for a in allocations}
     learners_map = get_learners_map(db, pairs)
@@ -120,8 +137,11 @@ def build_summary(db: Session, account_id: Optional[int] = None) -> dict:
     for alloc in allocations:
         account_ids.add(alloc.account_id)
         learners = learners_map.get((alloc.account_id, alloc.role_id), [])
-        content_ids = course_content.get(alloc.course_id, [])
+        all_ids = course_content.get(alloc.course_id, [])
         for learner in learners:
+            content_ids = learner_ids(all_ids, org_map, learner)
+            if content_ids is None:
+                continue
             if learner.role_id == 2:
                 user_admin_ids.add(learner.id)
             else:
@@ -180,6 +200,7 @@ def build_act_tree(db: Session, account_id: Optional[int] = None) -> list:
     course_ids = {a.course_id for a in allocations}
     courses = {c.id: c for c in db.query(TrainingCourse).filter(TrainingCourse.id.in_(course_ids)).all()} if course_ids else {}
     course_content, module_content, modules_by_id = get_course_content_map(db, course_ids) if course_ids else ({}, {}, {})
+    org_map = get_content_org_map(db, course_ids) if course_ids else {}
     modules_by_course = {}
     for mod in sorted(modules_by_id.values(), key=lambda x: x.sequence_order or 0):
         modules_by_course.setdefault(mod.course_id, []).append(mod)
@@ -203,10 +224,13 @@ def build_act_tree(db: Session, account_id: Optional[int] = None) -> list:
             if key not in latest_attempt or at.submitted_at > latest_attempt[key].submitted_at:
                 latest_attempt[key] = at
 
-    def module_rows(course_id, admin_id):
+    def module_rows(course_id, member):
+        admin_id = member.id
         rows = []
         for mod in modules_by_course.get(course_id, []):
-            ids = module_content.get(mod.id, [])
+            ids = learner_ids(module_content.get(mod.id, []), org_map, member)
+            if ids is None:
+                continue  # module hidden for this member's organization type
             status, pct = compute_status(ids, admin_id, completed_set)
             done = sum(1 for cid in ids if (admin_id, cid) in completed_set)
             tests = []
@@ -219,7 +243,7 @@ def build_act_tree(db: Session, account_id: Optional[int] = None) -> list:
                     "latest_test_at": at.submitted_at if at else None,
                 })
             rows.append({
-                "module_id": mod.id, "module_name": mod.module_name, "sequence_order": mod.sequence_order,
+                "module_id": mod.id, "module_name": mod.module_name, "sequence_order": len(rows) + 1,
                 "status": status, "progress_percent": pct, "sections_done": done, "sections_total": len(ids),
                 "is_complete": len(ids) > 0 and done == len(ids), "assignments": tests,
             })
@@ -245,14 +269,16 @@ def build_act_tree(db: Session, account_id: Optional[int] = None) -> list:
             for m in members_by_account.get(account_id, []):
                 course_rows = []
                 for alloc in allocs_by_key.get((account_id, m.role_id, act_name), []):
-                    ids = course_content.get(alloc.course_id, [])
+                    ids = learner_ids(course_content.get(alloc.course_id, []), org_map, m)
+                    if ids is None:
+                        continue  # nothing in this course is for this account's organization type
                     status, pct = compute_status(ids, m.id, completed_set)
                     course_rows.append({
                         "course_id": alloc.course_id, "course_name": courses[alloc.course_id].name,
                         "status": status, "progress_percent": pct, "is_mandatory": alloc.is_mandatory,
                         "assigned_at": alloc.assigned_at,
                         "sections_done": sum(1 for cid in ids if (m.id, cid) in completed_set), "sections_total": len(ids),
-                        "modules": module_rows(alloc.course_id, m.id),
+                        "modules": module_rows(alloc.course_id, m),
                     })
                 if not course_rows:
                     status, pct = "no_training", 0
@@ -292,6 +318,7 @@ def build_accounts_rollup(db: Session) -> list:
     course_ids = {a.course_id for a in allocations}
     courses = {c.id: c for c in db.query(TrainingCourse).filter(TrainingCourse.id.in_(course_ids)).all()}
     course_content, _, _ = get_course_content_map(db, course_ids)
+    org_map = get_content_org_map(db, course_ids)
 
     pairs = {(a.account_id, a.role_id) for a in allocations}
     learners_map = get_learners_map(db, pairs)
@@ -311,8 +338,11 @@ def build_accounts_rollup(db: Session) -> list:
         completed_pairs = total_pairs = 0
         for alloc in allocs:
             learners = learners_map.get((alloc.account_id, alloc.role_id), [])
-            content_ids = course_content.get(alloc.course_id, [])
+            all_ids = course_content.get(alloc.course_id, [])
             for learner in learners:
+                content_ids = learner_ids(all_ids, org_map, learner)
+                if content_ids is None:
+                    continue
                 (user_ids if learner.role_id == 2 else admin_ids).add(learner.id)
                 status, _ = compute_status(content_ids, learner.id, completed_set)
                 total_pairs += 1
@@ -342,6 +372,7 @@ def build_courses_rollup(db: Session, account_id: Optional[int] = None) -> list:
 
     courses = {c.id: c for c in db.query(TrainingCourse).filter(TrainingCourse.id.in_(by_course.keys())).all()}
     course_content, _, _ = get_course_content_map(db, by_course.keys())
+    org_map = get_content_org_map(db, by_course.keys())
 
     pairs = {(a.account_id, a.role_id) for a in allocations}
     learners_map = get_learners_map(db, pairs)
@@ -353,16 +384,19 @@ def build_courses_rollup(db: Session, account_id: Optional[int] = None) -> list:
         course = courses.get(course_id)
         if not course:
             continue
-        content_ids = course_content.get(course_id, [])
+        all_ids = course_content.get(course_id, [])
         account_ids_here = {a.account_id for a in allocs}
         role_names = set()
-        learner_ids = set()
+        seen_learners = set()
         not_started = in_progress = completed = 0
         for alloc in allocs:
             role_names.add("Account Admin" if alloc.role_id == 1 else "User")
             learners = learners_map.get((alloc.account_id, alloc.role_id), [])
             for learner in learners:
-                learner_ids.add(learner.id)
+                content_ids = learner_ids(all_ids, org_map, learner)
+                if content_ids is None:
+                    continue
+                seen_learners.add(learner.id)
                 status, _ = compute_status(content_ids, learner.id, completed_set)
                 if status == "not_started":
                     not_started += 1
@@ -377,7 +411,7 @@ def build_courses_rollup(db: Session, account_id: Optional[int] = None) -> list:
             "status": course.status,
             "accounts_mapped": len(account_ids_here),
             "role_types": sorted(role_names),
-            "total_learners": len(learner_ids),
+            "total_learners": len(seen_learners),
             "not_started_count": not_started,
             "in_progress_count": in_progress,
             "completed_count": completed,
@@ -394,17 +428,21 @@ def build_course_modules_rollup(db: Session, course_id: int, account_id: Optiona
     completed_set, _ = get_completed_map(db, all_admin_ids)
 
     modules = db.query(TrainingModule).filter(TrainingModule.course_id == course_id).order_by(TrainingModule.sequence_order.asc()).all()
+    org_map = get_content_org_map(db, [course_id])
 
     result = []
     prev_completed_count = None
     for m in modules:
-        content_ids = [ci.id for ci in m.content_items]
-        completed_count = 0
+        all_ids = [ci.id for ci in m.content_items]
+        completed_count = total_assigned = 0
         for learner in all_admins:
+            content_ids = learner_ids(all_ids, org_map, learner)
+            if content_ids is None:
+                continue  # module hidden for this learner's organization type
+            total_assigned += 1
             status, _ = compute_status(content_ids, learner.id, completed_set)
             if status == "completed":
                 completed_count += 1
-        total_assigned = len(all_admins)
         drop_off = None
         if prev_completed_count is not None and prev_completed_count > 0:
             drop_off = round(((prev_completed_count - completed_count) / prev_completed_count) * 100)
@@ -445,6 +483,7 @@ def build_records(db: Session, account_id: Optional[int] = None, act_code: Optio
     course_ids = {a.course_id for a in allocations}
     courses = {c.id: c for c in db.query(TrainingCourse).filter(TrainingCourse.id.in_(course_ids)).all()}
     course_content, module_content, modules_by_id = get_course_content_map(db, course_ids)
+    org_map = get_content_org_map(db, course_ids)
 
     account_ids_here = {a.account_id for a in allocations}
     accounts = {acc.id: acc for acc in db.query(EnterpriseAccount).filter(EnterpriseAccount.id.in_(account_ids_here)).all()}
@@ -482,11 +521,15 @@ def build_records(db: Session, account_id: Optional[int] = None, act_code: Optio
                 for m in target_modules:
                     if m.course_id != course.id:
                         continue
-                    content_ids = module_content.get(m.id, [])
+                    content_ids = learner_ids(module_content.get(m.id, []), org_map, learner)
+                    if content_ids is None:
+                        continue
                     status, pct = compute_status(content_ids, learner.id, completed_set)
                     rows.append(_build_row(learner, role_name, account, course, m, status, pct, alloc, content_ids, completed_at_map))
             else:
-                content_ids = course_content.get(course.id, [])
+                content_ids = learner_ids(course_content.get(course.id, []), org_map, learner)
+                if content_ids is None:
+                    continue
                 status, pct = compute_status(content_ids, learner.id, completed_set)
                 rows.append(_build_row(learner, role_name, account, course, None, status, pct, alloc, content_ids, completed_at_map))
 

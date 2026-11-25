@@ -23,6 +23,8 @@ from app.models.tab4_models import (
 from app.models.notifications import Notification
 from app.services.training_assignments import serialize_assignment_admin
 
+from app.services.training_visibility import item_org_types
+
 router = APIRouter(prefix="/api/v1/tab4/training", tags=["Tab 4 Training - Course Builder"])
 
 UPLOAD_DIR = Path(settings.upload_dir).resolve()
@@ -106,6 +108,16 @@ def serialize_course(c: TrainingCourse) -> dict:
     }
 
 
+def parse_org_types(raw: str) -> str:
+    try:
+        types = json.loads(raw or "[]")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="org_types must be a JSON list.")
+    if not isinstance(types, list):
+        raise HTTPException(status_code=400, detail="org_types must be a JSON list.")
+    return json.dumps(sorted({str(t).strip() for t in types if str(t).strip()}))
+
+
 def serialize_content_item(ci: TrainingContentItem) -> dict:
     return {
         "id": ci.id,
@@ -118,6 +130,7 @@ def serialize_content_item(ci: TrainingContentItem) -> dict:
         "file_type": ci.file_type or "",
         "external_url": ci.external_url or "",
         "sequence_order": ci.sequence_order,
+        "org_types": item_org_types(ci),
     }
 
 
@@ -435,6 +448,7 @@ def create_content_item(
     description: str = Form(""),
     source_type: str = Form("upload"),
     external_url: str = Form(""),
+    org_types: str = Form("[]"),  # JSON list of Organization Types; empty = all
     file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_admin: SuperAdmin = Depends(get_current_super_admin),
@@ -477,6 +491,7 @@ def create_content_item(
         file_type=f_ext,
         external_url=external_url.strip() if source_type == "external_url" else None,
         sequence_order=max_order + 1,
+        org_types=parse_org_types(org_types),
     )
     db.add(ci)
     db.commit()
@@ -493,6 +508,7 @@ def update_content_item(
     description: str = Form(""),
     source_type: str = Form("upload"),
     external_url: str = Form(""),
+    org_types: str = Form("[]"),  # JSON list of Organization Types; empty = all
     file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_admin: SuperAdmin = Depends(get_current_super_admin),
@@ -507,6 +523,7 @@ def update_content_item(
     ci.title = title.strip()
     ci.description = description.strip()
     ci.source_type = source_type
+    ci.org_types = parse_org_types(org_types)
 
     if source_type == "external_url":
         if not external_url.strip():

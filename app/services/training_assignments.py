@@ -108,7 +108,11 @@ def score_answers(assignment: TrainingAssignment, answers: dict):
 
 
 def is_module_complete(db: Session, module: TrainingModule, admin_id: int) -> bool:
-    content_ids = [ci.id for ci in module.content_items]
+    from app.models.tab1_models import AccountAdmin
+    from app.services.training_visibility import visible_items
+    admin = db.query(AccountAdmin).filter(AccountAdmin.id == admin_id).first()
+    org_type = admin.account.org_type if admin else None
+    content_ids = [ci.id for ci in visible_items(module, org_type)]
     if not content_ids:
         return False
     done = db.query(TrainingContentProgress).filter(

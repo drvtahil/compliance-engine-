@@ -163,6 +163,9 @@ export default function TabFourTraining() {
   const actsList = registries.find((r) => r.registry_key === "acts")?.items || [];
   const departmentList = registries.find((r) => r.registry_key === "industries")?.items || [];
   const processList = registries.find((r) => r.registry_key === "industry_processes")?.items || [];
+  const orgTypeRegistry = registries.find((r) => r.registry_key === "organization_types");
+  const orgTypeList = orgTypeRegistry?.items || [];
+  const orgTypeLabel = orgTypeRegistry?.display_name || "Organization Type";
 
   useEffect(() => {
     (async () => {
@@ -323,6 +326,7 @@ export default function TabFourTraining() {
       ) : (
         <CourseDetail
           course={course}
+          orgTypeLabel={orgTypeLabel}
           loading={courseLoading}
           subTab={subTab}
           setSubTab={setSubTab}
@@ -373,6 +377,8 @@ export default function TabFourTraining() {
           moduleId={selectedModuleId}
           editing={contentModal.editing}
           contentTypes={contentTypes}
+          orgTypeList={orgTypeList}
+          orgTypeLabel={orgTypeLabel}
           onClose={() => setContentModal(null)}
           onSaved={() => { setContentModal(null); refreshCourse(); }}
           setError={setError}
@@ -456,7 +462,7 @@ function CourseListTable({ courses, onView, onEdit, onPublish, onUnpublish, onAr
 
 function CourseDetail({
   course, loading, subTab, setSubTab, selectedModuleId, setSelectedModuleId,
-  departmentList, processList, accounts, roles, onBack, onRefresh,
+  departmentList, processList, orgTypeLabel = "Organization Type", accounts, roles, onBack, onRefresh,
   onEditCourse, onOpenModuleModal, onOpenContentModal, onOpenAssignmentModal, onOpenAllocationModal, allocationRefreshKey, onPreview, setError
 }) {
   if (loading || !course) {
@@ -614,6 +620,13 @@ function CourseDetail({
                           {ci.description && (
                             <div className="text-[10.5px] text-slate-500 mt-0.5 line-clamp-1">{ci.description}</div>
                           )}
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {ci.org_types?.length ? ci.org_types.map((o) => (
+                              <span key={o} className="text-[9.5px] font-bold bg-amber-50 text-amber-800 border border-amber-200 rounded px-1.5 py-0.5">{o}</span>
+                            )) : (
+                              <span className="text-[9.5px] font-semibold text-slate-400">All {orgTypeLabel.toLowerCase()}s</span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
                             {ci.source_type === "external_url" ? (
                               <><Link2 className="w-2.5 h-2.5" /> External link</>
@@ -795,7 +808,9 @@ function ModuleFormModal({ courseId, editing, departmentList, processList, onClo
   );
 }
 
-function ContentFormModal({ moduleId, editing, contentTypes, onClose, onSaved, setError }) {
+function ContentFormModal({ moduleId, editing, contentTypes, orgTypeList, orgTypeLabel, onClose, onSaved, setError }) {
+  const [orgTypes, setOrgTypes] = useState(editing?.org_types || []);
+  const toggleOrgType = (name) => setOrgTypes((cur) => (cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name]));
   const [contentType, setContentType] = useState(editing?.content_type || contentTypes[0]?.item_name || "");
   const [title, setTitle] = useState(editing?.title || "");
   const [description, setDescription] = useState(editing?.description || "");
@@ -816,6 +831,7 @@ function ContentFormModal({ moduleId, editing, contentTypes, onClose, onSaved, s
       formData.append("description", description);
       formData.append("source_type", sourceType);
       formData.append("external_url", externalUrl);
+      formData.append("org_types", JSON.stringify(orgTypes));
       if (file) formData.append("file", file);
       if (editing) await updateContentItemApi(editing.id, formData);
       else await createContentItemApi(moduleId, formData);
@@ -845,6 +861,17 @@ function ContentFormModal({ moduleId, editing, contentTypes, onClose, onSaved, s
         </div>
         <Field label="Title">
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border border-slate-300 rounded-lg text-sm px-3 py-2" />
+        </Field>
+        <Field label={`${orgTypeLabel} (optional - leave all unticked to show to every ${orgTypeLabel.toLowerCase()})`}>
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 border border-slate-200 rounded-lg px-3 py-2 max-h-32 overflow-y-auto">
+            {orgTypeList.length === 0 && <span className="text-xs text-slate-400 italic">No {orgTypeLabel} items in the master list yet.</span>}
+            {orgTypeList.map((o) => (
+              <label key={o.id} className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                <input type="checkbox" checked={orgTypes.includes(o.item_name)} onChange={() => toggleOrgType(o.item_name)} className="rounded text-[#ff5a36] focus:ring-[#ff5a36]" />
+                {o.item_name}
+              </label>
+            ))}
+          </div>
         </Field>
         <Field label="Description (optional)">
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="w-full border border-slate-300 rounded-lg text-sm px-3 py-2" placeholder="What does this content cover?" />

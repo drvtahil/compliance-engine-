@@ -16,6 +16,8 @@ from app.services.training_assignments import (
     serialize_assignment_learner, score_answers, is_module_complete, load_answers,
 )
 
+from app.services.training_visibility import module_visible
+
 router = APIRouter(prefix="/api/v1/account/training", tags=["Account Portal Assignments"])
 
 
@@ -31,6 +33,8 @@ def _get_assignment_for_learner(db: Session, assignment_id: int, admin: AccountA
     module = assignment.module
     if module.course_id not in get_allocated_course_ids(db, admin) or module.course.status != "published":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This course is not allocated to your account.")
+    if not module_visible(module, admin.account.org_type):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Assignment not found.")
     return assignment
 
 

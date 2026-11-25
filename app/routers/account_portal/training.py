@@ -11,6 +11,8 @@ from app.models.tab4_models import (
     TrainingContentProgress, TrainingCourseAllocation, TrainingAttempt,
 )
 
+from app.services.training_visibility import visible_items, visible_modules, course_visible, item_visible
+
 router = APIRouter(prefix="/api/v1/account/training", tags=["Account Portal Training"])
 
 
@@ -29,9 +31,10 @@ def list_my_courses(db: Session = Depends(get_db), current_admin: AccountAdmin =
     if not course_ids:
         return []
 
-    courses = db.query(TrainingCourse).filter(
+    org_type = current_admin.account.org_type
+    courses = [c for c in db.query(TrainingCourse).filter(
         TrainingCourse.id.in_(course_ids), TrainingCourse.status == "published"
-    ).order_by(TrainingCourse.id.desc()).all()
+    ).order_by(TrainingCourse.id.desc()).all() if course_visible(c, org_type)]
 
     attempted_assignment_ids = {
         r[0] for r in db.query(TrainingAttempt.assignment_id).filter(
@@ -41,7 +44,8 @@ def list_my_courses(db: Session = Depends(get_db), current_admin: AccountAdmin =
 
     result = []
     for c in courses:
-        content_ids = [ci.id for m in c.modules for ci in m.content_items]
+        mods = visible_modules(c, org_type)
+        content_ids = [ci.id for m in mods for ci in visible_items(m, org_type)]
         total = len(content_ids)
         completed = 0
         if total:
@@ -55,10 +59,10 @@ def list_my_courses(db: Session = Depends(get_db), current_admin: AccountAdmin =
             "act_code": c.act_code,
             "name": c.name,
             "description": c.description or "",
-            "module_count": len(c.modules),
+            "module_count": len(mods),
             "content_count": total,
             "completed_count": completed,
-            "has_test_required": any(a.questions and a.id not in attempted_assignment_ids for m in c.modules for a in m.assignments),
+            "has_test_required": any(a.questions and a.id not in attempted_assignment_ids for m in mods for a in m.assignments),
             "progress_percent": round((completed / total) * 100) if total else 0,
         })
     return result
@@ -70,17 +74,19 @@ def get_my_course(course_id: int, db: Session = Depends(get_db), current_admin: 
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This course is not allocated to your account.")
 
     course = db.query(TrainingCourse).filter(TrainingCourse.id == course_id, TrainingCourse.status == "published").first()
-    if not course:
+    org_type = current_admin.account.org_type
+    if not course or not course_visible(course, org_type):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found.")
+    mods = visible_modules(course, org_type)
 
-    all_content_ids = [ci.id for m in course.modules for ci in m.content_items]
+    all_content_ids = [ci.id for m in mods for ci in visible_items(m, org_type)]
     progress_rows = db.query(TrainingContentProgress).filter(
         TrainingContentProgress.admin_id == current_admin.id,
         TrainingContentProgress.content_item_id.in_(all_content_ids),
     ).all() if all_content_ids else []
     completed_ids = {p.content_item_id for p in progress_rows if p.status == "completed"}
 
-    assignment_ids = [a.id for m in course.modules for a in m.assignments]
+    assignment_ids = [a.id for m in mods for a in m.assignments]
     attempts_by_assignment = {}
     if assignment_ids:
         for at in db.query(TrainingAttempt).filter(
@@ -105,10 +111,12 @@ def get_my_course(course_id: int, db: Session = Depends(get_db), current_admin: 
         }
 
     modules_out = []
-    for m in course.modules:
+    # Modules and sections are numbered per learner, so hidden ones leave no gaps.
+    for m_pos, m in enumerate(mods, start=1):
+        items = visible_items(m, org_type)
         content_out = []
         prev_completed = True  # first item in a module is always unlocked
-        for ci in m.content_items:
+        for c_pos, ci in enumerate(items, start=1):
             is_completed = ci.id in completed_ids
             content_out.append({
                 "id": ci.id,
@@ -118,7 +126,7 @@ def get_my_course(course_id: int, db: Session = Depends(get_db), current_admin: 
                 "source_type": ci.source_type,
                 "external_url": ci.external_url or "",
                 "file_type": ci.file_type or "",
-                "sequence_order": ci.sequence_order,
+                "sequence_order": c_pos,
                 "is_completed": is_completed,
                 "is_unlocked": prev_completed,
             })
@@ -127,14 +135,14 @@ def get_my_course(course_id: int, db: Session = Depends(get_db), current_admin: 
             "id": m.id,
             "module_name": m.module_name,
             "short_description": m.short_description or "",
-            "sequence_order": m.sequence_order,
+            "sequence_order": m_pos,
             "department_name": m.department_item.item_name if m.department_item else None,
             "process_name": m.process_item.item_name if m.process_item else None,
             "chapter": m.chapter or "",
             "rules": m.rules or "",
             "test_required": len(m.assignments) > 0,
             "assignments": [assignment_summary(a) for a in m.assignments if a.questions],
-            "is_complete": len(m.content_items) > 0 and all(ci.id in completed_ids for ci in m.content_items),
+            "is_complete": len(items) > 0 and all(ci.id in completed_ids for ci in items),
             "content_items": content_out,
         })
 
@@ -156,9 +164,12 @@ def mark_content_complete(content_id: int, db: Session = Depends(get_db), curren
     module = ci.module
     if module.course_id not in get_allocated_course_ids(db, current_admin):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This course is not allocated to your account.")
+    org_type = current_admin.account.org_type
+    if not item_visible(ci, org_type):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Content item not found.")
 
-    # Enforce linear progression: every earlier item in the module must already be completed.
-    earlier_items = [x for x in module.content_items if x.sequence_order < ci.sequence_order]
+    # Enforce linear progression: every earlier visible item in the module must already be completed.
+    earlier_items = [x for x in visible_items(module, org_type) if x.sequence_order < ci.sequence_order]
     if earlier_items:
         completed_ids = {
             p.content_item_id for p in db.query(TrainingContentProgress).filter(
