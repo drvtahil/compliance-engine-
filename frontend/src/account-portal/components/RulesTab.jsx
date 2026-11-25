@@ -5,7 +5,7 @@ import { fetchEnrolledActsApi, fetchChaptersForActApi } from "../services/rulesA
 // The Act a chapter was created under is always mapped by default in Super
 // Admin (locked there, can't be removed) - shown here defensively too, in
 // case older data saved before that lock existed is missing it.
-function withDefaultAct(acts, defaultAct) {
+export function withDefaultAct(acts, defaultAct) {
   const list = acts || [];
   return defaultAct && !list.includes(defaultAct) ? [defaultAct, ...list] : list;
 }
@@ -57,7 +57,7 @@ function RuleCard({ rule, chapterActCode }) {
   );
 }
 
-function SectionCard({ section, chapterActCode }) {
+export function SectionCard({ section, chapterActCode }) {
   const displayActs = withDefaultAct(section.mapped_acts, chapterActCode);
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">

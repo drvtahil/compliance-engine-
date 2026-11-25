@@ -30,7 +30,7 @@ def list_questions(
         .join(LegalSection, LegalAssessment.section_id == LegalSection.id)
         .join(LegalRule, LegalSection.rule_id == LegalRule.id)
         .join(LegalChapter, LegalRule.chapter_id == LegalChapter.id)
-        .filter(LegalChapter.act_code == act_code)
+        .filter(LegalChapter.act_code == act_code, LegalRule.is_hidden.isnot(True))
         .all()
     )
 

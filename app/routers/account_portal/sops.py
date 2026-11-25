@@ -74,6 +74,9 @@ def visible_assessments_query(db: Session, current_admin: AccountAdmin, act_code
     # account_wide=True is for account-level data (documents/evidence) that
     # every member of the account can see, regardless of SOP assignment -
     # unlike the SOPs tab itself, which stays assignment-gated for a User.
+    # Documents/evidence (account_wide) stay visible; SOPs under a hidden rule are not listed.
+    if not account_wide:
+        q = q.filter(LegalRule.is_hidden.isnot(True))
     if not account_wide and not is_manager(current_admin):
         ids = assigned_assessment_ids(db, current_admin.account_id, current_admin.id)
         q = q.filter(LegalAssessment.id.in_(ids))
@@ -208,7 +211,7 @@ def get_compliance_score(
         .join(LegalSection, LegalAssessment.section_id == LegalSection.id)
         .join(LegalRule, LegalSection.rule_id == LegalRule.id)
         .join(LegalChapter, LegalRule.chapter_id == LegalChapter.id)
-        .filter(LegalChapter.act_code == act_code)
+        .filter(LegalChapter.act_code == act_code, LegalRule.is_hidden.isnot(True))
         .all()
     )
     visible = [a for a in rows if account_org_type in json.loads(a.mapped_org_types or "[]")]

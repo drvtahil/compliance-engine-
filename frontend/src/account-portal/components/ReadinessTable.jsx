@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { SectionCard } from "./RulesTab";
 
 const OPTIONS = ["Yes", "No", "NA"];
 
@@ -32,6 +34,9 @@ function ResponseSelector({ value, disabled, onChange }) {
 }
 
 export default function ReadinessTable({ questions, locked, showAssignee, onSetResponse, departmentLabel = "Department", processLabel = "Process" }) {
+  const [openRule, setOpenRule] = useState({});
+  const colCount = showAssignee ? 6 : 5;
+
   if (questions.length === 0) {
     return (
       <div className="p-12 text-center text-slate-400 italic bg-white rounded-xl border border-slate-200">
@@ -56,11 +61,20 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
           </thead>
           <tbody className="divide-y divide-slate-200">
             {questions.map((q, idx) => (
-              <tr key={q.assessment_id} className="hover:bg-slate-50/80 align-top">
+              <React.Fragment key={q.assessment_id}>
+              <tr className="hover:bg-slate-50/80 align-top">
                 <td className="p-3 text-slate-400 font-bold">{idx + 1}</td>
                 <td className="p-3 text-slate-700 max-w-md">
                   <div className="line-clamp-2">{q.question}</div>
                   <div className="text-[10px] text-slate-400 mt-0.5">{q.chapter_title} &middot; Rule {q.rule_order}</div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenRule((o) => ({ ...o, [q.assessment_id]: !o[q.assessment_id] }))}
+                    className="mt-1 inline-flex items-center gap-0.5 text-[10.5px] font-bold text-[#0b3f3c] hover:text-[#ff5a36]"
+                  >
+                    {openRule[q.assessment_id] ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                    {openRule[q.assessment_id] ? "Hide Rule" : "View Rule"}
+                  </button>
                 </td>
                 <td className="p-3">
                   <div className="flex flex-wrap gap-1 max-w-[160px]">
@@ -102,6 +116,21 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
                   />
                 </td>
               </tr>
+              {openRule[q.assessment_id] && (
+                <tr className="bg-slate-50/60">
+                  <td />
+                  <td colSpan={colCount - 1} className="p-3 pt-0">
+                    <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+                      <div className="text-[9.5px] font-bold uppercase tracking-wide text-[#0b3f3c]">
+                        {q.chapter_title} &middot; Rule {q.rule_order}
+                      </div>
+                      <p className="text-[12px] leading-relaxed text-slate-700 whitespace-pre-line">{q.rule_narrative}</p>
+                      {q.section && <SectionCard section={q.section} chapterActCode={q.act_code} />}
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

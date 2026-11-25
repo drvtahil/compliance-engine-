@@ -34,7 +34,8 @@ def assignments_query_for_act(db: Session, account_id: int, act_code: str):
         .join(LegalSection, LegalAssessment.section_id == LegalSection.id)
         .join(LegalRule, LegalSection.rule_id == LegalRule.id)
         .join(LegalChapter, LegalRule.chapter_id == LegalChapter.id)
-        .filter(QuestionAssignment.account_id == account_id, LegalChapter.act_code == act_code)
+        # Questions under a rule Super Admin has hidden are inactive: not listed, scored or required for submit.
+        .filter(QuestionAssignment.account_id == account_id, LegalChapter.act_code == act_code, LegalRule.is_hidden.isnot(True))
     )
 
 
@@ -52,6 +53,15 @@ def serialize_row(qa: QuestionAssignment, include_assignee: bool) -> dict:
         "industry_process": a.industry_process or "",
         "chapter_title": a.section.rule.chapter.title,
         "rule_order": a.section.rule.rule_order,
+        "act_code": a.section.rule.chapter.act_code,
+        "rule_narrative": a.section.rule.rule_narrative,
+        "section": {
+            "section_title": a.section.section_title,
+            "section_explanation": a.section.section_explanation,
+            "practical_examples": a.section.practical_examples or "",
+            "mapped_acts": json.loads(a.section.mapped_acts or "[]"),
+            "sub_sections": json.loads(a.section.sub_sections or "[]"),
+        },
         "response": qa.response,
     }
     if include_assignee:
