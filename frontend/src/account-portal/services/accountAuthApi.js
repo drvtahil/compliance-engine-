@@ -1,3 +1,5 @@
+import { tokenExpiry } from "../../services/authApi";
+
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/v1/account/auth`;
 const STORAGE_KEY = "mood9_account_session";
 
@@ -66,7 +68,8 @@ export const accountFetch = async (url, options = {}) => {
   // Sliding session: swap in the renewed token. This tab's pinned session always updates;
   // localStorage only if it still holds this tab's old token (never overwrite another tab's login).
   const refreshed = res.headers.get("X-Refreshed-Token");
-  if (refreshed && activeSession?.access_token) {
+  // Only ever move forward: a cached response can replay an older, already-expired token.
+  if (refreshed && activeSession?.access_token && tokenExpiry(refreshed) > tokenExpiry(activeSession.access_token)) {
     const old = activeSession.access_token;
     activeSession = { ...activeSession, access_token: refreshed };
     try {

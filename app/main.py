@@ -37,6 +37,8 @@ async def refresh_token(request, call_next):
             claims = decode_access_token(auth[7:].strip())
             claims.pop("exp", None)
             response.headers["X-Refreshed-Token"] = create_access_token(claims)
+            # Never cache a response carrying a token: a cached copy would replay a stale (expired) token later.
+            response.headers["Cache-Control"] = "no-store"
         except Exception:
             pass
     return response

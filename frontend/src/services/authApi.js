@@ -40,6 +40,16 @@ export const authHeaders = () => {
 // on a 401 (expired/invalid session) clears it and reloads so the user lands
 // back on the login screen instead of a raw "Could not validate credentials"
 // error on whatever action they were trying to take.
+// Expiry (seconds) of a JWT, read from its payload; 0 if unreadable.
+export const tokenExpiry = (token) => {
+  try {
+    const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(part)).exp || 0;
+  } catch {
+    return 0;
+  }
+};
+
 export const authFetch = async (url, options = {}) => {
   const res = await fetch(url, {
     ...options,
@@ -47,8 +57,11 @@ export const authFetch = async (url, options = {}) => {
   });
   const refreshed = res.headers.get("X-Refreshed-Token");
   if (refreshed) {
+    // Only ever move forward: a cached response can replay an older, already-expired token.
     const session = loadSession();
-    if (session) saveSession({ ...session, access_token: refreshed });
+    if (session && tokenExpiry(refreshed) > tokenExpiry(session.access_token)) {
+      saveSession({ ...session, access_token: refreshed });
+    }
   }
   if (res.status === 401) {
     clearSession();
