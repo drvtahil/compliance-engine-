@@ -8,7 +8,7 @@ from app.core.security import create_access_token, decode_access_token
 from app.database.connection import get_db
 
 # Import routers
-from app.routers import tab1_router, tab2_router, resources, auth, tab4_router, training_content, tab4_dashboard, tab4_assignments
+from app.routers import tab1_router, tab2_router, tab2_upload, resources, auth, tab4_router, training_content, tab4_dashboard, tab4_assignments
 from app.routers.account_portal import auth as account_auth, rules as account_rules, users as account_users, questions as account_questions, resources as account_resources, readiness as account_readiness, sops as account_sops, training as account_training, notifications as account_notifications, team_dashboard as account_team_dashboard, assignments as account_assignments, portal as account_portal
 
 app = FastAPI(
@@ -47,6 +47,7 @@ async def refresh_token(request, call_next):
 app.include_router(auth.router)
 app.include_router(tab1_router.router)
 app.include_router(tab2_router.router)
+app.include_router(tab2_upload.router)
 app.include_router(resources.router)
 app.include_router(tab4_router.router)
 app.include_router(tab4_dashboard.router)

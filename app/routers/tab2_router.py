@@ -30,28 +30,6 @@ def validate_sample_policies(db: Session, sample_policies: List[str]):
         )
 
 
-def validate_assessment_org_types(db: Session, rule: "RulePayload"):
-    needs_check = any(
-        (a_item.question.strip() or a_item.sop_name.strip()) and not a_item.mapped_org_types
-        for s_item in rule.sections for a_item in s_item.assessments
-    )
-    if not needs_check:
-        return
-
-    org_type_registry = db.query(MasterRegistry).filter(MasterRegistry.registry_key == "organization_types").first()
-    org_type_label = org_type_registry.display_name if org_type_registry else "Organization Type"
-
-    for s_item in rule.sections:
-        for a_item in s_item.assessments:
-            if not a_item.question.strip() and not a_item.sop_name.strip():
-                continue
-            if not a_item.mapped_org_types:
-                label = a_item.question.strip() or a_item.sop_name.strip()
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Question \"{label[:80]}\" must have at least one value selected under \"{org_type_label}\"."
-                )
-
 # --- Pydantic Request Schemas ---
 class ProcessItem(BaseModel):
     action: str
@@ -227,7 +205,6 @@ def save_or_update_chapter(payload: ChapterPayload, db: Session = Depends(get_db
     for r_item in payload.rules:
         if r_item.rule_narrative.strip():
             validate_sample_policies(db, r_item.sample_policies)
-            validate_assessment_org_types(db, r_item)
 
     if not chap:
         chap = LegalChapter(act_code=payload.act_code, title=payload.title.strip())
@@ -279,7 +256,6 @@ def update_single_rule(rule_id: int, payload: SingleRuleUpdatePayload, db: Sessi
 
     r_item = payload.rule
     validate_sample_policies(db, r_item.sample_policies)
-    validate_assessment_org_types(db, r_item)
     rule.rule_narrative = r_item.rule_narrative.strip()
     rule.sample_policies = json.dumps(r_item.sample_policies)
     rule.is_hidden = r_item.is_hidden
@@ -302,7 +278,6 @@ def add_rule_to_existing_chapter(chapter_id: int, payload: AddRuleToChapterPaylo
 
     r_item = payload.rule
     validate_sample_policies(db, r_item.sample_policies)
-    validate_assessment_org_types(db, r_item)
     max_order = db.query(LegalRule).filter(LegalRule.chapter_id == chapter_id).count()
     new_rule = LegalRule(
         chapter_id=chap.id,

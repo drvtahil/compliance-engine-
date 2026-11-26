@@ -26,8 +26,10 @@ import {
   toggleRuleHideApi,
   deleteSectionApi,
   deleteRuleApi,
-  deleteChapterApi
+  deleteChapterApi,
+  downloadUploadTemplateApi
 } from "../../services/tab2Api";
+import RulesUploadModal from "./RulesUploadModal";
 
 export default function TabTwoRules() {
   const [masterActs, setMasterActs] = useState([]);
@@ -232,11 +234,32 @@ export default function TabTwoRules() {
     setExpandedRules(prev => ({ ...prev, [ruleId]: !prev[ruleId] }));
   };
 
-  const totalChapterPages = Math.max(1, Math.ceil(chapters.length / chapterPageSize));
+  // "Missing Organization Type" filter: keep only the questions with no Organization Type
+  // ticked (and the sections / rules / chapters that contain them).
+  const [onlyMissingOrg, setOnlyMissingOrg] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const missingOrgCount = useMemo(
+    () => chapters.reduce((n, c) => n + (c.rules || []).reduce((m, r) => m + (r.sections || []).reduce(
+      (k, s) => k + (s.assessments || []).filter((a) => !a.mapped_org_types?.length).length, 0), 0), 0),
+    [chapters]
+  );
+  const explorerChapters = useMemo(() => {
+    if (!onlyMissingOrg) return chapters;
+    return chapters.map((c) => ({
+      ...c,
+      rules: (c.rules || []).map((r) => ({
+        ...r,
+        sections: (r.sections || []).map((s) => ({ ...s, assessments: (s.assessments || []).filter((a) => !a.mapped_org_types?.length) }))
+          .filter((s) => s.assessments.length),
+      })).filter((r) => r.sections.length),
+    })).filter((c) => c.rules.length);
+  }, [chapters, onlyMissingOrg]);
+
+  const totalChapterPages = Math.max(1, Math.ceil(explorerChapters.length / chapterPageSize));
   const pagedChapters = useMemo(() => {
     const start = (chapterPage - 1) * chapterPageSize;
-    return chapters.slice(start, start + chapterPageSize);
-  }, [chapters, chapterPage, chapterPageSize]);
+    return explorerChapters.slice(start, start + chapterPageSize);
+  }, [explorerChapters, chapterPage, chapterPageSize]);
 
   useEffect(() => {
     if (chapterPage > totalChapterPages) setChapterPage(totalChapterPages);
@@ -469,17 +492,6 @@ export default function TabTwoRules() {
       return;
     }
 
-    for (const rule of cleanedRules) {
-      for (const sec of rule.sections) {
-        for (const ass of sec.assessments) {
-          if (!ass.mapped_org_types || ass.mapped_org_types.length === 0) {
-            alert(`Question "${(ass.question || ass.sop_name).slice(0, 80)}" must have at least one value selected under "${orgTypeLabel}".`);
-            return;
-          }
-        }
-      }
-    }
-
     try {
       setSaving(true);
       if (editingContext.isEditingSingleRule && editingContext.ruleId && editingContext.chapterId) {
@@ -539,10 +551,6 @@ export default function TabTwoRules() {
     e.preventDefault();
     if (!addRuleModal.ruleNarrative.trim()) {
       alert("Please enter the rule narrative content.");
-      return;
-    }
-    if (!addRuleModal.orgTypes || addRuleModal.orgTypes.length === 0) {
-      alert(`Please select at least one value under "${orgTypeLabel}".`);
       return;
     }
 
@@ -667,7 +675,37 @@ export default function TabTwoRules() {
         >
           <RotateCcw className="w-3.5 h-3.5" /> Clear / New Form
         </button>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <button
+            type="button"
+            onClick={() => downloadUploadTemplateApi().catch((err) => alert(err.message))}
+            className="text-xs font-bold text-[#0b3f3c] flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Download Template
+          </button>
+          <button
+            type="button"
+            onClick={() => setUploadOpen(true)}
+            className="text-xs font-bold text-white flex items-center gap-1 bg-[#ff5a36] hover:bg-[#c8431f] px-3 py-1.5 rounded-lg"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Upload Excel
+          </button>
+        </div>
       </div>
+
+      {uploadOpen && (
+        <RulesUploadModal
+          acts={masterActs}
+          defaultAct={selectedAct}
+          onClose={() => setUploadOpen(false)}
+          onSaved={async (actCode) => {
+            setUploadOpen(false);
+            if (actCode !== selectedAct) handleSelectAct(actCode);
+            else await loadChapters(actCode);
+            setOnlyMissingOrg(true);
+          }}
+        />
+      )}
 
       {/* ========================================================================= */}
       {/* 2. HIERARCHICAL LEGAL NODE BUILDER                                        */}
@@ -752,7 +790,7 @@ export default function TabTwoRules() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 block">Sample Policies (Multi-Select) *</label>
+                  <label className="text-xs font-bold text-slate-700 block">Sample Policies (Multi-Select)</label>
                   <div className="p-3 border border-slate-300 rounded-lg space-y-2 max-h-32 overflow-y-auto bg-slate-50">
                     {samplePoliciesList.map((pol) => {
                       const isChecked = rule.sample_policies?.includes(pol.item_name);
@@ -1116,7 +1154,7 @@ export default function TabTwoRules() {
                           </div>
 
                           <div>
-                            <label className="text-[11px] font-bold text-slate-700 block mb-1">{orgTypeLabel} (Multi-Select) *</label>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">{orgTypeLabel} (Multi-Select)</label>
                             <div className="flex flex-wrap gap-1 p-2 border border-slate-300 rounded bg-slate-50 max-h-24 overflow-y-auto">
                               {orgTypesList.map((org) => {
                                 const isOrgChecked = ass.mapped_org_types?.includes(org.item_name);
@@ -1154,7 +1192,7 @@ export default function TabTwoRules() {
                           </div>
 
                           <div>
-                            <label className="text-xs font-bold text-slate-700 block mb-1">SOP Details &amp; Guidelines *</label>
+                            <label className="text-xs font-bold text-slate-700 block mb-1">SOP Details &amp; Guidelines</label>
                             <textarea
                               rows={2}
                               placeholder="Detailed step-by-step operating instructions..."
@@ -1333,6 +1371,26 @@ export default function TabTwoRules() {
             </button>
           ))}
         </div>
+
+        {chapters.length > 0 && (
+          <label className={`inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg border cursor-pointer ${
+            missingOrgCount ? "bg-amber-50 border-amber-300 text-amber-900" : "bg-slate-50 border-slate-200 text-slate-500"
+          }`}>
+            <input
+              type="checkbox"
+              checked={onlyMissingOrg}
+              onChange={(e) => { setOnlyMissingOrg(e.target.checked); setChapterPage(1); }}
+              className="rounded text-[#ff5a36] focus:ring-[#ff5a36]"
+            />
+            Show only questions missing {orgTypeLabel} ({missingOrgCount})
+          </label>
+        )}
+
+        {onlyMissingOrg && explorerChapters.length === 0 && chapters.length > 0 && (
+          <div className="p-6 text-center text-emerald-700 text-xs font-semibold bg-emerald-50 rounded-lg border border-emerald-200">
+            Every question has at least one {orgTypeLabel} ticked.
+          </div>
+        )}
 
         {chapters.length === 0 ? (
           <div className="p-8 text-center text-slate-400 italic text-xs">
@@ -1550,6 +1608,11 @@ export default function TabTwoRules() {
                                             {ass.industry_process && (
                                               <span className="bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200 uppercase">
                                                 {processLabel.toUpperCase()}: {ass.industry_process}
+                                              </span>
+                                            )}
+                                            {!ass.mapped_org_types?.length && (
+                                              <span className="bg-red-50 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded border border-red-200 uppercase">
+                                                No {orgTypeLabel} - not visible to accounts
                                               </span>
                                             )}
                                             {ass.mapped_org_types?.map((org, oIdx) => (
@@ -1825,7 +1888,7 @@ export default function TabTwoRules() {
               {/* Multi-Select Organization Types */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  {orgTypeLabel} (Multi-Select) *
+                  {orgTypeLabel} (Multi-Select)
                 </label>
                 <div className="p-2.5 border border-slate-300 rounded-lg space-y-1.5 max-h-28 overflow-y-auto bg-slate-50">
                   {orgTypesList.map((org) => {

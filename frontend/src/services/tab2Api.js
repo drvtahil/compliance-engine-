@@ -70,3 +70,51 @@ const deleteNode = async (path, fallback) => {
 export const deleteSectionApi = (id) => deleteNode(`sections/${id}`, "Failed to delete section.");
 export const deleteRuleApi = (id) => deleteNode(`rules/${id}`, "Failed to delete rule.");
 export const deleteChapterApi = (id) => deleteNode(`chapters/${id}`, "Failed to delete chapter.");
+
+// --- Bulk Excel upload ---
+const UPLOAD_BASE = `${API_BASE}/upload`;
+
+const saveBlob = async (res, fallbackName) => {
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fallbackName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
+const uploadForm = (actCode, file) => {
+  const fd = new FormData();
+  fd.append("act_code", actCode);
+  fd.append("file", file);
+  return fd;
+};
+
+export const downloadUploadTemplateApi = async () => {
+  const res = await authFetch(`${UPLOAD_BASE}/template`);
+  if (!res.ok) throw new Error("Failed to download the template.");
+  await saveBlob(res, "Mood9_Rules_Upload_Template.xlsx");
+};
+
+export const checkUploadApi = async (actCode, file) => {
+  const res = await authFetch(`${UPLOAD_BASE}/check`, { method: "POST", body: uploadForm(actCode, file) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || "Failed to check the file.");
+  return data;
+};
+
+export const downloadUploadErrorReportApi = async (actCode, file) => {
+  const res = await authFetch(`${UPLOAD_BASE}/error-report`, { method: "POST", body: uploadForm(actCode, file) });
+  if (!res.ok) throw new Error("Failed to build the error report.");
+  await saveBlob(res, "Upload_Errors.xlsx");
+};
+
+export const saveUploadApi = async (actCode, file) => {
+  const res = await authFetch(`${UPLOAD_BASE}/save`, { method: "POST", body: uploadForm(actCode, file) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || "Failed to save the upload.");
+  return data;
+};
