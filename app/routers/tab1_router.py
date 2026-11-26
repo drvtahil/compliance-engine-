@@ -16,7 +16,9 @@ from app.models.super_admin import SuperAdmin
 from app.models.tab1_models import (
     MasterRegistry, MasterRegistryItem, EnterpriseAccount, AccountEnrolledAct, AccountEnabledTab, AccountAdmin, Role
 )
-from app.models.tab2_models import LegalRule, QuestionAssignment, ReadinessSubmission
+from app.models.tab2_models import LegalChapter, LegalRule, QuestionAssignment, ReadinessSubmission
+from app.models.resources import ComplianceSection, ComplianceResource
+from app.models.tab4_models import TrainingCourse
 from app.models.sops import SopStatus, SopProcessStatus, SopActivity, SopFile
 
 router = APIRouter(prefix="/api/v1/tab1", tags=["Tab 1 Master Registries & Accounts"])
@@ -279,6 +281,19 @@ def delete_registry_item(item_id: int, db: Session = Depends(get_db), current_ad
     parent_reg = db.query(MasterRegistry).filter(MasterRegistry.id == item.registry_id).first()
 
     if parent_reg and parent_reg.registry_key == "acts":
+        # An Act can't be deleted while content is still filed under it - it would be left orphaned.
+        in_use = {
+            "chapter(s) in Tab 2": db.query(LegalChapter).filter(LegalChapter.act_code == item_name).count(),
+            "resource section(s) in Tab 3": db.query(ComplianceSection).filter(ComplianceSection.act_code == item_name).count(),
+            "resource document(s) in Tab 3": db.query(ComplianceResource).filter(ComplianceResource.act_code == item_name).count(),
+            "training course(s) in Tab 4": db.query(TrainingCourse).filter(TrainingCourse.act_code == item_name).count(),
+        }
+        in_use = [f"{n} {label}" for label, n in in_use.items() if n]
+        if in_use:
+            raise HTTPException(
+                status_code=409,
+                detail=f"\"{item_name}\" is still used by {', '.join(in_use)}. Delete or move these first, then delete the Act."
+            )
         # Cascade: If the deleted item is an Act, remove it from all enrolled accounts immediately
         db.query(AccountEnrolledAct).filter(AccountEnrolledAct.act_name == item_name).delete()
     elif parent_reg and parent_reg.registry_key == "sample_policies":
