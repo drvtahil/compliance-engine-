@@ -292,7 +292,7 @@ def delete_registry_item(item_id: int, db: Session = Depends(get_db), current_ad
         if in_use:
             raise HTTPException(
                 status_code=409,
-                detail=f"\"{item_name}\" is still used by {', '.join(in_use)}. Delete or move these first, then delete the Act."
+                detail=f"\"{item_name}\" is still used by {', '.join(in_use)}. Delete these first, then delete the Act."
             )
         # Cascade: If the deleted item is an Act, remove it from all enrolled accounts immediately
         db.query(AccountEnrolledAct).filter(AccountEnrolledAct.act_name == item_name).delete()
