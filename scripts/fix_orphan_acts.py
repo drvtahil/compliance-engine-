@@ -93,6 +93,25 @@ def main():
     for t in ticked:
         print("  " + t)
 
+    # Move Tab 3 resource sections and documents to the target Act. A section whose
+    # name already exists under the target Act is merged into it (documents link by name).
+    from app.models.resources import ComplianceSection as _Sec, ComplianceResource as _Doc
+    target_names = {s.name for s in db.query(_Sec).filter(_Sec.act_code == TARGET_ACT).all()}
+    for s in db.query(_Sec).filter(_Sec.act_code.in_(REMOVE_ACTS)).all():
+        if s.name in target_names:
+            print(f"Resource section [{s.act_code}] '{s.name}': merged into existing {TARGET_ACT} section")
+            db.delete(s)
+        else:
+            print(f"Resource section [{s.act_code}] '{s.name}': moved to {TARGET_ACT}")
+            s.act_code = TARGET_ACT
+            target_names.add(s.name)
+    docs = db.query(_Doc).filter(_Doc.act_code.in_(REMOVE_ACTS)).all()
+    for doc in docs:
+        doc.act_code = TARGET_ACT
+        doc.mapped_acts, _ = strip_acts(doc.mapped_acts)
+    print(f"Resource documents moved to {TARGET_ACT}: {len(docs)}")
+    db.flush()
+
     # Remove the unwanted Acts from the master list and from account enrolments -
     # unless training courses or resources are still filed under them (they would be orphaned).
     from app.models.tab4_models import TrainingCourse
