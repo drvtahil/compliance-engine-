@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { fetchMyAttemptsApi } from "../../services/trainingApi";
 import { ScorePill, formatDateTime } from "./assignmentUtils.jsx";
+import Pagination, { usePagination } from "../../../shared/Pagination";
 
 export default function AssignmentResultsLog() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const pager = usePagination(rows);
 
   useEffect(() => {
     fetchMyAttemptsApi().then(setRows).catch((e) => setError(e.message)).finally(() => setLoading(false));
@@ -19,6 +21,7 @@ export default function AssignmentResultsLog() {
   }
 
   return (
+    <div className="space-y-3">
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden overflow-x-auto">
       <table className="w-full text-xs min-w-[640px]">
         <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
@@ -31,7 +34,7 @@ export default function AssignmentResultsLog() {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {pager.pageItems.map((r) => (
             <tr key={r.attempt_id} className="border-b border-slate-50 last:border-0">
               <td className="py-2.5 pl-4">
                 <div className="font-bold text-slate-800">{r.module_name}</div>
@@ -45,6 +48,8 @@ export default function AssignmentResultsLog() {
           ))}
         </tbody>
       </table>
+    </div>
+    <Pagination pager={pager} noun="attempt" />
     </div>
   );
 }

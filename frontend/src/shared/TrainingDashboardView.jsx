@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import Pagination, { usePagination } from "./Pagination";
 import {
   LayoutDashboard, Building2, GraduationCap, ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
   ChevronsUpDown, Loader2, Circle, PlayCircle, CheckCircle2, Layers
@@ -638,6 +639,7 @@ function RecordsDrillDown({ drill, onBack, api, scope, departmentList, processLi
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ role_id: "", department_item_id: "", process_item_id: "", status: "" });
   const sort = useSortedList(records, "admin_name");
+  const pager = usePagination(sort.sorted);
 
   const baseParams = useMemo(() => {
     if (drill.type === "account") return { account_id: drill.accountId };
@@ -704,7 +706,7 @@ function RecordsDrillDown({ drill, onBack, api, scope, departmentList, processLi
               </tr>
             </thead>
             <tbody>
-              {sort.sorted.map((r, idx) => (
+              {pager.pageItems.map((r, idx) => (
                 <tr key={`${r.admin_id}-${r.course_id}-${r.module_id || "c"}-${idx}`} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
                   <td className="py-2.5 pl-4 font-bold text-slate-800">{r.admin_name}</td>
                   <td className="py-2.5 text-slate-500">{r.role_name}</td>
@@ -718,6 +720,7 @@ function RecordsDrillDown({ drill, onBack, api, scope, departmentList, processLi
               ))}
             </tbody>
           </table>
+          <Pagination pager={pager} noun="record" className="rounded-none border-x-0 border-b-0 shadow-none" />
         </div>
       )}
     </div>

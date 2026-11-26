@@ -6,6 +6,7 @@ import {
   ChevronUp, ChevronDown, ChevronsUpDown, LayoutDashboard, ClipboardList
 } from "lucide-react";
 import { fetchTab1BootstrapApi } from "../../services/tab1Api";
+import Pagination, { usePagination } from "../../shared/Pagination";
 import {
   fetchRolesApi, fetchContentTypesApi, fetchCoursesApi, createCourseApi, getCourseApi, updateCourseApi,
   deleteCourseApi, archiveCourseApi, publishCourseApi, unpublishCourseApi, previewCourseApi,
@@ -1224,6 +1225,7 @@ function AllocationModal({ courseId, courseActCode, accounts, allAccountsCount, 
 function AuditLogPanel({ entityType, entityId, setError }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const pager = usePagination(entries);
 
   useEffect(() => {
     (async () => {
@@ -1246,12 +1248,13 @@ function AuditLogPanel({ entityType, entityId, setError }) {
         <div className="text-center text-xs text-slate-400 py-8">No changes logged yet.</div>
       ) : (
         <div className="space-y-2">
-          {entries.map((e) => (
+          {pager.pageItems.map((e) => (
             <div key={e.id} className="text-xs border-b border-slate-50 pb-2">
               <span className="font-bold text-slate-700 uppercase">{e.action}</span>
               <span className="text-slate-400"> &middot; {e.entity_type} #{e.entity_id} &middot; {new Date(e.created_at).toLocaleString()}</span>
             </div>
           ))}
+          <Pagination pager={pager} noun="change" className="mt-3 shadow-none" />
         </div>
       )}
     </div>

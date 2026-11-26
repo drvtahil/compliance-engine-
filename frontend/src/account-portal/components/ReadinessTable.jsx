@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { SectionCard } from "./RulesTab";
+import Pagination, { usePagination } from "../../shared/Pagination";
 
 const OPTIONS = ["Yes", "No", "NA"];
 
@@ -36,6 +37,7 @@ function ResponseSelector({ value, disabled, onChange }) {
 export default function ReadinessTable({ questions, locked, showAssignee, onSetResponse, departmentLabel = "Department", processLabel = "Process" }) {
   const [openRule, setOpenRule] = useState({});
   const colCount = showAssignee ? 6 : 5;
+  const pager = usePagination(questions);
 
   if (questions.length === 0) {
     return (
@@ -46,6 +48,7 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
   }
 
   return (
+    <div className="space-y-3">
     <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
@@ -60,10 +63,10 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {questions.map((q, idx) => (
+            {pager.pageItems.map((q, idx) => (
               <React.Fragment key={q.assessment_id}>
               <tr className="hover:bg-slate-50/80 align-top">
-                <td className="p-3 text-slate-400 font-bold">{idx + 1}</td>
+                <td className="p-3 text-slate-400 font-bold">{pager.offset + idx + 1}</td>
                 <td className="p-3 text-slate-700 max-w-md">
                   <div className="line-clamp-2">{q.question}</div>
                   <div className="text-[10px] text-slate-400 mt-0.5">{q.chapter_title} &middot; Rule {q.rule_order}</div>
@@ -135,6 +138,8 @@ export default function ReadinessTable({ questions, locked, showAssignee, onSetR
           </tbody>
         </table>
       </div>
+    </div>
+    <Pagination pager={pager} noun="question" />
     </div>
   );
 }

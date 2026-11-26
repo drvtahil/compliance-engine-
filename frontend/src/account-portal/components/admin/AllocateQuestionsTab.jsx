@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Loader2, RefreshCw } from "lucide-react";
 import { fetchQuestionsApi, fetchAssignableUsersApi, assignQuestionApi, unassignQuestionApi } from "../../services/questionsApi";
 import useRegistryLabels from "../../hooks/useRegistryLabels";
+import Pagination, { usePagination } from "../../../shared/Pagination";
 
 export default function AllocateQuestionsTab({ acts }) {
   const { department_label: departmentLabel, process_label: processLabel } = useRegistryLabels();
@@ -9,6 +10,7 @@ export default function AllocateQuestionsTab({ acts }) {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [allocationFilter, setAllocationFilter] = useState("all"); // all | unallocated | allocated
   const [sortConfig, setSortConfig] = useState({ field: "question", direction: "asc" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [assignTarget, setAssignTarget] = useState(null); // { ids: [...] } when bulk-assign modal open
@@ -45,6 +47,8 @@ export default function AllocateQuestionsTab({ acts }) {
 
   const filteredSorted = useMemo(() => {
     let filtered = questions.filter((q) => {
+      if (allocationFilter === "unallocated" && q.assigned_user) return false;
+      if (allocationFilter === "allocated" && !q.assigned_user) return false;
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
       return (
@@ -75,7 +79,11 @@ export default function AllocateQuestionsTab({ acts }) {
     });
 
     return filtered;
-  }, [questions, searchQuery, sortConfig]);
+  }, [questions, searchQuery, sortConfig, allocationFilter]);
+
+  const pager = usePagination(filteredSorted);
+  const allocatedCount = questions.filter((q) => q.assigned_user).length;
+  const unallocatedCount = questions.length - allocatedCount;
 
   const unassignedSelectable = filteredSorted.filter((q) => !q.assigned_user);
 
@@ -152,6 +160,16 @@ export default function AllocateQuestionsTab({ acts }) {
             </button>
           </div>
 
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <select
+            value={allocationFilter}
+            onChange={(e) => setAllocationFilter(e.target.value)}
+            className="border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-semibold"
+          >
+            <option value="all">All ({questions.length})</option>
+            <option value="unallocated">Not allocated ({unallocatedCount})</option>
+            <option value="allocated">Allocated ({allocatedCount})</option>
+          </select>
           <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
@@ -161,6 +179,7 @@ export default function AllocateQuestionsTab({ acts }) {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
             />
+          </div>
           </div>
         </div>
 
@@ -214,9 +233,9 @@ export default function AllocateQuestionsTab({ acts }) {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {filteredSorted.length > 0 ? (
-                filteredSorted.map((q, idx) => (
+                pager.pageItems.map((q, idx) => (
                   <tr key={q.id} className="hover:bg-slate-50/80">
-                    <td className="p-3 text-slate-400 font-bold">{idx + 1}</td>
+                    <td className="p-3 text-slate-400 font-bold">{pager.offset + idx + 1}</td>
                     <td className="p-3">
                       <input
                         type="checkbox"
@@ -282,7 +301,7 @@ export default function AllocateQuestionsTab({ acts }) {
               ) : (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-slate-400 italic">
-                    No questions found for this act.
+                    {allocationFilter === "unallocated" && questions.length > 0 ? "Every question is allocated." : "No questions found for this act."}
                   </td>
                 </tr>
               )}
@@ -290,6 +309,7 @@ export default function AllocateQuestionsTab({ acts }) {
           </table>
         )}
       </div>
+      {!loading && <Pagination pager={pager} noun="question" className="rounded-none border-x-0 border-b-0 shadow-none" />}
 
       {assignTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">

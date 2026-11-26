@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import Pagination, { usePagination } from "../../shared/Pagination";
 import { Bell, CheckCheck, Trash2, Eraser, Loader2 } from "lucide-react";
 import {
   fetchNotificationsApi, markNotificationReadApi, markAllNotificationsReadApi,
@@ -11,6 +12,7 @@ export default function NotificationsPage() {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const pager = usePagination(notifications);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,7 +117,7 @@ export default function NotificationsPage() {
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
-          {notifications.map((n) => (
+          {pager.pageItems.map((n) => (
             <div key={n.id} className={`p-4 flex items-start gap-3 ${!n.is_read ? "bg-[#fff1ec]/40" : ""}`}>
               {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a36] mt-1.5 flex-shrink-0" />}
               <div className={`flex-1 min-w-0 ${n.is_read ? "ml-[18px]" : ""}`}>
@@ -147,6 +149,7 @@ export default function NotificationsPage() {
           ))}
         </div>
       )}
+      {!loading && <Pagination pager={pager} noun="notification" />}
     </div>
   );
 }

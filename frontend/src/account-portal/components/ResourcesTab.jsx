@@ -16,6 +16,7 @@ import {
 import { fetchAccountResourcesApi, viewResourceFile, downloadResourceFile } from "../services/resourcesApi";
 import { fetchEnrolledActsApi } from "../services/rulesApi";
 import useRegistryLabels from "../hooks/useRegistryLabels";
+import Pagination, { usePagination } from "../../shared/Pagination";
 
 const getBadgeColor = (ext) => {
   switch (ext?.toUpperCase()) {
@@ -210,6 +211,7 @@ export default function ResourcesTab() {
     }
     return list;
   }, [resources, searchQuery, activeSectionFilter]);
+  const pager = usePagination(filtered);
 
   const sections = useMemo(() => {
     const names = [...new Set(resources.map((r) => r.section_name))];
@@ -325,7 +327,7 @@ export default function ResourcesTab() {
             ) : (
               <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 sm:p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filtered.map((doc) => (
+                  {pager.pageItems.map((doc) => (
                     <div
                       key={doc.id}
                       className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between space-y-2.5"
@@ -383,6 +385,7 @@ export default function ResourcesTab() {
                 </div>
               </div>
             )}
+            <Pagination pager={pager} noun="resource" />
           </div>
         </div>
       )}

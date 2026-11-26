@@ -4,6 +4,7 @@ import { toggleUserActiveApi } from "../../services/usersApi";
 import UserFormModal from "./UserFormModal";
 import ResetUserPasswordModal from "./ResetUserPasswordModal";
 import useRegistryLabels from "../../hooks/useRegistryLabels";
+import Pagination, { usePagination } from "../../../shared/Pagination";
 
 export default function UserListTab({ users, onRefresh }) {
   const { department_label: departmentLabel, process_label: processLabel } = useRegistryLabels();
@@ -11,6 +12,7 @@ export default function UserListTab({ users, onRefresh }) {
   const [resettingUser, setResettingUser] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
   const [blockedNotice, setBlockedNotice] = useState(null);
+  const pager = usePagination(users);
 
   const handleToggleActive = async (user) => {
     setTogglingId(user.id);
@@ -43,7 +45,7 @@ export default function UserListTab({ users, onRefresh }) {
           </thead>
           <tbody className="divide-y divide-slate-200">
             {users.length > 0 ? (
-              users.map((u) => (
+              pager.pageItems.map((u) => (
                 <tr key={u.id} className="hover:bg-slate-50/80">
                   <td className="p-3 font-bold text-[#c8431f] font-mono">{u.user_code}</td>
                   <td className="p-3 font-semibold text-slate-800">{u.name}</td>
@@ -130,6 +132,7 @@ export default function UserListTab({ users, onRefresh }) {
           </tbody>
         </table>
       </div>
+      <Pagination pager={pager} noun="user" className="rounded-none border-x-0 border-b-0 shadow-none" />
 
       {editingUser && (
         <UserFormModal

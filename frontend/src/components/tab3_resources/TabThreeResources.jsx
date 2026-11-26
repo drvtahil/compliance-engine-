@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import Pagination, { usePagination } from "../../shared/Pagination";
 import {
   FileText,
   PlusCircle,
@@ -289,6 +290,7 @@ export default function TabThreeResources() {
       return matchDocName || matchActs || matchProcs || matchInds || matchOrgs;
     });
   }, [resources, activeSectionFilter, searchQuery]);
+  const pager = usePagination(filteredResources);
 
   const visibleSections = useMemo(() => {
     if (activeSectionFilter === "ALL") return sections;
@@ -422,7 +424,7 @@ export default function TabThreeResources() {
             ) : (
               <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 sm:p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredResources.map((doc) => (
+                  {pager.pageItems.map((doc) => (
                     <div
                       key={doc.id}
                       className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between space-y-2.5"
@@ -468,6 +470,7 @@ export default function TabThreeResources() {
                     </div>
                   ))}
                 </div>
+                <Pagination pager={pager} noun="document" className="mt-4 shadow-none" />
               </div>
             )
           ) : (

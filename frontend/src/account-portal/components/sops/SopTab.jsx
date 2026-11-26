@@ -147,6 +147,21 @@ export default function SopTab() {
             <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
           </button>
         </div>
+
+        {!loading && sops.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+            <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-md">Total SOPs: {sops.length}</span>
+            {["Compliant", "Not Compliant", "Not Applicable"].map((st) => {
+              const n = sops.filter((s) => (s.status || "Not Compliant") === st).length;
+              const color = st === "Compliant"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : st === "Not Applicable"
+                  ? "bg-slate-50 text-slate-600 border-slate-200"
+                  : "bg-red-50 text-red-700 border-red-200";
+              return <span key={st} className={`border px-2.5 py-1 rounded-md ${color}`}>{st}: {n}</span>;
+            })}
+          </div>
+        )}
       </div>
 
       {error && <div className="p-3 text-red-700 bg-red-50 border border-red-200 rounded-lg">{error}</div>}

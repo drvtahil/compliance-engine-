@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Archive, Eye, Download, Search, Loader2, RefreshCw } from "lucide-react";
 import { fetchEnrolledActsApi } from "../../services/rulesApi";
+import Pagination, { usePagination } from "../../../shared/Pagination";
 import { fetchDocumentsApi, fetchEvidenceApi, viewSopFile, downloadSopFile } from "../../services/sopsApi";
 
 const getBadgeColor = (ext) => {
@@ -65,6 +66,7 @@ export default function LibraryTab({ kind = "document" }) {
     }
     return list;
   }, [files, activeTypeFilter, searchQuery]);
+  const pager = usePagination(filtered);
 
   const groups = useMemo(() => {
     const names = [...new Set(files.map((f) => f.type_name || "Uncategorized"))];
@@ -170,7 +172,7 @@ export default function LibraryTab({ kind = "document" }) {
             ) : (
               <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 sm:p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filtered.map((doc) => (
+                  {pager.pageItems.map((doc) => (
                     <div key={doc.id} className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between space-y-2.5">
                       <div>
                         <div className="flex justify-between items-start gap-2">
@@ -212,6 +214,7 @@ export default function LibraryTab({ kind = "document" }) {
                 </div>
               </div>
             )}
+            <Pagination pager={pager} noun={isEvidence ? "evidence file" : "document"} />
           </div>
         </div>
       )}
