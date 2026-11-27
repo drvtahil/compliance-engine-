@@ -71,6 +71,7 @@ function GroupPanel({ items, emptyLabel, nameOf }) {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                <th className="p-3 w-8">#</th>
                 <th className="p-3">Name</th>
                 <th className="p-3">Score</th>
                 <th className="p-3">Risk Level</th>
@@ -82,6 +83,7 @@ function GroupPanel({ items, emptyLabel, nameOf }) {
             <tbody className="divide-y divide-slate-200">
               {items.map((item, i) => (
                 <tr key={i} className="hover:bg-slate-50/80">
+                  <td className="p-3 text-slate-400 font-bold">{i + 1}</td>
                   <td className="p-3 font-semibold text-slate-800">{nameOf(item)}</td>
                   <td className="p-3 text-slate-600">{item.score == null ? "-" : `${item.score}%`}</td>
                   <td className="p-3"><RiskBadge level={item.risk_level} /></td>

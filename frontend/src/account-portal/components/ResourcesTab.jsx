@@ -327,14 +327,14 @@ export default function ResourcesTab() {
             ) : (
               <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 sm:p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {pager.pageItems.map((doc) => (
+                  {pager.pageItems.map((doc, idx) => (
                     <div
                       key={doc.id}
                       className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between space-y-2.5"
                     >
                       <div>
                         <div className="flex justify-between items-start gap-2">
-                          <h4 className="font-bold text-xs text-slate-900 leading-snug truncate">{doc.title}</h4>
+                          <h4 className="font-bold text-xs text-slate-900 leading-snug truncate"><span className="text-slate-400 font-bold mr-1">{pager.offset + idx + 1}.</span>{doc.title}</h4>
                           <div className="flex items-center gap-1 shrink-0">
                             <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border mr-0.5 ${getBadgeColor(doc.file_type)}`}>
                               {doc.file_type || "FILE"}

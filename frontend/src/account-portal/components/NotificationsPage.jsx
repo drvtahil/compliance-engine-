@@ -117,11 +117,11 @@ export default function NotificationsPage() {
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
-          {pager.pageItems.map((n) => (
+          {pager.pageItems.map((n, idx) => (
             <div key={n.id} className={`p-4 flex items-start gap-3 ${!n.is_read ? "bg-[#fff1ec]/40" : ""}`}>
               {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-[#ff5a36] mt-1.5 flex-shrink-0" />}
               <div className={`flex-1 min-w-0 ${n.is_read ? "ml-[18px]" : ""}`}>
-                <div className="text-sm font-bold text-slate-800">{n.title}</div>
+                <div className="text-sm font-bold text-slate-800"><span className="text-slate-400 mr-1">{pager.offset + idx + 1}.</span>{n.title}</div>
                 <div className="text-xs text-slate-500 mt-0.5">{n.message}</div>
                 <div className="text-[10.5px] text-slate-400 mt-1">{new Date(n.created_at).toLocaleString()}</div>
               </div>

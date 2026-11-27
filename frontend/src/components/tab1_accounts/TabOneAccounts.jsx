@@ -542,6 +542,7 @@ export default function TabOneAccounts() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider select-none">
+                  <th className="p-3.5 w-8">#</th>
                   {/* Sortable: Account ID */}
                   <th
                     onClick={() => handleSort("account_code")}
@@ -596,8 +597,9 @@ export default function TabOneAccounts() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {paginatedAccounts.length > 0 ? (
-                  paginatedAccounts.map((acc) => (
+                  paginatedAccounts.map((acc, idx) => (
                     <tr key={acc.id} className="hover:bg-slate-50/80 transition">
+                      <td className="p-3.5 text-slate-400 font-bold">{(currentPage - 1) * pageSize + idx + 1}</td>
                       <td className="p-3.5 font-bold text-[#c8431f] font-mono">
                         {acc.account_code}
                       </td>
@@ -658,7 +660,7 @@ export default function TabOneAccounts() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-400 italic">
+                    <td colSpan={9} className="p-8 text-center text-slate-400 italic">
                       No enterprise accounts found matching your filter criteria.
                     </td>
                   </tr>
@@ -796,9 +798,9 @@ export default function TabOneAccounts() {
                 {/* Items List */}
                 <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
                   {reg.items && reg.items.length > 0 ? (
-                    reg.items.map((item) => (
+                    reg.items.map((item, idx) => (
                       <div key={item.id} className="p-1.5 bg-white rounded border border-slate-200 text-xs flex justify-between items-center">
-                        <span className="text-slate-700 font-medium truncate pr-2">{item.item_name}</span>
+                        <span className="text-slate-700 font-medium truncate pr-2"><span className="text-slate-400 font-bold mr-1">{idx + 1}.</span>{item.item_name}</span>
                         <div className="flex items-center gap-1 shrink-0">
                           <button
                             onClick={() => handleOpenEditItem(reg, item)}

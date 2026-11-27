@@ -26,7 +26,8 @@ export default function AssignmentResultsLog() {
       <table className="w-full text-xs min-w-[640px]">
         <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
           <tr>
-            <th className="py-2 pl-4 font-semibold text-left">Module</th>
+            <th className="py-2 pl-4 font-semibold text-left w-8">#</th>
+            <th className="py-2 font-semibold text-left">Module</th>
             <th className="py-2 font-semibold text-left">Assignment</th>
             <th className="py-2 font-semibold text-left">Date &amp; Time</th>
             <th className="py-2 font-semibold text-left">Attempt</th>
@@ -34,9 +35,10 @@ export default function AssignmentResultsLog() {
           </tr>
         </thead>
         <tbody>
-          {pager.pageItems.map((r) => (
+          {pager.pageItems.map((r, idx) => (
             <tr key={r.attempt_id} className="border-b border-slate-50 last:border-0">
-              <td className="py-2.5 pl-4">
+              <td className="py-2.5 pl-4 text-slate-400 font-bold">{pager.offset + idx + 1}</td>
+              <td className="py-2.5">
                 <div className="font-bold text-slate-800">{r.module_name}</div>
                 <div className="text-[10px] text-slate-400">{r.course_name}</div>
               </td>

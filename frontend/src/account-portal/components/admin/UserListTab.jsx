@@ -32,6 +32,7 @@ export default function UserListTab({ users, onRefresh }) {
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+              <th className="p-3 w-8">#</th>
               <th className="p-3">User ID</th>
               <th className="p-3">Full Name</th>
               <th className="p-3">Email</th>
@@ -45,8 +46,9 @@ export default function UserListTab({ users, onRefresh }) {
           </thead>
           <tbody className="divide-y divide-slate-200">
             {users.length > 0 ? (
-              pager.pageItems.map((u) => (
+              pager.pageItems.map((u, idx) => (
                 <tr key={u.id} className="hover:bg-slate-50/80">
+                  <td className="p-3 text-slate-400 font-bold">{pager.offset + idx + 1}</td>
                   <td className="p-3 font-bold text-[#c8431f] font-mono">{u.user_code}</td>
                   <td className="p-3 font-semibold text-slate-800">{u.name}</td>
                   <td className="p-3 text-slate-600">{u.email}</td>
@@ -124,7 +126,7 @@ export default function UserListTab({ users, onRefresh }) {
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-slate-400 italic">
+                <td colSpan={10} className="p-8 text-center text-slate-400 italic">
                   No users provisioned yet. Use "Create User" to add your first team member.
                 </td>
               </tr>

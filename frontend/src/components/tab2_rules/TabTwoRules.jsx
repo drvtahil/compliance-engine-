@@ -1397,7 +1397,7 @@ export default function TabTwoRules() {
             No legal chapters found for <strong>{selectedAct}</strong>. Use the builder above to create and save one under this Act.
           </div>
         ) : (
-          pagedChapters.map((chap) => {
+          pagedChapters.map((chap, chapIdx) => {
             const isChapExpanded = !!expandedChapters[chap.id];
             const rulesCount = chap.rules?.length || 0;
             let sectionsCount = 0;
@@ -1421,7 +1421,7 @@ export default function TabTwoRules() {
                 >
                   <div className="flex items-center gap-2">
                     {isChapExpanded ? <ChevronDown className="w-4 h-4 text-[#ff9269]" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-                    <h3 className="font-bold text-sm tracking-wide">{chap.title}</h3>
+                    <h3 className="font-bold text-sm tracking-wide"><span className="text-[#9fd0cb] mr-1.5">{(chapterPage - 1) * chapterPageSize + chapIdx + 1}.</span>{chap.title}</h3>
                   </div>
                   <div className="flex items-center gap-2 text-[11px] font-bold" onClick={(e) => e.stopPropagation()}>
                     <span className="bg-[#12504c] px-2.5 py-0.5 rounded text-[#d3ece8]">{rulesCount} Rules</span>

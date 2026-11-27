@@ -37,7 +37,7 @@ function StatusPill({ status }) {
   return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${color}`}>{status}</span>;
 }
 
-function FileCard({ file, kind, isManager, onEdit, onDelete }) {
+function FileCard({ file, number, kind, isManager, onEdit, onDelete }) {
   const style = KIND_STYLES[kind];
   return (
     <div className={`bg-white border ${style.border} rounded-lg p-2.5 space-y-1`}>
@@ -79,7 +79,7 @@ function FileCard({ file, kind, isManager, onEdit, onDelete }) {
         </div>
       </div>
 
-      <div className="text-[11px] font-bold text-slate-800 truncate">{file.name}</div>
+      <div className="text-[11px] font-bold text-slate-800 truncate">{number != null && <span className="text-slate-400 mr-1">{number}.</span>}{file.name}</div>
       {file.description && <div className="text-[10px] text-slate-500 truncate">{file.description}</div>}
 
       <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[9px] text-slate-500">
@@ -351,16 +351,16 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
               {sop.documents.length > 0 && (
                 <div className="space-y-1.5">
                   <div className="text-[10px] font-bold text-slate-500 uppercase">Documents</div>
-                  {sop.documents.map((f) => (
-                    <FileCard key={f.id} file={f} kind="document" isManager={isManager} onEdit={(file) => onEditFile("document", file)} onDelete={(file) => onDeleteFile(file)} />
+                  {sop.documents.map((f, i) => (
+                    <FileCard key={f.id} file={f} number={i + 1} kind="document" isManager={isManager} onEdit={(file) => onEditFile("document", file)} onDelete={(file) => onDeleteFile(file)} />
                   ))}
                 </div>
               )}
               {sop.evidence.length > 0 && (
                 <div className="space-y-1.5">
                   <div className="text-[10px] font-bold text-slate-500 uppercase">Evidences</div>
-                  {sop.evidence.map((f) => (
-                    <FileCard key={f.id} file={f} kind="evidence" isManager={isManager} onEdit={(file) => onEditFile("evidence", file)} onDelete={(file) => onDeleteFile(file)} />
+                  {sop.evidence.map((f, i) => (
+                    <FileCard key={f.id} file={f} number={i + 1} kind="evidence" isManager={isManager} onEdit={(file) => onEditFile("evidence", file)} onDelete={(file) => onDeleteFile(file)} />
                   ))}
                 </div>
               )}

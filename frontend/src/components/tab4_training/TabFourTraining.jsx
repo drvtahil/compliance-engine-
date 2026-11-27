@@ -422,7 +422,8 @@ function CourseListTable({ courses, onView, onEdit, onPublish, onUnpublish, onAr
       <table className="w-full text-xs">
         <thead className="bg-slate-50 border-b border-slate-200">
           <tr className="text-slate-500">
-            <SortableTh label="Course Name" sortKeyName="name" currentKey={sortKey} currentDir={sortDir} onSort={toggleSort} className="pl-4" />
+            <th className="py-1.5 pl-4 font-semibold text-left w-8">#</th>
+            <SortableTh label="Course Name" sortKeyName="name" currentKey={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortableTh label="Act" sortKeyName="act_code" currentKey={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <th className="py-1.5 font-semibold text-left">Description</th>
             <th className="py-1.5 font-semibold text-left">Default Roles</th>
@@ -432,9 +433,10 @@ function CourseListTable({ courses, onView, onEdit, onPublish, onUnpublish, onAr
           </tr>
         </thead>
         <tbody>
-          {sorted.map((c) => (
+          {sorted.map((c, idx) => (
             <tr key={c.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-              <td className="py-2.5 pl-4 font-bold text-slate-800">{c.name}</td>
+              <td className="py-2.5 pl-4 text-slate-400 font-bold">{idx + 1}</td>
+              <td className="py-2.5 font-bold text-slate-800">{c.name}</td>
               <td className="py-2.5 text-slate-500">{c.act_code}</td>
               <td className="py-2.5 text-slate-500 max-w-xs truncate">{c.description || "-"}</td>
               <td className="py-2.5 text-slate-500">{c.default_roles.join(", ") || "-"}</td>
@@ -1145,6 +1147,7 @@ function AllocationsTable({ allocations, onRemove }) {
         <table className="w-full text-xs">
           <thead>
             <tr className="text-left text-slate-400 border-b border-slate-100">
+              <th className="py-1.5 font-semibold w-8">#</th>
               <SortableTh label="Account" sortKeyName="account_name" currentKey={sortKey} currentDir={sortDir} onSort={toggleSort} />
               <SortableTh label="Role" sortKeyName="role_name" currentKey={sortKey} currentDir={sortDir} onSort={toggleSort} />
               <SortableTh label="Mandatory" sortKeyName="is_mandatory" currentKey={sortKey} currentDir={sortDir} onSort={toggleSort} />
@@ -1153,8 +1156,9 @@ function AllocationsTable({ allocations, onRemove }) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((a) => (
+            {sorted.map((a, idx) => (
               <tr key={a.id} className="border-b border-slate-50">
+                <td className="py-1.5 text-slate-400 font-bold">{idx + 1}</td>
                 <td className="py-1.5 font-semibold text-slate-700">{a.account_name} <span className="text-slate-400">({a.account_code})</span></td>
                 <td className="py-1.5">{a.role_name}</td>
                 <td className="py-1.5">{a.is_mandatory ? "Yes" : "No"}</td>
@@ -1248,8 +1252,9 @@ function AuditLogPanel({ entityType, entityId, setError }) {
         <div className="text-center text-xs text-slate-400 py-8">No changes logged yet.</div>
       ) : (
         <div className="space-y-2">
-          {pager.pageItems.map((e) => (
+          {pager.pageItems.map((e, idx) => (
             <div key={e.id} className="text-xs border-b border-slate-50 pb-2">
+              <span className="text-slate-400 font-bold mr-1.5">{pager.offset + idx + 1}.</span>
               <span className="font-bold text-slate-700 uppercase">{e.action}</span>
               <span className="text-slate-400"> &middot; {e.entity_type} #{e.entity_id} &middot; {new Date(e.created_at).toLocaleString()}</span>
             </div>

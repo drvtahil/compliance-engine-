@@ -178,7 +178,8 @@ export default function TrainingDashboardView({
             <table className="w-full text-xs">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr className="text-slate-500">
-                  <Th label="Account" sortKeyName="account_name" currentKey={accountsSort.sortKey} currentDir={accountsSort.sortDir} onSort={accountsSort.toggleSort} className="pl-4" />
+                  <th className="py-1.5 pl-4 font-semibold text-left w-8">#</th>
+                  <Th label="Account" sortKeyName="account_name" currentKey={accountsSort.sortKey} currentDir={accountsSort.sortDir} onSort={accountsSort.toggleSort} />
                   <Th label="Courses" sortKeyName="course_count" currentKey={accountsSort.sortKey} currentDir={accountsSort.sortDir} onSort={accountsSort.toggleSort} />
                   <Th label="Acts" sortKeyName="act_count" currentKey={accountsSort.sortKey} currentDir={accountsSort.sortDir} onSort={accountsSort.toggleSort} />
                   <Th label="Users" sortKeyName="user_count" currentKey={accountsSort.sortKey} currentDir={accountsSort.sortDir} onSort={accountsSort.toggleSort} />
@@ -188,9 +189,10 @@ export default function TrainingDashboardView({
                 </tr>
               </thead>
               <tbody>
-                {accountsSort.sorted.map((a) => (
+                {accountsSort.sorted.map((a, idx) => (
                   <tr key={a.account_id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                    <td className="py-2.5 pl-4 font-bold text-slate-800">{a.account_name} <span className="text-slate-400 font-normal">({a.account_code})</span></td>
+                    <td className="py-2.5 pl-4 text-slate-400 font-bold">{idx + 1}</td>
+                    <td className="py-2.5 font-bold text-slate-800">{a.account_name} <span className="text-slate-400 font-normal">({a.account_code})</span></td>
                     <td className="py-2.5">{a.course_count}</td>
                     <td className="py-2.5">{a.act_count}</td>
                     <td className="py-2.5">{a.user_count}</td>
@@ -217,7 +219,8 @@ export default function TrainingDashboardView({
             <table className="w-full text-xs">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr className="text-slate-500">
-                  <Th label="Course" sortKeyName="course_name" currentKey={coursesSort.sortKey} currentDir={coursesSort.sortDir} onSort={coursesSort.toggleSort} className="pl-4" />
+                  <th className="py-1.5 pl-4 font-semibold text-left w-8">#</th>
+                  <Th label="Course" sortKeyName="course_name" currentKey={coursesSort.sortKey} currentDir={coursesSort.sortDir} onSort={coursesSort.toggleSort} />
                   <Th label="Act" sortKeyName="act_code" currentKey={coursesSort.sortKey} currentDir={coursesSort.sortDir} onSort={coursesSort.toggleSort} />
                   {scope === "super_admin" && <Th label="Accounts" sortKeyName="accounts_mapped" currentKey={coursesSort.sortKey} currentDir={coursesSort.sortDir} onSort={coursesSort.toggleSort} />}
                   <th className="py-1.5 font-semibold text-left">Roles</th>
@@ -227,9 +230,10 @@ export default function TrainingDashboardView({
                 </tr>
               </thead>
               <tbody>
-                {coursesSort.sorted.map((c) => (
+                {coursesSort.sorted.map((c, idx) => (
                   <tr key={c.course_id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                    <td className="py-2.5 pl-4 font-bold text-slate-800">{c.course_name}</td>
+                    <td className="py-2.5 pl-4 text-slate-400 font-bold">{idx + 1}</td>
+                    <td className="py-2.5 font-bold text-slate-800">{c.course_name}</td>
                     <td className="py-2.5 text-slate-500">{c.act_code}</td>
                     {scope === "super_admin" && <td className="py-2.5">{c.accounts_mapped}</td>}
                     <td className="py-2.5 text-slate-500">{c.role_types.join(", ")}</td>
@@ -474,7 +478,8 @@ function ActTree({ acts, single = false }) {
           <table className="w-full text-xs">
             <thead className="text-slate-500 border-b border-slate-100">
               <tr>
-                <th className="py-2 pl-4 font-semibold text-left">Account</th>
+                <th className="py-2 pl-4 font-semibold text-left w-8">#</th>
+                <th className="py-2 font-semibold text-left">Account</th>
                 <th className="py-2 font-semibold text-center">Account Admins</th>
                 <th className="py-2 font-semibold text-center">Users</th>
                 <th className="py-2 font-semibold text-center">Getting Training</th>
@@ -484,13 +489,14 @@ function ActTree({ acts, single = false }) {
               </tr>
             </thead>
             <tbody>
-              {act.accounts.map((acc) => {
+              {act.accounts.map((acc, accIdx) => {
                 const key = `${act.act_code}::${acc.account_id}`;
                 const open = openAccounts.has(key);
                 return (
                   <React.Fragment key={key}>
                     <tr onClick={() => toggle(key)} className="border-b border-slate-50 cursor-pointer hover:bg-slate-50/60">
-                      <td className="py-2.5 pl-4 font-bold text-slate-800">
+                      <td className="py-2.5 pl-4 text-slate-400 font-bold">{accIdx + 1}</td>
+                      <td className="py-2.5 font-bold text-slate-800">
                         <span className="inline-flex items-center gap-1.5">
                           {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
                           {acc.account_name} <span className="text-slate-400 font-normal">({acc.account_code})</span>
@@ -505,7 +511,7 @@ function ActTree({ acts, single = false }) {
                     </tr>
                     {open && (
                       <tr className="border-b border-slate-100">
-                        <td colSpan={7} className="bg-slate-50/60 pl-10 pr-4 py-3">
+                        <td colSpan={8} className="bg-slate-50/60 pl-10 pr-4 py-3">
                           <PeopleProgress members={acc.members} />
                         </td>
                       </tr>
@@ -695,7 +701,8 @@ function RecordsDrillDown({ drill, onBack, api, scope, departmentList, processLi
           <table className="w-full text-xs">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr className="text-slate-500">
-                <Th label="Learner" sortKeyName="admin_name" currentKey={sort.sortKey} currentDir={sort.sortDir} onSort={sort.toggleSort} className="pl-4" />
+                <th className="py-1.5 pl-4 font-semibold text-left w-8">#</th>
+                <Th label="Learner" sortKeyName="admin_name" currentKey={sort.sortKey} currentDir={sort.sortDir} onSort={sort.toggleSort} />
                 <th className="py-1.5 font-semibold text-left">Role</th>
                 {scope === "super_admin" && drill.type !== "account" && <th className="py-1.5 font-semibold text-left">Account</th>}
                 <th className="py-1.5 font-semibold text-left">Course</th>
@@ -708,7 +715,8 @@ function RecordsDrillDown({ drill, onBack, api, scope, departmentList, processLi
             <tbody>
               {pager.pageItems.map((r, idx) => (
                 <tr key={`${r.admin_id}-${r.course_id}-${r.module_id || "c"}-${idx}`} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                  <td className="py-2.5 pl-4 font-bold text-slate-800">{r.admin_name}</td>
+                  <td className="py-2.5 pl-4 text-slate-400 font-bold">{pager.offset + idx + 1}</td>
+                  <td className="py-2.5 font-bold text-slate-800">{r.admin_name}</td>
                   <td className="py-2.5 text-slate-500">{r.role_name}</td>
                   {scope === "super_admin" && drill.type !== "account" && <td className="py-2.5 text-slate-500">{r.account_name}</td>}
                   <td className="py-2.5 text-slate-500">{r.course_name}</td>
