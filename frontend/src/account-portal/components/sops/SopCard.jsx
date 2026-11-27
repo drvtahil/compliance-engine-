@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PlusCircle, FileUp, ShieldPlus, Eye, Download, Edit2, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { viewSopFile, downloadSopFile } from "../../services/sopsApi";
+import { SectionCard } from "../RulesTab";
 
 const STATUS_OPTIONS = ["Not Compliant", "Compliant", "Not Applicable"];
 const DEFAULT_STATUS = "Not Compliant";
@@ -91,6 +92,7 @@ function FileCard({ file, kind, isManager, onEdit, onDelete }) {
 
 export default function SopCard({ sop, number, departmentLabel, processLabel, isManager, onSetStatus, onSetComment, onSetProcessStatus, onCreateActivity, onUploadFile, onEditFile, onDeleteFile }) {
   const [expanded, setExpanded] = useState(false);
+  const [ruleOpen, setRuleOpen] = useState(false);
   const [commentDraft, setCommentDraft] = useState(sop.comment || "");
 
   useEffect(() => {
@@ -135,6 +137,26 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
           <StatusPill status={sop.status} />
         </div>
       </button>
+
+      <div className={`pb-2 -mt-2 ${number != null ? "pl-[4.25rem]" : "pl-10"} pr-4`}>
+        <button
+          type="button"
+          onClick={() => setRuleOpen((v) => !v)}
+          className="inline-flex items-center gap-0.5 text-[10.5px] font-bold text-[#0b3f3c] hover:text-[#ff5a36]"
+        >
+          {ruleOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          {ruleOpen ? "Hide Rule" : "View Rule"}
+        </button>
+      </div>
+      {ruleOpen && (
+        <div className="mx-4 mb-3 bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+          <div className="text-[9.5px] font-bold uppercase tracking-wide text-[#0b3f3c]">
+            {sop.chapter_title} &middot; Rule No. {sop.rule_order}
+          </div>
+          <p className="text-[12px] leading-relaxed text-slate-700 whitespace-pre-line">{sop.rule_narrative}</p>
+          {sop.section && <SectionCard section={sop.section} chapterActCode={sop.act_code} />}
+        </div>
+      )}
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-emerald-100 pt-3">
