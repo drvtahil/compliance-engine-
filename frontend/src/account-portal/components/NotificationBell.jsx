@@ -4,7 +4,7 @@ import {
   fetchNotificationsApi, fetchUnreadCountApi, markNotificationReadApi, markAllNotificationsReadApi
 } from "../services/notificationsApi";
 
-export default function NotificationBell({ onNavigateToTraining, onViewAll }) {
+export default function NotificationBell({ onNavigateToTraining, onNavigateToActivities, onViewAll }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -61,6 +61,10 @@ export default function NotificationBell({ onNavigateToTraining, onViewAll }) {
     }
     if (n.entity_type === "training_course" && onNavigateToTraining) {
       onNavigateToTraining();
+      setOpen(false);
+    }
+    if (n.entity_type === "sop_activity" && onNavigateToActivities) {
+      onNavigateToActivities();
       setOpen(false);
     }
   };

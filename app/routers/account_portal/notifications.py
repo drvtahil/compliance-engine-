@@ -7,6 +7,7 @@ from app.core.deps import get_current_account_admin
 from app.database.connection import get_db
 from app.models.tab1_models import AccountAdmin
 from app.models.notifications import Notification
+from app.services.activity_notifications import check_due
 
 router = APIRouter(prefix="/api/v1/account/notifications", tags=["Account Portal Notifications"])
 
@@ -19,6 +20,7 @@ def list_notifications(
     db: Session = Depends(get_db),
     current_admin: AccountAdmin = Depends(get_current_account_admin),
 ):
+    check_due(db, current_admin)
     notes = db.query(Notification).filter(
         Notification.recipient_admin_id == current_admin.id
     ).order_by(Notification.id.desc()).offset(offset).limit(limit).all()
@@ -35,6 +37,7 @@ def list_notifications(
 
 @router.get("/unread-count")
 def unread_count(db: Session = Depends(get_db), current_admin: AccountAdmin = Depends(get_current_account_admin)):
+    check_due(db, current_admin)
     count = db.query(Notification).filter(
         Notification.recipient_admin_id == current_admin.id, Notification.is_read == False
     ).count()

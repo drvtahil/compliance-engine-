@@ -76,7 +76,7 @@ export default function AccountAdminApp({ session, onLogout }) {
             {session.name?.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex items-center gap-1">
-            <NotificationBell onNavigateToTraining={() => isEnabled("training") && setActiveTab("training")} onViewAll={() => setActiveTab("notifications")} />
+            <NotificationBell onNavigateToTraining={() => isEnabled("training") && setActiveTab("training")} onNavigateToActivities={() => isEnabled("activity") && setActiveTab("activity")} onViewAll={() => setActiveTab("notifications")} />
             <button
               onClick={() => setShowChangePassword(true)}
               title="Change Password"

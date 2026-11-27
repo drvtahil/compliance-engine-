@@ -17,6 +17,7 @@ from app.core.deps import get_current_account_admin
 from app.database.connection import get_db
 from app.models.tab1_models import AccountAdmin, AccountEnrolledAct, MasterRegistry
 from app.services.sop_numbers import sop_ref
+from app.services import activity_notifications
 from app.models.tab2_models import LegalAssessment, LegalSection, LegalRule, LegalChapter, QuestionAssignment
 from app.models.sops import SopStatus, SopProcessStatus, SopActivity, SopFile
 
@@ -445,6 +446,9 @@ def create_activity(
     db.add(activity)
     db.commit()
     db.refresh(activity)
+    activity_notifications.on_created(db, activity)
+    db.commit()
+    activity_notifications.check_due(db, current_admin)  # due within 2 days -> reminder straight away
     return {"status": "created", "id": activity.id}
 
 
@@ -505,7 +509,10 @@ def set_activity_status(
     if activity.owner_admin_id != current_admin.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Only the person this activity is allocated to can update its status.")
 
+    was_completed = activity.status == "Completed"
     activity.status = payload.status
+    if payload.status == "Completed" and not was_completed:
+        activity_notifications.on_completed(db, activity, current_admin)
     db.commit()
     return {"status": "updated", "id": activity_id, "activity_status": activity.status}
 

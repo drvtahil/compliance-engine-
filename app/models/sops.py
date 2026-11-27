@@ -53,6 +53,8 @@ class SopActivity(Base):
     completed_at = Column(Date, nullable=True)
     created_by = Column(Integer, ForeignKey("account_admins.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    reminder_sent_at = Column(DateTime, nullable=True)  # due-soon notification sent
+    overdue_sent_at = Column(DateTime, nullable=True)   # overdue notification sent
 
     assessment = relationship("LegalAssessment")
     owner_admin = relationship("AccountAdmin", foreign_keys=[owner_admin_id])
