@@ -308,6 +308,7 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
                 <table className="w-full text-left text-[11px]">
                   <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase">
                     <tr>
+                      <th className="p-2 w-8">#</th>
                       <th className="p-2">Activity</th>
                       <th className="p-2">Created By</th>
                       <th className="p-2">Owner</th>
@@ -317,8 +318,9 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {sop.activities.map((act) => (
+                    {sop.activities.map((act, idx) => (
                       <tr key={act.id}>
+                        <td className="p-2 text-slate-400 font-bold">{idx + 1}</td>
                         <td className="p-2 font-semibold text-slate-800">{act.activity_name}</td>
                         <td className="p-2 text-slate-600">{act.creator?.name || "-"}</td>
                         <td className="p-2 text-slate-600">{act.owner?.name || "Unassigned"}</td>
