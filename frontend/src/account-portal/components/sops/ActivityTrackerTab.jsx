@@ -3,14 +3,19 @@ import { Activity, Loader2, RefreshCw, Info, X, CheckCircle2, ChevronLeft, Chevr
 import { fetchActivitiesApi, setActivityStatusApi } from "../../services/sopsApi";
 import { loadAccountSession } from "../../services/accountAuthApi";
 
-function ActivityDetailsModal({ activity, onClose }) {
+export function ActivityDetailsModal({ activity, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
       <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4 text-xs">
         <div className="flex justify-between items-start border-b border-slate-100 pb-3">
           <div>
             <h3 className="text-sm font-bold text-slate-800">{activity.activity_name}</h3>
-            <span className="text-[11px] text-slate-500">{activity.sop_name}</span>
+            <span className="text-[11px] text-slate-500">
+              <span className="font-bold text-[#0b3f3c]">{activity.sop_ref}</span> &middot; {activity.sop_name}
+            </span>
+            {activity.chapter_title && (
+              <div className="text-[10px] text-slate-400">{activity.chapter_title} &middot; Rule No. {activity.rule_order}</div>
+            )}
           </div>
           <button onClick={onClose}><X className="w-5 h-5 text-slate-400 hover:text-slate-600" /></button>
         </div>
@@ -165,7 +170,7 @@ export default function ActivityTrackerTab() {
                     <div className="flex items-center gap-1">Activity <SortIcon field="activity_name" /></div>
                   </th>
                   <th className="p-3 cursor-pointer" onClick={() => handleSort("sop_name")}>
-                    <div className="flex items-center gap-1">SOP Name <SortIcon field="sop_name" /></div>
+                    <div className="flex items-center gap-1">SOP ID &amp; Name <SortIcon field="sop_name" /></div>
                   </th>
                   <th className="p-3 cursor-pointer" onClick={() => handleSort("creator")}>
                     <div className="flex items-center gap-1">Created By <SortIcon field="creator" /></div>
@@ -189,7 +194,10 @@ export default function ActivityTrackerTab() {
                     <tr key={act.id} className="hover:bg-slate-50/80">
                       <td className="p-3 text-slate-400 font-bold">{(page - 1) * pageSize + idx + 1}</td>
                       <td className="p-3 font-semibold text-slate-800">{act.activity_name}</td>
-                      <td className="p-3 text-slate-600">{act.sop_name}</td>
+                      <td className="p-3 text-slate-600">
+                        <div><span className="font-bold text-[#0b3f3c] mr-1">{act.sop_ref}</span>{act.sop_name}</div>
+                        <div className="text-[10px] text-slate-400">{act.chapter_title} &middot; Rule No. {act.rule_order}</div>
+                      </td>
                       <td className="p-3 text-slate-600">{act.creator?.name || "-"}</td>
                       <td className="p-3 text-slate-600">{act.owner?.name || "Unassigned"}</td>
                       <td className="p-3 text-slate-600">{act.completed_at || "-"}</td>

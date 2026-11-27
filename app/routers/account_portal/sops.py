@@ -137,6 +137,10 @@ def list_sops(
         process_statuses.setdefault(ps.assessment_id, {})[ps.process_index] = ps.status
 
     result = []
+    activities_by_sop = {}
+    for act in visible_activities_query(db, current_admin).order_by(SopActivity.created_at.desc()).all():
+        activities_by_sop.setdefault(act.assessment_id, []).append(serialize_activity(act))
+
     for a in rows:
         if account_org_type not in json.loads(a.mapped_org_types or "[]"):
             continue
@@ -148,6 +152,8 @@ def list_sops(
             proc["status"] = proc_status_map.get(idx, "Incomplete")
         result.append({
             "assessment_id": a.id,
+            "sop_ref": sop_ref(a.id),
+            "activities": activities_by_sop.get(a.id, []),
             "question": a.question,
             "industries": json.loads(a.industries or "[]"),
             "industry_process": a.industry_process or "",
@@ -440,33 +446,47 @@ def create_activity(
     return {"status": "created", "id": activity.id}
 
 
-@router.get("/activities")
-def list_activities(
-    db: Session = Depends(get_db),
-    current_admin: AccountAdmin = Depends(get_current_account_admin),
-):
+def sop_ref(assessment_id: int) -> str:
+    """Fixed SOP reference shown to users - never changes when the SOP list is re-ordered."""
+    return f"SOP-{assessment_id}"
+
+
+def serialize_activity(act: SopActivity) -> dict:
+    a = act.assessment
+    return {
+        "id": act.id,
+        "activity_name": act.activity_name,
+        "detail": act.detail or "",
+        "sop_ref": sop_ref(act.assessment_id),
+        "sop_name": a.sop_name,
+        "chapter_title": a.section.rule.chapter.title,
+        "rule_order": a.section.rule.rule_order,
+        "assessment_id": act.assessment_id,
+        "creator": serialize_owner(act.created_by_admin) if act.created_by else None,
+        "owner": serialize_owner(act.owner_admin) if act.owner_admin_id else None,
+        "status": act.status,
+        "completed_at": act.completed_at,
+    }
+
+
+def visible_activities_query(db: Session, current_admin: AccountAdmin):
+    """Account Admins see every activity in the account; a User sees the ones they created or own."""
     q = db.query(SopActivity).filter(SopActivity.account_id == current_admin.account_id)
     if not is_manager(current_admin):
         q = q.filter(or_(
             SopActivity.created_by == current_admin.id,
             SopActivity.owner_admin_id == current_admin.id,
         ))
+    return q
 
-    activities = q.order_by(SopActivity.created_at.desc()).all()
-    return [
-        {
-            "id": act.id,
-            "activity_name": act.activity_name,
-            "detail": act.detail or "",
-            "sop_name": act.assessment.sop_name,
-            "assessment_id": act.assessment_id,
-            "creator": serialize_owner(act.created_by_admin) if act.created_by else None,
-            "owner": serialize_owner(act.owner_admin) if act.owner_admin_id else None,
-            "status": act.status,
-            "completed_at": act.completed_at,
-        }
-        for act in activities
-    ]
+
+@router.get("/activities")
+def list_activities(
+    db: Session = Depends(get_db),
+    current_admin: AccountAdmin = Depends(get_current_account_admin),
+):
+    activities = visible_activities_query(db, current_admin).order_by(SopActivity.created_at.desc()).all()
+    return [serialize_activity(act) for act in activities]
 
 
 class ActivityStatusPayload(BaseModel):

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { PlusCircle, FileUp, ShieldPlus, Eye, Download, Edit2, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { PlusCircle, FileUp, ShieldPlus, Eye, Download, Edit2, Trash2, ChevronDown, ChevronRight, Info } from "lucide-react";
 import { viewSopFile, downloadSopFile } from "../../services/sopsApi";
 import { SectionCard } from "../RulesTab";
+import { ActivityDetailsModal } from "./ActivityTrackerTab";
 
 const STATUS_OPTIONS = ["Not Compliant", "Compliant", "Not Applicable"];
 const DEFAULT_STATUS = "Not Compliant";
@@ -93,6 +94,7 @@ function FileCard({ file, kind, isManager, onEdit, onDelete }) {
 export default function SopCard({ sop, number, departmentLabel, processLabel, isManager, onSetStatus, onSetComment, onSetProcessStatus, onCreateActivity, onUploadFile, onEditFile, onDeleteFile }) {
   const [expanded, setExpanded] = useState(false);
   const [ruleOpen, setRuleOpen] = useState(false);
+  const [activityDetail, setActivityDetail] = useState(null);
   const [commentDraft, setCommentDraft] = useState(sop.comment || "");
 
   useEffect(() => {
@@ -124,7 +126,9 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
           )}
           {expanded ? <ChevronDown className="w-4 h-4 text-emerald-700 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-emerald-700 flex-shrink-0" />}
           <div className="min-w-0">
-            <div className="text-xs font-extrabold text-emerald-900 truncate">{sop.sop_name}</div>
+            <div className="text-xs font-extrabold text-emerald-900 truncate">
+              <span className="text-[#ff5a36] mr-1.5">{sop.sop_ref}</span>{sop.sop_name}
+            </div>
             <div className="text-[10px] text-slate-500 truncate">
               {sop.chapter_title} &middot; Rule No. {sop.rule_order}
             </div>
@@ -296,6 +300,49 @@ export default function SopCard({ sop, number, departmentLabel, processLabel, is
               <ShieldPlus className="w-3.5 h-3.5" /> Upload Evidence
             </button>
           </div>
+
+          <div className="space-y-1.5">
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Activities for this SOP ({sop.activities?.length || 0})</div>
+            {sop.activities?.length ? (
+              <div className="border border-slate-200 rounded-lg overflow-x-auto">
+                <table className="w-full text-left text-[11px]">
+                  <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase">
+                    <tr>
+                      <th className="p-2">Activity</th>
+                      <th className="p-2">Created By</th>
+                      <th className="p-2">Owner</th>
+                      <th className="p-2">Date of Completion</th>
+                      <th className="p-2">Status</th>
+                      <th className="p-2 text-right">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {sop.activities.map((act) => (
+                      <tr key={act.id}>
+                        <td className="p-2 font-semibold text-slate-800">{act.activity_name}</td>
+                        <td className="p-2 text-slate-600">{act.creator?.name || "-"}</td>
+                        <td className="p-2 text-slate-600">{act.owner?.name || "Unassigned"}</td>
+                        <td className="p-2 text-slate-600">{act.completed_at || "-"}</td>
+                        <td className="p-2">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            act.status === "Completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"
+                          }`}>{act.status}</span>
+                        </td>
+                        <td className="p-2 text-right">
+                          <button type="button" onClick={() => setActivityDetail(act)} title="Details" className="text-slate-400 hover:text-slate-700">
+                            <Info className="w-3.5 h-3.5 inline" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-[11px] text-slate-400 italic">No activities yet.</div>
+            )}
+          </div>
+          {activityDetail && <ActivityDetailsModal activity={activityDetail} onClose={() => setActivityDetail(null)} />}
 
           {(sop.documents.length > 0 || sop.evidence.length > 0) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
