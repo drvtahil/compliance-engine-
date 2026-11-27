@@ -121,7 +121,7 @@ export default function RulesUploadModal({ acts, defaultAct, onClose, onSaved })
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   ["New chapters", s.new_chapters], ["New rules", s.new_rules], ["New sections", s.new_sections],
-                  ["New questions", s.new_questions], ["New processes", s.new_processes], ["Sub-section rows", s.new_sub_rows],
+                  ["New questions", s.new_questions], ["New processes", s.new_processes], ["Sub-section lines", s.new_sub_lines],
                   ["Existing rules (kept)", s.skipped_rules], ["Existing questions (skipped)", s.skipped_questions],
                 ].map(([label, n]) => (
                   <div key={label} className="border border-slate-200 rounded-lg p-2.5">
@@ -165,7 +165,7 @@ export default function RulesUploadModal({ acts, defaultAct, onClose, onSaved })
           <button
             type="button"
             onClick={handleSave}
-            disabled={!clean || !!busy || (s.new_questions + s.new_rules + s.new_sections + s.new_sub_rows === 0)}
+            disabled={!clean || !!busy || (s.new_questions + s.new_rules + s.new_sections + s.new_sub_lines === 0)}
             className="bg-[#ff5a36] hover:bg-[#c8431f] text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 disabled:opacity-50"
           >
             {busy === "save" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Confirm &amp; Save
