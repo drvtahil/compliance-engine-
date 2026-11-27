@@ -8,6 +8,7 @@ from app.core.deps import get_current_super_admin
 from app.database.connection import get_db
 from app.models.super_admin import SuperAdmin
 from app.models.tab1_models import MasterRegistry, MasterRegistryItem
+from app.services.sop_numbers import next_sop_no
 from app.models.tab2_models import LegalChapter, LegalRule, LegalSection, LegalAssessment
 
 router = APIRouter(prefix="/api/v1/tab2", tags=["Tab 2 Deep Rules Engine"])
@@ -175,7 +176,7 @@ def sync_section_data(db: Session, rule_id: int, s_item: SectionPayload):
         if a_item.id:
             ass = db.query(LegalAssessment).filter(LegalAssessment.id == a_item.id, LegalAssessment.section_id == sec.id).first()
         if not ass:
-            ass = LegalAssessment(section_id=sec.id)
+            ass = LegalAssessment(section_id=sec.id, sop_no=next_sop_no(db, sec.rule.chapter.act_code))
             db.add(ass)
 
         ass.question = a_item.question.strip()

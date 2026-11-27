@@ -16,6 +16,7 @@ from app.core.config import settings
 from app.core.deps import get_current_account_admin
 from app.database.connection import get_db
 from app.models.tab1_models import AccountAdmin, AccountEnrolledAct, MasterRegistry
+from app.services.sop_numbers import sop_ref
 from app.models.tab2_models import LegalAssessment, LegalSection, LegalRule, LegalChapter, QuestionAssignment
 from app.models.sops import SopStatus, SopProcessStatus, SopActivity, SopFile
 
@@ -152,7 +153,7 @@ def list_sops(
             proc["status"] = proc_status_map.get(idx, "Incomplete")
         result.append({
             "assessment_id": a.id,
-            "sop_ref": sop_ref(a.id),
+            "sop_ref": sop_ref(a),
             "activities": activities_by_sop.get(a.id, []),
             "question": a.question,
             "industries": json.loads(a.industries or "[]"),
@@ -446,18 +447,13 @@ def create_activity(
     return {"status": "created", "id": activity.id}
 
 
-def sop_ref(assessment_id: int) -> str:
-    """Fixed SOP reference shown to users - never changes when the SOP list is re-ordered."""
-    return f"SOP-{assessment_id}"
-
-
 def serialize_activity(act: SopActivity) -> dict:
     a = act.assessment
     return {
         "id": act.id,
         "activity_name": act.activity_name,
         "detail": act.detail or "",
-        "sop_ref": sop_ref(act.assessment_id),
+        "sop_ref": sop_ref(a),
         "sop_name": a.sop_name,
         "chapter_title": a.section.rule.chapter.title,
         "rule_order": a.section.rule.rule_order,

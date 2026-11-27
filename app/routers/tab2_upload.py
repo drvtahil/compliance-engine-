@@ -24,6 +24,7 @@ from app.core.deps import get_current_super_admin
 from app.database.connection import get_db
 from app.models.super_admin import SuperAdmin
 from app.models.tab1_models import MasterRegistry, MasterRegistryItem
+from app.services.sop_numbers import next_sop_no
 from app.models.tab2_models import LegalChapter, LegalRule, LegalSection, LegalAssessment
 
 router = APIRouter(prefix="/api/v1/tab2/upload", tags=["Tab 2 Bulk Upload"])
@@ -389,13 +390,14 @@ async def save_upload(act_code: str = Form(...), file: UploadFile = File(...), d
                         if key(q["question"]) in existing_q:
                             continue
                         db.add(LegalAssessment(
-                            section_id=s.id, question=q["question"], mapped_acts=json.dumps([act_code]),
+                            section_id=s.id, sop_no=next_sop_no(db, act_code), question=q["question"], mapped_acts=json.dumps([act_code]),
                             industries="[]", industry_process="", mapped_org_types="[]",
                             sop_name=q["sop_name"], sop_details=q["sop_details"] or "",
                             processes=json.dumps([{"action": p, "task_name": "None", "schedule": "None", "auto_tracking": False}
                                                   for p in q["processes"]]),
                         ))
                         existing_q.add(key(q["question"]))
+                        db.flush()  # so the next question sees this SOP number
         db.commit()
     except Exception:
         db.rollback()

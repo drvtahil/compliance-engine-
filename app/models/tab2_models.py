@@ -51,6 +51,7 @@ class LegalAssessment(Base):
     sop_name = Column(Text, nullable=False)
     sop_details = Column(Text, nullable=False)
     processes = Column(Text, nullable=True) # Stored as structured JSON list of processes
+    sop_no = Column(Integer, nullable=True)  # stored per-Act SOP number (SOP-001 ...); never changes
     created_at = Column(DateTime, default=datetime.utcnow)
 
     section = relationship("LegalSection", back_populates="assessments")
