@@ -9,7 +9,7 @@ from typing import Optional, Literal
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -69,6 +69,7 @@ def visible_assessments_query(db: Session, current_admin: AccountAdmin, act_code
         .join(LegalSection, LegalAssessment.section_id == LegalSection.id)
         .join(LegalRule, LegalSection.rule_id == LegalRule.id)
         .join(LegalChapter, LegalRule.chapter_id == LegalChapter.id)
+        .filter(func.trim(func.coalesce(LegalAssessment.sop_name, "")) != "")  # no SOP name = no SOP
     )
     if act_code:
         q = q.filter(LegalChapter.act_code == act_code)
@@ -230,7 +231,7 @@ def get_compliance_score(
         .filter(LegalChapter.act_code == act_code, LegalRule.is_hidden.isnot(True))
         .all()
     )
-    visible = [a for a in rows if account_org_type in json.loads(a.mapped_org_types or "[]")]
+    visible = [a for a in rows if account_org_type in json.loads(a.mapped_org_types or "[]") and (a.sop_name or "").strip()]
 
     statuses = {
         s.assessment_id: s.status for s in db.query(SopStatus).filter(SopStatus.account_id == current_admin.account_id).all()

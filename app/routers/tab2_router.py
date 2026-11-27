@@ -176,7 +176,7 @@ def sync_section_data(db: Session, rule_id: int, s_item: SectionPayload):
         if a_item.id:
             ass = db.query(LegalAssessment).filter(LegalAssessment.id == a_item.id, LegalAssessment.section_id == sec.id).first()
         if not ass:
-            ass = LegalAssessment(section_id=sec.id, sop_no=next_sop_no(db, sec.rule.chapter.act_code))
+            ass = LegalAssessment(section_id=sec.id)
             db.add(ass)
 
         ass.question = a_item.question.strip()
@@ -185,6 +185,8 @@ def sync_section_data(db: Session, rule_id: int, s_item: SectionPayload):
         ass.industry_process = a_item.industry_process.strip() if a_item.industry_process else ""
         ass.mapped_org_types = json.dumps(a_item.mapped_org_types)
         ass.sop_name = a_item.sop_name.strip()
+        if ass.sop_name and not ass.sop_no:
+            ass.sop_no = next_sop_no(db, sec.rule.chapter.act_code)
         ass.sop_details = a_item.sop_details.strip()
         ass.processes = json.dumps(valid_processes)
         db.commit()
