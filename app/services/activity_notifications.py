@@ -1,5 +1,6 @@
 """In-app notifications for SOP activities:
-- assigned: to the owner when someone else creates the activity for them
+- assigned: to the owner when someone else creates the activity for them,
+  plus a confirmation to the creator
 - due soon: REMINDER_DAYS before the due date, to owner + creator (once)
 - overdue: after the due date if still Pending, to owner + creator (once)
 - completed: to the creator when the owner marks it Completed
@@ -36,6 +37,9 @@ def on_created(db: Session, act: SopActivity):
         by = act.created_by_admin.name if act.created_by_admin else "your Account Admin"
         _send(db, [act.owner_admin_id], f'New activity assigned: "{act.activity_name}"',
               f"{_sop(act)} · Due {_fmt(act.completed_at)} · Assigned by {by}", act)
+        owner = act.owner_admin.name if act.owner_admin else "the owner"
+        _send(db, [act.created_by], f'You assigned "{act.activity_name}" to {owner}',
+              f"{_sop(act)} · Due {_fmt(act.completed_at)}", act)
 
 
 def on_completed(db: Session, act: SopActivity, completed_by):
