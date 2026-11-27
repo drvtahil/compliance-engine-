@@ -19,6 +19,7 @@ from app.models.tab1_models import (
 from app.models.tab2_models import LegalChapter, LegalRule, QuestionAssignment, ReadinessSubmission
 from app.models.resources import ComplianceSection, ComplianceResource
 from app.models.tab4_models import TrainingCourse
+from app.services import master_usage
 from app.models.sops import SopStatus, SopProcessStatus, SopActivity, SopFile
 
 router = APIRouter(prefix="/api/v1/tab1", tags=["Tab 1 Master Registries & Accounts"])
@@ -230,20 +231,6 @@ def add_registry_item(reg_id: int, payload: MasterItemCreate, db: Session = Depe
     db.refresh(item)
     return item
 
-def sync_sample_policy_name(db: Session, old_name: str, new_name: Optional[str]):
-    # LegalRule.sample_policies is a JSON-encoded list of policy name strings,
-    # not a real relation - unlike AccountEnrolledAct, a rename/delete in the
-    # registry can't be synced with a single SQL UPDATE/DELETE. new_name=None
-    # means remove the entry entirely (the item was deleted, not renamed).
-    rules = db.query(LegalRule).filter(LegalRule.sample_policies.like(f'%{old_name}%')).all()
-    for rule in rules:
-        names = json.loads(rule.sample_policies or "[]")
-        if old_name not in names:
-            continue
-        updated = [new_name if n == old_name else n for n in names] if new_name else [n for n in names if n != old_name]
-        rule.sample_policies = json.dumps(updated)
-    db.commit()
-
 @router.put("/registry-items/{item_id}")
 def update_registry_item(item_id: int, payload: MasterItemCreate, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
     item = db.query(MasterRegistryItem).filter(MasterRegistryItem.id == item_id).first()
@@ -260,19 +247,36 @@ def update_registry_item(item_id: int, payload: MasterItemCreate, db: Session = 
 
     parent_reg = db.query(MasterRegistry).filter(MasterRegistry.id == item.registry_id).first()
     if parent_reg and old_name != new_name:
-        # If an Act is renamed, synchronize with all accounts enrolled in it
-        if parent_reg.registry_key == "acts":
-            db.query(AccountEnrolledAct).filter(AccountEnrolledAct.act_name == old_name).update({"act_name": new_name})
-        # If a Sample Policy is renamed, synchronize with every rule that maps it
-        elif parent_reg.registry_key == "sample_policies":
-            sync_sample_policy_name(db, old_name, new_name)
+        # Records keep copies of the name - update every one of them.
+        master_usage.rename(db, item, parent_reg.registry_key, old_name, new_name)
 
     db.commit()
     db.refresh(item)
     return item
 
+@router.get("/registry-items/{item_id}/usage")
+def registry_item_usage(item_id: int, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
+    item = db.query(MasterRegistryItem).filter(MasterRegistryItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    parent_reg = db.query(MasterRegistry).filter(MasterRegistry.id == item.registry_id).first()
+    key = parent_reg.registry_key if parent_reg else ""
+    result = master_usage.usage(db, item, key)
+    result["item_name"] = item.item_name
+    result["is_act"] = key == "acts"
+    result["replacements"] = [
+        {"id": i.id, "item_name": i.item_name}
+        for i in db.query(MasterRegistryItem).filter(MasterRegistryItem.registry_id == item.registry_id, MasterRegistryItem.id != item.id)
+        .order_by(MasterRegistryItem.item_name).all()
+    ]
+    return result
+
+
 @router.delete("/registry-items/{item_id}")
-def delete_registry_item(item_id: int, db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
+def delete_registry_item(item_id: int, action: Optional[str] = None, replace_with: Optional[int] = None,
+                         db: Session = Depends(get_db), current_admin: SuperAdmin = Depends(get_current_super_admin)):
+    """action: None (only allowed when the value is unused), 'replace' (with replace_with = another
+    item of the same list) or 'remove' (take the value off every record - optional fields only)."""
     item = db.query(MasterRegistryItem).filter(MasterRegistryItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -296,9 +300,24 @@ def delete_registry_item(item_id: int, db: Session = Depends(get_db), current_ad
             )
         # Cascade: If the deleted item is an Act, remove it from all enrolled accounts immediately
         db.query(AccountEnrolledAct).filter(AccountEnrolledAct.act_name == item_name).delete()
-    elif parent_reg and parent_reg.registry_key == "sample_policies":
-        # Cascade: If the deleted item is a Sample Policy, remove it from every rule that maps it
-        sync_sample_policy_name(db, item_name, None)
+    elif parent_reg:
+        info = master_usage.usage(db, item, parent_reg.registry_key)
+        if info["total"]:
+            if action == "replace":
+                replacement = db.query(MasterRegistryItem).filter(
+                    MasterRegistryItem.id == replace_with, MasterRegistryItem.registry_id == item.registry_id,
+                    MasterRegistryItem.id != item.id).first()
+                if not replacement:
+                    raise HTTPException(status_code=400, detail="Choose a replacement from the same master list.")
+                master_usage.apply(db, item, parent_reg.registry_key, replacement)
+            elif action == "remove":
+                if not info["can_remove"]:
+                    raise HTTPException(status_code=409, detail=(
+                        f"\"{item_name}\" can't just be removed - it is the only / a mandatory value on: "
+                        f"{', '.join(info['remove_blockers'])}. Choose a replacement instead."))
+                master_usage.apply(db, item, parent_reg.registry_key, None)
+            else:
+                raise HTTPException(status_code=409, detail=f"\"{item_name}\" is in use - choose Replace or Remove.")
 
     db.delete(item)
     db.commit()

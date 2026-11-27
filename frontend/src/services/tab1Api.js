@@ -71,8 +71,19 @@ export const updateRegistryItemApi = async (item_id, item_name, item_code = "", 
   return await res.json();
 };
 
-export const deleteRegistryItemApi = async (item_id) => {
-  const res = await authFetch(`${API_BASE}/registry-items/${item_id}`, {
+export const fetchRegistryItemUsageApi = async (item_id) => {
+  const res = await authFetch(`${API_BASE}/registry-items/${item_id}/usage`);
+  if (!res.ok) throw new Error("Failed to check where this value is used.");
+  return await res.json();
+};
+
+// action: undefined (unused value), "replace" (with replaceWith item id) or "remove"
+export const deleteRegistryItemApi = async (item_id, action, replaceWith) => {
+  const params = new URLSearchParams();
+  if (action) params.set("action", action);
+  if (replaceWith) params.set("replace_with", replaceWith);
+  const qs = params.toString() ? `?${params}` : "";
+  const res = await authFetch(`${API_BASE}/registry-items/${item_id}${qs}`, {
     method: "DELETE",
   });
   if (!res.ok) {

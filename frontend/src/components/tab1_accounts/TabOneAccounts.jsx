@@ -31,11 +31,13 @@ import {
   addRegistryItemApi,
   updateRegistryItemApi,
   deleteRegistryItemApi,
+  fetchRegistryItemUsageApi,
   createAccountApi,
   updateAccountApi,
   checkAdminDeletionApi,
   fetchPortalTabsApi
 } from "../../services/tab1Api";
+import DeleteMasterItemModal from "./DeleteMasterItemModal";
 
 export default function TabOneAccounts() {
   const [data, setData] = useState(null);
@@ -384,16 +386,34 @@ export default function TabOneAccounts() {
     }
   };
 
+  // Unused values delete after a simple confirm; values in use open the Replace / Remove popup.
+  const [deleteUsage, setDeleteUsage] = useState(null); // { itemId, ...usage }
+
   const handleDeleteItem = async (itemId, itemName) => {
-    if (!window.confirm(`Delete "${itemName}"? If this is an Act, it will also be unassigned from enrolled enterprise accounts.`)) return;
     try {
       setSaving(true);
+      const usage = await fetchRegistryItemUsageApi(itemId);
+      if (usage.total > 0) {
+        setDeleteUsage({ itemId, ...usage });
+        return;
+      }
+      if (!window.confirm(`Delete "${itemName}"? It is not used anywhere.`)) return;
       await deleteRegistryItemApi(itemId);
       await loadData();
     } catch (err) {
       alert(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleConfirmDeleteInUse = async (mode, replaceWith) => {
+    try {
+      await deleteRegistryItemApi(deleteUsage.itemId, mode, replaceWith);
+      setDeleteUsage(null);
+      await loadData();
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -408,6 +428,9 @@ export default function TabOneAccounts() {
 
   return (
     <div className="space-y-6">
+      {deleteUsage && (
+        <DeleteMasterItemModal usage={deleteUsage} onClose={() => setDeleteUsage(null)} onConfirm={handleConfirmDeleteInUse} />
+      )}
       {toast && (
         <div className="fixed top-4 right-4 z-[60] bg-emerald-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-lg">
           {toast}
