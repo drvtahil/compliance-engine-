@@ -906,7 +906,7 @@ export default function TabTwoRules() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-slate-700 block mb-1">Section Explanation *</label>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Section Explanation</label>
                       <textarea
                         rows={2}
                         placeholder="Detailed interpretation and obligations..."

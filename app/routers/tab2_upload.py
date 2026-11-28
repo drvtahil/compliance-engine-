@@ -39,7 +39,7 @@ COLUMNS = [
     ("Rule No.", True, "Whole number, e.g. 5. Same Chapter Title + Rule No. = same rule."),
     ("Rule Narrative", True, "Full rule text. Repeat it on every row of the same rule."),
     ("Section Title", True, "Section title / number. Same rule + Section Title = same section."),
-    ("Section Explanation", True, "Repeat it on every row of the same section."),
+    ("Section Explanation", False, "Optional. If given, use the same text on every row of the section (or fill it on one row only)."),
     ("Practical Examples", False, "Optional."),
     ("Sub-section Title", False, "Optional. Rows with the same Sub-section Title (in the same section) build one sub-section."),
     ("Paragraph", False, "Optional paragraph under the sub-section on this row."),
@@ -118,7 +118,7 @@ def download_template(current_admin: SuperAdmin = Depends(get_current_super_admi
         "",
         "Fill the 'Questions' sheet. The 'Example' sheet shows a filled sample - it is never uploaded.",
         "",
-        "1. Orange headers with * are mandatory on every row: Chapter Title, Rule No., Rule Narrative, Section Title, Section Explanation.",
+        "1. Orange headers with * are mandatory on every row: Chapter Title, Rule No., Rule Narrative, Section Title.",
         "   Repeat them on every row that belongs to the same rule / section.",
         "2. Rows with the same Chapter Title + Rule No. + Section Title are ONE section.",
         "3. Sub-sections: use one row per paragraph. Rows with the same Sub-section Title build one sub-section.",
@@ -239,11 +239,15 @@ def analyse(db: Session, act_code: str, data: bytes) -> dict:
         if key(rule["narrative"]) != key(v["Rule Narrative"]):
             err(row, "Rule Narrative", f"Differs from row {rule['row']} for the same Chapter + Rule No. {rule_no}")
         sk = key(v["Section Title"])
-        sec = rule["sections"].setdefault(sk, {"title": v["Section Title"], "explanation": v["Section Explanation"],
+        sec = rule["sections"].setdefault(sk, {"title": v["Section Title"], "explanation": v.get("Section Explanation", ""),
                                                 "examples": v.get("Practical Examples", ""), "row": row,
                                                 "questions": [], "subs": []})
-        if key(sec["explanation"]) != key(v["Section Explanation"]):
-            err(row, "Section Explanation", f"Differs from row {sec['row']} for the same section")
+        # Optional: blank rows are fine; two different non-blank texts for one section are not.
+        if v.get("Section Explanation"):
+            if not sec["explanation"]:
+                sec["explanation"] = v["Section Explanation"]
+            elif key(sec["explanation"]) != key(v["Section Explanation"]):
+                err(row, "Section Explanation", f"Differs from row {sec['row']} for the same section")
         if v.get("Practical Examples") and not sec["examples"]:
             sec["examples"] = v["Practical Examples"]
         if v.get("Sub-section Title"):
@@ -374,7 +378,7 @@ async def save_upload(act_code: str = Form(...), file: UploadFile = File(...), d
                 for sk, sec in rule["sections"].items():
                     s = next((x for x in r.sections if key(x.section_title) == sk), None)
                     if not s:
-                        s = LegalSection(rule_id=r.id, section_title=sec["title"], section_explanation=sec["explanation"],
+                        s = LegalSection(rule_id=r.id, section_title=sec["title"], section_explanation=sec["explanation"] or "",
                                          practical_examples=sec["examples"], mapped_acts=json.dumps([act_code]),
                                          sub_sections="[]")
                         db.add(s)
